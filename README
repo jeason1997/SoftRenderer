@@ -1,0 +1,8 @@
+需求：安装nodejs
+初始：npm install
+启动gulp监控自动编译任务：gulp
+启动项目：npx serve
+浏览器打开
+
+
+
