@@ -1,3 +1,4 @@
+import { Input } from "./Input";
 import { Renderer } from "./Renderer";
 
 // 画布尺寸
@@ -23,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 渲染函数
     function render() {
+        // 处理逻辑
+
         // 渲染
         renderer.Render();
         // 将图像数据绘制到canvas上
@@ -32,4 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // 开始动画循环
     requestAnimationFrame(render);
+});
+
+// 获取鼠标事件
+document.addEventListener('mousemove', (event) => {
+    // 获取鼠标相对于canvas的坐标
+    const rect = (event.target as HTMLCanvasElement).getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    Input.mouseX = mouseX;
+    Input.mouseY = mouseY;
 });
