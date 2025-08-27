@@ -1,5 +1,7 @@
 import { Color } from "./Color";
-import { Input } from "./Input";
+import { Transform } from "./Model";
+import { Vector2 } from "./Vector2";
+import { Vector3 } from "./Vector3";
 
 export class Renderer {
     private canvasWidth: number;
@@ -12,36 +14,7 @@ export class Renderer {
         this.canvasHeight = canvasHeight;
     }
 
-    angle: number = 0;
-    public Render() {
-        this.Clear(Color.GRAY);
-        // 圆心
-        const centerX = this.canvasWidth / 2;
-        const centerY = this.canvasHeight / 2;
-        // 半径
-        const radius = 100;
-        // 绘制圆心到半径的线（绕一圈）
-        const x = centerX + radius * Math.cos(this.angle * Math.PI / 180);
-        const y = centerY + radius * Math.sin(this.angle * Math.PI / 180);
-        this.DrawLine(centerX, centerY, x, y, Color.WHITE);
-        this.angle++;
-
-        // // 画线
-        // this.DrawLine(200, 200, 200, 0, Color.WHITE);
-        // this.DrawLine(200, 200, 300, 0, Color.RED);
-        // this.DrawLine(200, 200, 300, 200, Color.GREEN);
-        // this.DrawLine(200, 200, 300, 400, Color.BLUE);
-        // this.DrawLine(200, 200, 200, 300, Color.BLACK);
-        // this.DrawLine(200, 200, 100, 300, Color.YELLOW);
-        // this.DrawLine(200, 200, 100, 100, Color.ORANGE);
-
-        // 画三角形
-        //console.log(Input.mouseX, Input.mouseY);
-        this.DrawTriangleFilledWithVertexColor(200, 200, 300, 100, Input.mouseX, Input.mouseY, Color.RED, Color.GREEN, Color.BLUE);
-        //this.DrawTriangleFilled(200, 200, 300, 100, Input.mouseX, Input.mouseY, Color.RED);
-        this.DrawTriangle(200, 200, 300, 100, Input.mouseX, Input.mouseY, Color.YELLOW);
-        this.DrawLine(200, 200, Input.mouseX, Input.mouseY, Color.WHITE);
-    }
+    //#region 基础绘制接口
 
     public Clear(color: number) {
         // 使用 fill 方法替代循环，性能更好
@@ -173,7 +146,7 @@ export class Renderer {
             // 预分配数组大小
             const dx = Math.abs(Math.floor(d2 - d1));
             const result = new Array(dx + 1);
-            
+
             // 计算步长
             const invDelta = 1 / (d2 - d1);
             const rStep = (r2 - r1) * invDelta;
@@ -232,7 +205,7 @@ export class Renderer {
 
             // 预计算颜色差值
             const rDiff = rightColor.r - leftColor.r;
-            const gDiff = rightColor.g - leftColor.g; 
+            const gDiff = rightColor.g - leftColor.g;
             const bDiff = rightColor.b - leftColor.b;
             const aDiff = rightColor.a - leftColor.a;
 
@@ -251,9 +224,9 @@ export class Renderer {
 
             // 水平方向颜色插值
             for (let x = xStart; x <= xEnd; x++) {
-                const finalColor = ((a|0) << 24) | ((b|0) << 16) | ((g|0) << 8) | (r|0);
+                const finalColor = ((a | 0) << 24) | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0);
                 this.DrawPixel(x, y, finalColor);
-                
+
                 // 累加颜色值
                 r += rStep;
                 g += gStep;
@@ -262,6 +235,97 @@ export class Renderer {
             }
         }
     }
+
+    //#endregion
+
+    //#region 投影相关
+
+    public ViewportToCanvas(x: number, y: number) {
+        return {
+            x: x * this.canvasWidth,
+            y: y * this.canvasHeight
+        }
+    }
+
+    public ProjectVertex(vertex: Vector3): Vector2 {
+        return new Vector2(vertex.x, vertex.y);
+    }
+
+    //#endregion
+
+    //#region 变换
+
+    public ApplyTransform(vertex: Vector3, transform: Transform) {
+        // 必须严格安装先缩放后旋转后平移的顺序
+        this.ScaleVertex(vertex, transform);
+        this.RotateVertex(vertex, transform);
+        this.TranslateVertex(vertex, transform);
+    }
+
+    public ScaleVertex(vertex: Vector3, transform: Transform) {
+        vertex.x *= transform.scale.x;
+        vertex.y *= transform.scale.y;
+        vertex.z *= transform.scale.z;
+    }
+
+    public RotateVertex(vertex: Vector3, transform: Transform) {
+        const cosX = Math.cos(transform.rotation.x);
+        const sinX = Math.sin(transform.rotation.x);
+        const cosY = Math.cos(transform.rotation.y);
+        const sinY = Math.sin(transform.rotation.y);
+        const cosZ = Math.cos(transform.rotation.z);
+        const sinZ = Math.sin(transform.rotation.z);
+    }
+
+    public TranslateVertex(vertex: Vector3, transform: Transform) {
+        vertex.x += transform.position.x;
+        vertex.y += transform.position.y;
+        vertex.z += transform.position.z;
+    }
+
+    //#endregion
+
+    //#region 绘制物体
+
+    public DrawObject(vertices: Vector3[], vertexColors: number[], triangles: number[][], drawWireframe: boolean = false) {
+        // 投影
+        const projectedVertices = new Array(vertices.length);
+        for (let i = 0; i < vertices.length; i++) {
+            projectedVertices[i] = this.ProjectVertex(vertices[i]);
+        }
+        // 绘制三角形
+        for (const triangle of triangles) {
+            const [v1, v2, v3] = triangle;
+            const p1 = projectedVertices[v1];
+            const p2 = projectedVertices[v2];
+            const p3 = projectedVertices[v3];
+
+            // 线框模式，暂不支持顶点色
+            if (drawWireframe) {
+                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
+            }
+            else {
+                // 获取顶点颜色
+                const color1 = vertexColors[v1];
+                const color2 = vertexColors[v2];
+                const color3 = vertexColors[v3];
+
+                // 绘制带顶点颜色的三角形
+                this.DrawTriangleFilledWithVertexColor(
+                    p1.x, p1.y,
+                    p2.x, p2.y,
+                    p3.x, p3.y,
+                    color1,
+                    color2,
+                    color3
+                );
+            }
+        }
+    }
+
+    //#endregion
+
+    //#region 工具函数
 
     /// <summary>
     /// 线性插值
@@ -285,4 +349,6 @@ export class Renderer {
         }
         return value;
     }
+
+    //#endregion
 }
