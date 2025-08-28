@@ -1,9 +1,16 @@
 import { Color } from "./Color";
 import { Instance, Transform } from "./Model";
-import { Vector2 } from "./Vector2";
-import { Vector3 } from "./Vector3";
+import { Vector2 } from "./Math/Vector2";
+import { Vector3 } from "./Math/Vector3";
+
+enum DrawMode {
+    Wireframe,
+    Point,
+    Shader
+}
 
 export class Renderer {
+    public drawMode: DrawMode = DrawMode.Wireframe;
     private canvasWidth: number;
     private canvasHeight: number;
     private readonly canvasWidthHalf: number;
@@ -371,14 +378,13 @@ export class Renderer {
 
     //#region 绘制物体
 
-    public DrawObject(obj: Instance, drawWireframe: boolean = false) {
+    public DrawObject(obj: Instance) {
         const model = obj.model;
         const vertices = model.vertices;
-        const vertexColors = model.vertexColors;
-        const triangles = model.triangles;
+        const indices = model.faces.flatMap(face => face.vertexIndices);
 
         const projectedVertices = new Array(vertices.length);
-        for (let i = 0; i < vertices.length; i++) {
+        for (let i = 0; i < vertices.length; i += 1) {
             let vertice = vertices[i].clone();
             // 先变换
             this.ApplyTransform(vertice, obj.transform);
@@ -389,29 +395,22 @@ export class Renderer {
         }
 
         // 最后绘制三角形到屏幕上
-        for (const triangle of triangles) {
-            const [v1, v2, v3] = triangle;
-            const p1 = projectedVertices[v1];
-            const p2 = projectedVertices[v2];
-            const p3 = projectedVertices[v3];
+        for (let i = 0; i < indices.length; i += 3) {
+            const p1 = projectedVertices[indices[i]];
+            const p2 = projectedVertices[indices[i + 1]];
+            const p3 = projectedVertices[indices[i + 2]];
 
             // 线框模式，暂不支持顶点色
-            if (drawWireframe) {
+            if (this.drawMode === DrawMode.Wireframe) {
                 this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
             }
-            else {
-                // 获取顶点颜色
-                const color1 = vertexColors[v1];
-                const color2 = vertexColors[v2];
-                const color3 = vertexColors[v3];
-
-                // 绘制带顶点颜色的三角形
-                this.DrawTriangleFilledWithVertexColor(
-                    p1.x, p1.y,
-                    p2.x, p2.y,
-                    p3.x, p3.y,
-                    color1, color2, color3
-                );
+            else if (this.drawMode === DrawMode.Point) {
+                this.DrawPixel(p1.x, p1.y, Color.WHITE);
+                this.DrawPixel(p2.x, p2.y, Color.WHITE);
+                this.DrawPixel(p3.x, p3.y, Color.WHITE);
+            }
+            else if (this.drawMode === DrawMode.Shader) {
+                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
             }
         }
     }

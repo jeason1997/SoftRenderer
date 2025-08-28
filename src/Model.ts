@@ -1,20 +1,13 @@
-import { Vector3 } from "./Vector3";
+import { Vector3 } from "./Math/Vector3";
+import { OBJModel } from "./Utils/ObjParser";
 
-export class Model {
-    public name: string;
-    public vertices: Vector3[];
-    public vertexColors: number[];
-    public triangles: number[][];
-}
-
-export class Transform {
-    public position: Vector3;
-    public rotation: Vector3;
-    public scale: Vector3;
+export interface Transform {
+    position: Vector3;
+    rotation: Vector3;
+    scale: Vector3;
 }
 
 export class Instance {
-    public model: Model;
+    public model: OBJModel;
     public transform: Transform;
-    public shader: boolean;
 }
