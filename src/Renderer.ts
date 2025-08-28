@@ -1,17 +1,23 @@
 import { Color } from "./Color";
-import { Transform } from "./Model";
+import { Instance, Transform } from "./Model";
 import { Vector2 } from "./Vector2";
 import { Vector3 } from "./Vector3";
 
 export class Renderer {
     private canvasWidth: number;
     private canvasHeight: number;
+    private readonly canvasWidthHalf: number;
+    private readonly canvasHeightHalf: number;
+    private readonly aspectRatio: number;
     private uint32View: Uint32Array;
 
     constructor(uint32View: Uint32Array, canvasWidth: number, canvasHeight: number) {
         this.uint32View = uint32View;
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
+        this.canvasWidthHalf = canvasWidth >> 1;
+        this.canvasHeightHalf = canvasHeight >> 1;
+        this.aspectRatio = canvasWidth / canvasHeight;
     }
 
     //#region 基础绘制接口
@@ -28,10 +34,27 @@ export class Renderer {
     }
 
     public DrawPixel(x: number, y: number, color: number) {
-        this.uint32View[Math.floor(y) * this.canvasWidth + Math.floor(x)] = color;
+        // 绘制到屏幕上的像素应该是整数的
+        // 优化: 使用位运算代替Math.floor，提升性能
+        x = (x | 0);
+        y = (y | 0);
+        // x = Math.floor(x);
+        // y = Math.floor(y);
+
+        if (x < 0 || x >= this.canvasWidth || y < 0 || y >= this.canvasHeight) {
+            return;
+        }
+
+        this.uint32View[y * this.canvasWidth + x] = color;
     }
 
     public DrawLine(x1: number, y1: number, x2: number, y2: number, color: number) {
+        // 取整
+        x1 = x1 | 0;
+        y1 = y1 | 0;
+        x2 = x2 | 0;
+        y2 = y2 | 0;
+
         const dx = x2 - x1;
         const dy = y2 - y1;
 
@@ -92,6 +115,14 @@ export class Renderer {
     public DrawTriangleFilled(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, color: number) {
         // 注：以下提到的长边，特指y轴跨度最长的边，而不是实际上的边长
 
+        // 实际绘制到屏幕上的点，必须是整数，取整一下。使用位运算代替Math.floor，提升性能
+        x1 = x1 | 0;
+        y1 = y1 | 0;
+        x2 = x2 | 0;
+        y2 = y2 | 0;
+        x3 = x3 | 0;
+        y3 = y3 | 0;
+
         // 对点进行排序，使得y1<=y2<=y3，即可确定三角形的长边为L13，L12和L23则是另外两条短边
         if (y1 > y2) [x1, y1, x2, y2] = [x2, y2, x1, y1];
         if (y1 > y3) [x1, y1, x3, y3] = [x3, y3, x1, y1];
@@ -108,7 +139,9 @@ export class Renderer {
         const p123 = p12.concat(p23);
 
         // 判断L13和L123哪条长边是左哪条是右，都取数组中间的点，判断谁左谁右即可。
-        const m = Math.floor(p123.length / 2);
+        // 使用位运算代替Math.floor，提升性能
+        // const m = Math.floor(p123.length / 2);
+        const m = (p123.length >> 1) | 0;
         let pLeft = p123;
         let pRight = p13;
         if (p13[m] < p123[m]) {
@@ -130,6 +163,14 @@ export class Renderer {
         x3: number, y3: number,
         color1: number, color2: number, color3: number
     ) {
+        // 实际绘制到屏幕上的点，必须是整数，取整一下。使用位运算代替Math.floor，提升性能
+        x1 = x1 | 0;
+        y1 = y1 | 0;
+        x2 = x2 | 0;
+        y2 = y2 | 0;
+        x3 = x3 | 0;
+        y3 = y3 | 0;
+
         // 对点按Y坐标排序，确保y1 <= y2 <= y3
         if (y1 > y2) [x1, y1, x2, y2, color1, color2] = [x2, y2, x1, y1, color2, color1];
         if (y1 > y3) [x1, y1, x3, y3, color1, color3] = [x3, y3, x1, y1, color3, color1];
@@ -144,7 +185,9 @@ export class Renderer {
         const interpolateColor = (d1: number, r1: number, g1: number, b1: number, a1: number,
             d2: number, r2: number, g2: number, b2: number, a2: number) => {
             // 预分配数组大小
-            const dx = Math.abs(Math.floor(d2 - d1));
+            // 使用位运算代替Math.floor和Math.abs，提升性能
+            // const dx = Math.abs(Math.floor(d2 - d1));
+            const dx = ((d2 > d1 ? d2 - d1 : d1 - d2) | 0);
             const result = new Array(dx + 1);
 
             // 计算步长
@@ -181,7 +224,8 @@ export class Renderer {
         const p123Colors = p12Colors.concat(p23Colors);
 
         // 确定左右边界
-        const m = Math.floor(p123.length / 2);
+        // const m = Math.floor(p123.length / 2);
+        const m = (p123.length >> 1) | 0;
         let leftPoints = p123;
         let rightPoints = p13;
         let leftColors = p123Colors;
@@ -240,15 +284,40 @@ export class Renderer {
 
     //#region 投影相关
 
-    public ViewportToCanvas(x: number, y: number) {
-        return {
-            x: x * this.canvasWidth,
-            y: y * this.canvasHeight
-        }
+    // 将视口上的内容映射到实际屏幕上
+    public ViewportToCanvas(point: Vector2) {
+        // 假设视口宽度为1个单位
+        // 因为aspectRatio = canvasWidth / canvasHeight，
+        // 所以视口高度 = 1 / aspectRatio = canvasHeight / canvasWidth
+        const viewportWidth = 1;
+        const viewportHeight = 1 / this.aspectRatio;
+
+        // 将投影坐标映射到Canvas像素坐标
+        // X坐标：从 [-viewportWidth/2, viewportWidth/2] 映射到 [0, canvasWidth]
+        // Y坐标：从 [-viewportHeight/2, viewportHeight/2] 映射到 [0, canvasHeight] (注意Y轴方向)
+        const canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * this.canvasWidth;
+        const canvasY = this.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * this.canvasHeight); // Canvas的Y轴通常是向下的
+        point.x = canvasX;
+        point.y = canvasY;
     }
 
+    // 透视投影，将3D场景的坐标转换为2D屏幕坐标，投射到视口上
     public ProjectVertex(vertex: Vector3): Vector2 {
-        return new Vector2(vertex.x, vertex.y);
+        // 假设视点到近裁面（视口）的距离是d，视口的宽是1
+        // 根据三角函数有：tan(fov/2) = (0.5 / d)
+        // 所以：d = 0.5 / tan(fov/2)
+        const fovDegrees = 60;
+        const fovRadians = fovDegrees * (Math.PI / 180); // 将角度转换为弧度
+        const d = 0.5 / Math.tan(fovRadians / 2);
+
+        // 透视公式，假设视点位置(0,0)，视点到视口距离为d，场景里的点为P(x,y,z)，投射到视口上的点为P'(x,y)
+        // 则根据相似三角形有：z / d = x / x' = y / y'，可得到：
+        // x' = (d * x) / z
+        // y' = (d * y) / z
+        const projectionX = (d * vertex.x) / vertex.z;
+        const projectionY = (d * vertex.y) / vertex.z;
+
+        return new Vector2(projectionX, projectionY);
     }
 
     //#endregion
@@ -275,6 +344,21 @@ export class Renderer {
         const sinY = Math.sin(transform.rotation.y);
         const cosZ = Math.cos(transform.rotation.z);
         const sinZ = Math.sin(transform.rotation.z);
+        // 先绕Z轴旋转
+        const x = vertex.x * cosZ - vertex.y * sinZ;
+        const y = vertex.x * sinZ + vertex.y * cosZ;
+        vertex.x = x;
+        vertex.y = y;
+        // 再绕Y轴旋转
+        const z = vertex.z * cosY - vertex.x * sinY;
+        const x2 = vertex.z * sinY + vertex.x * cosY;
+        vertex.z = z;
+        vertex.x = x2;
+        // 最后绕X轴旋转
+        const y2 = vertex.y * cosX - vertex.z * sinX;
+        const z2 = vertex.y * sinX + vertex.z * cosX;
+        vertex.y = y2;
+        vertex.z = z2;
     }
 
     public TranslateVertex(vertex: Vector3, transform: Transform) {
@@ -287,13 +371,24 @@ export class Renderer {
 
     //#region 绘制物体
 
-    public DrawObject(vertices: Vector3[], vertexColors: number[], triangles: number[][], drawWireframe: boolean = false) {
-        // 投影
+    public DrawObject(obj: Instance, drawWireframe: boolean = false) {
+        const model = obj.model;
+        const vertices = model.vertices;
+        const vertexColors = model.vertexColors;
+        const triangles = model.triangles;
+
         const projectedVertices = new Array(vertices.length);
         for (let i = 0; i < vertices.length; i++) {
-            projectedVertices[i] = this.ProjectVertex(vertices[i]);
+            let vertice = vertices[i].clone();
+            // 先变换
+            this.ApplyTransform(vertice, obj.transform);
+            // 再投影
+            projectedVertices[i] = this.ProjectVertex(vertice);
+            // 再视口映射
+            this.ViewportToCanvas(projectedVertices[i]);
         }
-        // 绘制三角形
+
+        // 最后绘制三角形到屏幕上
         for (const triangle of triangles) {
             const [v1, v2, v3] = triangle;
             const p1 = projectedVertices[v1];
@@ -315,9 +410,7 @@ export class Renderer {
                     p1.x, p1.y,
                     p2.x, p2.y,
                     p3.x, p3.y,
-                    color1,
-                    color2,
-                    color3
+                    color1, color2, color3
                 );
             }
         }
@@ -338,7 +431,8 @@ export class Renderer {
     /// </summary>
     private Interpolate(a1: number, b1: number, a2: number, b2: number): number[] {
         // 预分配数组大小以避免动态扩容
-        const dx = Math.abs(Math.floor(a2 - a1));
+        // const dx = Math.abs(Math.floor(a2 - a1));
+        const dx = ((a2 > a1 ? a2 - a1 : a1 - a2) | 0);
         const value = new Array(dx + 1);
         const a = (b2 - b1) / (a2 - a1);
         let d = b1;

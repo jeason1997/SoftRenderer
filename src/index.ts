@@ -6,7 +6,7 @@ import { Vector3 } from "./Vector3";
 
 // 画布尺寸
 const canvasWidth = 400;
-const canvasHeight = 400;
+const canvasHeight = 600;
 
 // 对象列表
 const instances: Instance[] = [];
@@ -59,14 +59,14 @@ function Init() {
     const model = new Model();
     model.name = "立方体";
     model.vertices = [
-        new Vector3(-50, -50, -50),
-        new Vector3(-50, 50, -50),
-        new Vector3(50, 50, -50),
-        new Vector3(50, -50, -50),
-        new Vector3(-50, -50, 50),
-        new Vector3(-50, 50, 50),
-        new Vector3(50, 50, 50),
-        new Vector3(50, -50, 50),
+        new Vector3(-0.5, -0.5, -0.5), // Original (-2, -0.5, 5) -> (-2+1.5, -0.5+0, 5-5.5)
+        new Vector3(-0.5, 0.5, -0.5), // Original (-2,  0.5, 5) -> (-2+1.5, 0.5+0, 5-5.5)
+        new Vector3(0.5, 0.5, -0.5), // Original (-1,  0.5, 5) -> (-1+1.5, 0.5+0, 5-5.5)
+        new Vector3(0.5, -0.5, -0.5), // Original (-1, -0.5, 5) -> (-1+1.5, -0.5+0, 5-5.5)
+        new Vector3(-0.5, -0.5, 0.5), // Original (-2, -0.5, 6) -> (-2+1.5, -0.5+0, 6-5.5)
+        new Vector3(-0.5, 0.5, 0.5), // Original (-2,  0.5, 6) -> (-2+1.5, 0.5+0, 6-5.5)
+        new Vector3(0.5, 0.5, 0.5), // Original (-1,  0.5, 6) -> (-1+1.5, 0.5+0, 6-5.5)
+        new Vector3(0.5, -0.5, 0.5)  // Original (-1, -0.5, 6) -> (-1+1.5, -0.5+0, 6-5.5)
     ];
     model.vertexColors = [
         Color.RED,
@@ -96,27 +96,44 @@ function Init() {
     const cubeInstance = new Instance();
     cubeInstance.model = model;
     cubeInstance.transform = new Transform();
-    cubeInstance.transform.position = new Vector3(0, 0, 0);
-    cubeInstance.transform.rotation = new Vector3(0, 0, 0);
+    cubeInstance.transform.position = new Vector3(0, 0, 3);
+    cubeInstance.transform.rotation = new Vector3(350, 50, 0);
     cubeInstance.transform.scale = new Vector3(1, 1, 1);
+    cubeInstance.shader = true;
     instances.push(cubeInstance);
+
+    const cubeInstance2 = new Instance();
+    cubeInstance2.model = model;
+    cubeInstance2.transform = new Transform();
+    cubeInstance2.transform.position = new Vector3(1, 1, 3);
+    cubeInstance2.transform.rotation = new Vector3(0, 0, 0);
+    cubeInstance2.transform.scale = new Vector3(0.5, 0.5, 0.5);
+    cubeInstance2.shader = false;
+    instances.push(cubeInstance2);
 }
 
 function Update() {
+    for (const instance of instances) {
+        // 让物体在所有轴上旋转
+        instance.transform.rotation.x += 0.01;
+        instance.transform.rotation.y += 0.02;
+        instance.transform.rotation.z += 0.015;
 
+        // 使用sin函数实现缩放在0.9到1.1之间循环
+        // const scaleOffset = Math.sin(Date.now() * 0.002) * 0.1 + 1;
+        // instance.transform.scale.x = scaleOffset;
+        // instance.transform.scale.y = scaleOffset;
+        // instance.transform.scale.z = scaleOffset;
+    }
 }
 
 function Render(renderer: Renderer) {
     renderer.Clear(Color.BLACK);
 
     for (const instance of instances) {
-        renderer.DrawObject(
-            instance.model.vertices,
-            instance.model.vertexColors,
-            instance.model.triangles,
-        );
+        renderer.DrawObject(instance, !instance.shader);
     }
 
     // 画三角形
-    renderer.DrawTriangleFilledWithVertexColor(200, 200, 300, 100, Input.mouseX, Input.mouseY, Color.RED, Color.GREEN, Color.BLUE);
+    // renderer.DrawTriangleFilledWithVertexColor(0, 0, 100, 100, Input.mouseX, Input.mouseY, Color.RED, Color.GREEN, Color.BLUE);
 }

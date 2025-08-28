@@ -16,4 +16,5 @@ export class Transform {
 export class Instance {
     public model: Model;
     public transform: Transform;
+    public shader: boolean;
 }

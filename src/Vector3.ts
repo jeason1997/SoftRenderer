@@ -8,4 +8,8 @@ export class Vector3 {
         this.y = y;
         this.z = z;
     }
+    
+    clone(): Vector3 {
+        return new Vector3(this.x, this.y, this.z);
+    }
 }
