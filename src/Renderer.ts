@@ -345,12 +345,14 @@ export class Renderer {
     }
 
     public RotateVertex(vertex: Vector3, transform: Transform) {
-        const cosX = Math.cos(transform.rotation.x);
-        const sinX = Math.sin(transform.rotation.x);
-        const cosY = Math.cos(transform.rotation.y);
-        const sinY = Math.sin(transform.rotation.y);
-        const cosZ = Math.cos(transform.rotation.z);
-        const sinZ = Math.sin(transform.rotation.z);
+        const eulerAngles = transform.rotation.eulerAngles;
+
+        const cosX = Math.cos(eulerAngles.x);
+        const sinX = Math.sin(eulerAngles.x);
+        const cosY = Math.cos(eulerAngles.y);
+        const sinY = Math.sin(eulerAngles.y);
+        const cosZ = Math.cos(eulerAngles.z);
+        const sinZ = Math.sin(eulerAngles.z);
         // 先绕Z轴旋转
         const x = vertex.x * cosZ - vertex.y * sinZ;
         const y = vertex.x * sinZ + vertex.y * cosZ;
@@ -385,7 +387,7 @@ export class Renderer {
 
         const projectedVertices = new Array(vertices.length);
         for (let i = 0; i < vertices.length; i += 1) {
-            let vertice = vertices[i].clone();
+            let vertice = vertices[i].copy();
             // 先变换
             this.ApplyTransform(vertice, obj.transform);
             // 再投影

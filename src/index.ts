@@ -1,5 +1,6 @@
 import { Color } from "./Color";
 import { Input } from "./Input";
+import { Quaternion } from "./Math/Quaternion";
 import { Vector3 } from "./Math/Vector3";
 import { Instance } from "./Model";
 import { Renderer } from "./Renderer";
@@ -57,19 +58,34 @@ document.addEventListener('mousemove', (event) => {
 });
 
 function Init() {
+    let lee: Instance;
+
     // 加载模型
-    AssetLoader.loadInstanceFromModel('Model', 'resources/assets/meshes/lee.obj').then((instance) => {
+    AssetLoader.loadInstanceFromModel('lee', 'resources/assets/meshes/lee.obj').then((instance) => {
+        lee = instance;
         instance.transform.position = new Vector3(0, 0, 2);
+        instances.push(instance);
+    });
+
+    AssetLoader.loadInstanceFromModel('cube', 'resources/cube.obj').then((instance) => {
+        instance.transform.position = new Vector3(0, 0, 5);
+        instance.transform.setParent(lee.transform);
         instances.push(instance);
     });
 }
 
 function Update() {
     for (const instance of instances) {
+        if (instance.name == "cube"){
+            continue;
+        }
+
         // 让物体在所有轴上旋转
-        instance.transform.rotation.x += 0.01;
-        instance.transform.rotation.y += 0.02;
-        instance.transform.rotation.z += 0.015;
+        const eulerAngles = instance.transform.rotation.eulerAngles;
+        eulerAngles.x += 0.01;
+        eulerAngles.y += 0.02;
+        eulerAngles.z += 0.015;
+        instance.transform.rotation = new Quaternion(eulerAngles);
 
         // 使用sin函数实现缩放在0.9到1.1之间循环
         const scaleOffset = Math.sin(Date.now() * 0.002) * 0.1 + 1;

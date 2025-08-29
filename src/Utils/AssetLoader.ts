@@ -1,3 +1,4 @@
+import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Instance, Transform } from "../Model";
 import { Dictionary } from "./Dictionary";
@@ -100,11 +101,11 @@ export class AssetLoader {
    
     public static async loadInstanceFromModel(name: string, modelPath: string, scale: number = 1, reverse: boolean = false): Promise<Instance> {
         var instance = new Instance();
-        instance.transform = {
-            position: new Vector3(0, 0, 0),
-            rotation: new Vector3(0, 0, 0),
-            scale: new Vector3(1, 1, 1),
-        };
+        instance.name = name;
+        instance.transform = new Transform(name);
+        instance.transform.position = Vector3.ZERO;
+        instance.transform.rotation = Quaternion.identity;
+        instance.transform.scale = Vector3.ONE;
 
         var objDoc = await AssetLoader.loadTextFile(modelPath);
         if (objDoc != null) {
