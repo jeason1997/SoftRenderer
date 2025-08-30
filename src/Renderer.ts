@@ -13,7 +13,7 @@ enum DrawMode {
 }
 
 export class Renderer {
-    public drawMode: DrawMode = DrawMode.Point;
+    public drawMode: DrawMode = DrawMode.Wireframe;
     private uint32View: Uint32Array;
 
     constructor(uint32View: Uint32Array) {
@@ -338,13 +338,13 @@ export class Renderer {
         const cameraForward = camera.transform.forward;
         const cameraUp = camera.transform.up;
         // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
-        const modelViewMatrix = modelMatrix.copy().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
+        const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
         const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
 
         // 1. MVP变换到裁剪空间
         // 模型空间 -> 世界空间 -> 观察空间 -> 裁剪空间
         for (let i = 0; i < vertices.length; i += 1) {
-            let vertice = vertices[i].copy();
+            let vertice = vertices[i].clone();
             let v = mvpMatrix.multiplyVector4(new Vector4(vertice, 1));
             clipSpaceVertices[i] = v;
         }
@@ -400,7 +400,7 @@ export class Renderer {
 
         // 简单变换
         for (let i = 0; i < vertices.length; i += 1) {
-            let vertice = vertices[i].copy();
+            let vertice = vertices[i].clone();
             // 先变换，必须严格按照先缩放，再旋转，再平移
             this.ScaleVertex(vertice, obj.transform);
             this.RotateVertex(vertice, obj.transform);

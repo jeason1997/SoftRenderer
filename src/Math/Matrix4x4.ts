@@ -429,7 +429,7 @@ export class Matrix4x4 {
         ]);
     }
 
-    public copy(): Matrix4x4 {
+    public clone(): Matrix4x4 {
         return new Matrix4x4(
             this.getRow(0),
             this.getRow(1),

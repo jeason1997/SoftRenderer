@@ -73,7 +73,7 @@ export class Quaternion {
         return out;
     }
 
-    public copy(): Quaternion {
+    public clone(): Quaternion {
         return new Quaternion(this.x, this.y, this.z, this.w);
     }
 

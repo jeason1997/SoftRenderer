@@ -112,7 +112,7 @@ export class Vector3 {
      ADDITIONAL FUNCTIONS
      */
 
-    public copy(): Vector3 {
+    public clone(): Vector3 {
         return new Vector3(this.x, this.y, this.z);
     }
 

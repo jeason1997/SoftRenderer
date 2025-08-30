@@ -91,7 +91,7 @@ export class Transform {
     }
 
     public get position(): Vector3 {
-        return this._tempPos.copy();
+        return this._tempPos.clone();
     }
 
     public set position(pos: Vector3) {
@@ -103,7 +103,7 @@ export class Transform {
     }
 
     public get rotation(): Quaternion {
-        return this._tempRot.copy();
+        return this._tempRot.clone();
     }
 
     public set rotation(q: Quaternion) {
@@ -115,7 +115,7 @@ export class Transform {
     }
 
     public get scale(): Vector3 {
-        return this._tempScale.copy();
+        return this._tempScale.clone();
     }
 
     public set scale(s: Vector3) {
