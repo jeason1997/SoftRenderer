@@ -324,11 +324,94 @@ export class Renderer {
 
     //#region 变换
 
-    public ApplyTransform(vertex: Vector3, transform: Transform) {
-        // 必须严格安装先缩放后旋转后平移的顺序
-        this.ScaleVertex(vertex, transform);
-        this.RotateVertex(vertex, transform);
-        this.TranslateVertex(vertex, transform);
+    /*
+     * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
+     */
+    public VertexProcessingStage(obj: Instance) {
+        const model = obj.model;
+        const vertices = model.vertices;
+        const clipSpaceVertices = new Array(vertices.length);
+
+        // 构建MVP矩阵
+        const modelMatrix = obj.transform.localToWorldMatrix;
+        const camera = Camera.mainCamera;
+        const cameraForward = camera.transform.forward;
+        const cameraUp = camera.transform.up;
+        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
+        const modelViewMatrix = modelMatrix.copy().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
+        const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+
+        // 1. MVP变换到裁剪空间
+        // 模型空间 -> 世界空间 -> 观察空间 -> 裁剪空间
+        for (let i = 0; i < vertices.length; i += 1) {
+            let vertice = vertices[i].copy();
+            let v = mvpMatrix.multiplyVector4(new Vector4(vertice, 1));
+            clipSpaceVertices[i] = v;
+        }
+
+        // 2. 透视除法：将裁剪空间坐标转换为标准设备坐标（NDC）
+        // 裁剪空间 -> 标准化设备坐标（NDC 空间）
+        for (let i = 0; i < clipSpaceVertices.length; i++) {
+            const v = clipSpaceVertices[i];
+            // w分量是透视投影产生的，用于透视除法
+            const w = v.w; // 假设你的Vector4/Vector3实现中，齐次坐标w存储在w属性中。如果没有，需要确保MVP变换时处理了齐次坐标。
+            // 如果没有显式的w分量，且mvpMatrix.multiplyVector3返回的是Vector3，那么通常认为w=1（正交投影）或者需要从变换矩阵中考虑透视
+
+            // 进行透视除法：xyz分别除以w
+            // 注意：如果你的矩阵乘法没有处理齐次坐标（即返回的vertice是三维向量），那么很可能你的变换没有包含透视投影产生的w分量。
+            // 假设你的mvpMatrix.multiplyVector3确实返回了包含齐次坐标的Vector4，或者有一个返回Vector4的方法。
+            // 这里假设 projectedVertices 中存储的是 Vector4，或者至少有 x, y, z, w 属性。
+
+            // 如果您的实现中，经过透视投影矩阵变换后，顶点已经是一个齐次坐标（x, y, z, w），则需要以下除法：
+            v.x = v.x / w;
+            v.y = v.y / w;
+            v.z = v.z / w; // 对于深度信息，可能还需要进一步处理，但屏幕映射通常主要关注x,y
+            // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
+            // 假设我们的NDC是[-1, 1]范围。
+        }
+
+        // 3. 视口变换：将NDC坐标映射到屏幕坐标
+        // 标准化设备坐标（NDC 空间） -> 屏幕空间
+        // 获取画布（或视口）的宽度和高度
+        const screenVertices = new Array(clipSpaceVertices.length);
+        for (let i = 0; i < clipSpaceVertices.length; i++) {
+            const ndc = clipSpaceVertices[i]; // 此时ndc应该是经过透视除法后的NDC坐标
+
+            // 将NDC的x从[-1, 1]映射到[0, screenWidth]
+            const screenX = ((ndc.x + 1) / 2) * Config.canvasWidth;
+            // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
+            const screenY = Config.canvasHeight - (((ndc.y + 1) / 2) * Config.canvasHeight);
+            // z分量通常用于深度测试，这里我们只关心屏幕x,y
+            // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
+
+            screenVertices[i] = { x: screenX, y: screenY }; // 存储屏幕坐标
+        }
+        
+        return screenVertices;
+    }
+
+    /*
+     * 简单变换阶段：没有通过矩阵计算，而是简单的相似三角形原理，三角函数算出MVP变换跟屏幕映射，理解起来比较简单，但每个顶点都经过从头到尾的计算，比较耗性能
+     */
+    public EasyVertexProcessingStage(obj: Instance) {
+        const model = obj.model;
+        const vertices = model.vertices;
+        const clipSpaceVertices = new Array(vertices.length);
+
+        // 简单变换
+        for (let i = 0; i < vertices.length; i += 1) {
+            let vertice = vertices[i].copy();
+            // 先变换，必须严格按照先缩放，再旋转，再平移
+            this.ScaleVertex(vertice, obj.transform);
+            this.RotateVertex(vertice, obj.transform);
+            this.TranslateVertex(vertice, obj.transform);
+            // 再投影
+            clipSpaceVertices[i] = this.ProjectVertex(vertice);
+            // 再视口映射
+            this.ViewportToCanvas(clipSpaceVertices[i]);
+        }
+        
+        return clipSpaceVertices;
     }
 
     public ScaleVertex(vertex: Vector3, transform: Transform) {
@@ -375,88 +458,18 @@ export class Renderer {
 
     public DrawObject(obj: Instance) {
         const model = obj.model;
-        const vertices = model.vertices;
         const indices = model.faces.flatMap(face => face.vertexIndices);
 
-        // 构建MVP矩阵
-        const modelMatrix = obj.transform.localToWorldMatrix;
-        const camera = Camera.mainCamera;
-        const cameraForward = camera.transform.forward;
-        const cameraUp = camera.transform.up;
-        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
-        const modelViewMatrix = modelMatrix.copy().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
-        const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
-
-        const projectedVertices = new Array(vertices.length);
-        // 简单变换
-        // for (let i = 0; i < vertices.length; i += 1) {
-        //     let vertice = vertices[i].copy();
-        //     // 先变换
-        //     this.ApplyTransform(vertice, obj.transform);
-        //     // 再投影
-        //     projectedVertices[i] = this.ProjectVertex(vertice);
-        //     // 再视口映射
-        //     this.ViewportToCanvas(projectedVertices[i]);
-        // }
-        // let vs = projectedVertices;
-
-
-
-
         // MVP变换
-        for (let i = 0; i < vertices.length; i += 1) {
-            let vertice = vertices[i].copy();
-            let v = mvpMatrix.multiplyVector4(new Vector4(vertice, 1));
-            projectedVertices[i] = v;
-        }
-        // 1. 透视除法：将裁剪空间坐标转换为标准设备坐标（NDC）
-        for (let i = 0; i < projectedVertices.length; i++) {
-            const v = projectedVertices[i];
-            // w分量是透视投影产生的，用于透视除法
-            const w = v.w; // 假设你的Vector4/Vector3实现中，齐次坐标w存储在w属性中。如果没有，需要确保MVP变换时处理了齐次坐标。
-            // 如果没有显式的w分量，且mvpMatrix.multiplyVector3返回的是Vector3，那么通常认为w=1（正交投影）或者需要从变换矩阵中考虑透视
-
-            // 进行透视除法：xyz分别除以w
-            // 注意：如果你的矩阵乘法没有处理齐次坐标（即返回的vertice是三维向量），那么很可能你的变换没有包含透视投影产生的w分量。
-            // 假设你的mvpMatrix.multiplyVector3确实返回了包含齐次坐标的Vector4，或者有一个返回Vector4的方法。
-            // 这里假设 projectedVertices 中存储的是 Vector4，或者至少有 x, y, z, w 属性。
-
-            // 如果您的实现中，经过透视投影矩阵变换后，顶点已经是一个齐次坐标（x, y, z, w），则需要以下除法：
-            v.x = v.x / w;
-            v.y = v.y / w;
-            v.z = v.z / w; // 对于深度信息，可能还需要进一步处理，但屏幕映射通常主要关注x,y
-            // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
-            // 假设我们的NDC是[-1, 1]范围。
-        }
-
-        // 2. 视口变换：将NDC坐标映射到屏幕坐标
-        // 获取画布（或视口）的宽度和高度
-        const screenVertices = new Array(projectedVertices.length);
-        for (let i = 0; i < projectedVertices.length; i++) {
-            const ndc = projectedVertices[i]; // 此时ndc应该是经过透视除法后的NDC坐标
-
-            // 将NDC的x从[-1, 1]映射到[0, screenWidth]
-            const screenX = ((ndc.x + 1) / 2) * Config.canvasWidth;
-            // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-            const screenY = Config.canvasHeight - (((ndc.y + 1) / 2) * Config.canvasHeight);
-            // z分量通常用于深度测试，这里我们只关心屏幕x,y
-            // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
-
-            screenVertices[i] = { x: screenX, y: screenY }; // 存储屏幕坐标
-        }
-        let vs = screenVertices;
-
-
-
-
-
-
+        const screenVertices = this.VertexProcessingStage(obj);
+        // 简单MVP变换
+        // const screenVertices = this.EasyVertexProcessingStage(obj);
 
         // 最后绘制三角形到屏幕上
         for (let i = 0; i < indices.length; i += 3) {
-            const p1 = vs[indices[i]];
-            const p2 = vs[indices[i + 1]];
-            const p3 = vs[indices[i + 2]];
+            const p1 = screenVertices[indices[i]];
+            const p2 = screenVertices[indices[i + 1]];
+            const p3 = screenVertices[indices[i + 2]];
 
             // 线框模式，暂不支持顶点色
             if (this.drawMode === DrawMode.Wireframe) {
