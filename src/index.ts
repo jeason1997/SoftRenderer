@@ -1,14 +1,12 @@
+import { Camera } from "./Camera";
 import { Color } from "./Color";
+import { Config } from "./Config";
 import { Input } from "./Input";
 import { Quaternion } from "./Math/Quaternion";
 import { Vector3 } from "./Math/Vector3";
 import { Instance } from "./Model";
 import { Renderer } from "./Renderer";
 import { AssetLoader } from "./Utils/AssetLoader";
-
-// 画布尺寸
-const canvasWidth = 400;
-const canvasHeight = 600;
 
 // 对象列表
 const instances: Instance[] = [];
@@ -19,16 +17,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     // 设置canvas尺寸
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    canvas.width = Config.canvasWidth;
+    canvas.height = Config.canvasHeight;
 
     // 创建图像数据对象
-    const imageData = ctx.createImageData(canvasWidth, canvasHeight);
+    const imageData = ctx.createImageData(Config.canvasWidth, Config.canvasHeight);
     // 创建32位无符号整型数组视图，用于直接操作像素数据
     const uint32View = new Uint32Array(imageData.data.buffer);
 
     // 创建渲染器实例
-    const renderer = new Renderer(uint32View, canvasWidth, canvasHeight);
+    const renderer = new Renderer(uint32View);
 
     Init();
 
@@ -60,6 +58,10 @@ document.addEventListener('mousemove', (event) => {
 function Init() {
     let lee: Instance;
 
+    // 相机
+    const camera = new Camera("camera");
+    //camera.transform.position = new Vector3(0, 0, -10);
+
     // 加载模型
     AssetLoader.loadInstanceFromModel('lee', 'resources/assets/meshes/lee.obj').then((instance) => {
         lee = instance;
@@ -68,30 +70,34 @@ function Init() {
     });
 
     AssetLoader.loadInstanceFromModel('cube', 'resources/cube.obj').then((instance) => {
-        instance.transform.position = new Vector3(0, 0, 5);
-        instance.transform.setParent(lee.transform);
+        instance.transform.position = new Vector3(1, 0, 0);
+        instance.transform.scale = new Vector3(0.1, 0.1, 0.1);
+        //instance.transform.rotation = new Quaternion(new Vector3(0, 45, 0));
+        instance.transform.setParent(lee.transform, false);
         instances.push(instance);
     });
 }
 
+let angle = 0;
 function Update() {
     for (const instance of instances) {
-        if (instance.name == "cube"){
+        if (instance.name == "cube") {
+            // 使用sin函数实现缩放在0.9到1.1之间循环
+            const scaleOffset = Math.sin(Date.now() * 0.002) * 0.1 + 0.1;
+            const scale = instance.transform.scale;
+            scale.x = scaleOffset;
+            scale.y = scaleOffset;
+            scale.z = scaleOffset;
+            instance.transform.scale = scale;
+
+            instance.transform.rotation = Quaternion.angleAxis(angle, Vector3.FORWARD);
+            angle += 1;
             continue;
         }
 
         // 让物体在所有轴上旋转
-        const eulerAngles = instance.transform.rotation.eulerAngles;
-        eulerAngles.x += 0.01;
-        eulerAngles.y += 0.02;
-        eulerAngles.z += 0.015;
-        instance.transform.rotation = new Quaternion(eulerAngles);
-
-        // 使用sin函数实现缩放在0.9到1.1之间循环
-        const scaleOffset = Math.sin(Date.now() * 0.002) * 0.1 + 1;
-        instance.transform.scale.x = scaleOffset;
-        instance.transform.scale.y = scaleOffset;
-        instance.transform.scale.z = scaleOffset;
+        instance.transform.rotation = Quaternion.angleAxis(angle, Vector3.UP);
+        // angle += 1;
     }
 }
 

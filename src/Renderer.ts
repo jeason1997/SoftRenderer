@@ -2,6 +2,9 @@ import { Color } from "./Color";
 import { Instance, Transform } from "./Model";
 import { Vector2 } from "./Math/Vector2";
 import { Vector3 } from "./Math/Vector3";
+import { Camera } from "./Camera";
+import { Config } from "./Config";
+import { Vector4 } from "./Math/Vector4";
 
 enum DrawMode {
     Wireframe,
@@ -10,21 +13,11 @@ enum DrawMode {
 }
 
 export class Renderer {
-    public drawMode: DrawMode = DrawMode.Wireframe;
-    private canvasWidth: number;
-    private canvasHeight: number;
-    private readonly canvasWidthHalf: number;
-    private readonly canvasHeightHalf: number;
-    private readonly aspectRatio: number;
+    public drawMode: DrawMode = DrawMode.Point;
     private uint32View: Uint32Array;
 
-    constructor(uint32View: Uint32Array, canvasWidth: number, canvasHeight: number) {
+    constructor(uint32View: Uint32Array) {
         this.uint32View = uint32View;
-        this.canvasWidth = canvasWidth;
-        this.canvasHeight = canvasHeight;
-        this.canvasWidthHalf = canvasWidth >> 1;
-        this.canvasHeightHalf = canvasHeight >> 1;
-        this.aspectRatio = canvasWidth / canvasHeight;
     }
 
     //#region 基础绘制接口
@@ -48,11 +41,11 @@ export class Renderer {
         // x = Math.floor(x);
         // y = Math.floor(y);
 
-        if (x < 0 || x >= this.canvasWidth || y < 0 || y >= this.canvasHeight) {
+        if (x < 0 || x >= Config.canvasWidth || y < 0 || y >= Config.canvasHeight) {
             return;
         }
 
-        this.uint32View[y * this.canvasWidth + x] = color;
+        this.uint32View[y * Config.canvasWidth + x] = color;
     }
 
     public DrawLine(x1: number, y1: number, x2: number, y2: number, color: number) {
@@ -297,13 +290,13 @@ export class Renderer {
         // 因为aspectRatio = canvasWidth / canvasHeight，
         // 所以视口高度 = 1 / aspectRatio = canvasHeight / canvasWidth
         const viewportWidth = 1;
-        const viewportHeight = 1 / this.aspectRatio;
+        const viewportHeight = 1 / Config.aspectRatio;
 
         // 将投影坐标映射到Canvas像素坐标
         // X坐标：从 [-viewportWidth/2, viewportWidth/2] 映射到 [0, canvasWidth]
         // Y坐标：从 [-viewportHeight/2, viewportHeight/2] 映射到 [0, canvasHeight] (注意Y轴方向)
-        const canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * this.canvasWidth;
-        const canvasY = this.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * this.canvasHeight); // Canvas的Y轴通常是向下的
+        const canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * Config.canvasWidth;
+        const canvasY = Config.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * Config.canvasHeight); // Canvas的Y轴通常是向下的
         point.x = canvasX;
         point.y = canvasY;
     }
@@ -385,22 +378,85 @@ export class Renderer {
         const vertices = model.vertices;
         const indices = model.faces.flatMap(face => face.vertexIndices);
 
+        // 构建MVP矩阵
+        const modelMatrix = obj.transform.localToWorldMatrix;
+        const camera = Camera.mainCamera;
+        const cameraForward = camera.transform.forward;
+        const cameraUp = camera.transform.up;
+        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
+        const modelViewMatrix = modelMatrix.copy().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
+        const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+
         const projectedVertices = new Array(vertices.length);
+        // 简单变换
+        // for (let i = 0; i < vertices.length; i += 1) {
+        //     let vertice = vertices[i].copy();
+        //     // 先变换
+        //     this.ApplyTransform(vertice, obj.transform);
+        //     // 再投影
+        //     projectedVertices[i] = this.ProjectVertex(vertice);
+        //     // 再视口映射
+        //     this.ViewportToCanvas(projectedVertices[i]);
+        // }
+        // let vs = projectedVertices;
+
+
+
+
+        // MVP变换
         for (let i = 0; i < vertices.length; i += 1) {
             let vertice = vertices[i].copy();
-            // 先变换
-            this.ApplyTransform(vertice, obj.transform);
-            // 再投影
-            projectedVertices[i] = this.ProjectVertex(vertice);
-            // 再视口映射
-            this.ViewportToCanvas(projectedVertices[i]);
+            let v = mvpMatrix.multiplyVector4(new Vector4(vertice, 1));
+            projectedVertices[i] = v;
         }
+        // 1. 透视除法：将裁剪空间坐标转换为标准设备坐标（NDC）
+        for (let i = 0; i < projectedVertices.length; i++) {
+            const v = projectedVertices[i];
+            // w分量是透视投影产生的，用于透视除法
+            const w = v.w; // 假设你的Vector4/Vector3实现中，齐次坐标w存储在w属性中。如果没有，需要确保MVP变换时处理了齐次坐标。
+            // 如果没有显式的w分量，且mvpMatrix.multiplyVector3返回的是Vector3，那么通常认为w=1（正交投影）或者需要从变换矩阵中考虑透视
+
+            // 进行透视除法：xyz分别除以w
+            // 注意：如果你的矩阵乘法没有处理齐次坐标（即返回的vertice是三维向量），那么很可能你的变换没有包含透视投影产生的w分量。
+            // 假设你的mvpMatrix.multiplyVector3确实返回了包含齐次坐标的Vector4，或者有一个返回Vector4的方法。
+            // 这里假设 projectedVertices 中存储的是 Vector4，或者至少有 x, y, z, w 属性。
+
+            // 如果您的实现中，经过透视投影矩阵变换后，顶点已经是一个齐次坐标（x, y, z, w），则需要以下除法：
+            v.x = v.x / w;
+            v.y = v.y / w;
+            v.z = v.z / w; // 对于深度信息，可能还需要进一步处理，但屏幕映射通常主要关注x,y
+            // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
+            // 假设我们的NDC是[-1, 1]范围。
+        }
+
+        // 2. 视口变换：将NDC坐标映射到屏幕坐标
+        // 获取画布（或视口）的宽度和高度
+        const screenVertices = new Array(projectedVertices.length);
+        for (let i = 0; i < projectedVertices.length; i++) {
+            const ndc = projectedVertices[i]; // 此时ndc应该是经过透视除法后的NDC坐标
+
+            // 将NDC的x从[-1, 1]映射到[0, screenWidth]
+            const screenX = ((ndc.x + 1) / 2) * Config.canvasWidth;
+            // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
+            const screenY = Config.canvasHeight - (((ndc.y + 1) / 2) * Config.canvasHeight);
+            // z分量通常用于深度测试，这里我们只关心屏幕x,y
+            // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
+
+            screenVertices[i] = { x: screenX, y: screenY }; // 存储屏幕坐标
+        }
+        let vs = screenVertices;
+
+
+
+
+
+
 
         // 最后绘制三角形到屏幕上
         for (let i = 0; i < indices.length; i += 3) {
-            const p1 = projectedVertices[indices[i]];
-            const p2 = projectedVertices[indices[i + 1]];
-            const p3 = projectedVertices[indices[i + 2]];
+            const p1 = vs[indices[i]];
+            const p2 = vs[indices[i + 1]];
+            const p3 = vs[indices[i + 2]];
 
             // 线框模式，暂不支持顶点色
             if (this.drawMode === DrawMode.Wireframe) {

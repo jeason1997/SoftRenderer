@@ -100,9 +100,7 @@ export class AssetLoader {
     */
    
     public static async loadInstanceFromModel(name: string, modelPath: string, scale: number = 1, reverse: boolean = false): Promise<Instance> {
-        var instance = new Instance();
-        instance.name = name;
-        instance.transform = new Transform(name);
+        var instance = new Instance(name);
         instance.transform.position = Vector3.ZERO;
         instance.transform.rotation = Quaternion.identity;
         instance.transform.scale = Vector3.ONE;

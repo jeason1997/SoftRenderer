@@ -8,6 +8,11 @@ export class Instance {
     public name: string;
     public model: OBJModel;
     public transform: Transform;
+
+    constructor(name: string) {
+        this.name = name;
+        this.transform = new Transform(name);
+    }
 }
 
 export class Transform {
@@ -73,9 +78,8 @@ export class Transform {
     }
 
     public get forward(): Vector3 {
-        //这里需要注意，因为整个逻辑用的是右手系统，所以向前的方向（即指向屏幕内）是负轴
         //我们要得到的是一个方向，因此不需要位置信息，将齐次坐标的w设置为0，抛弃掉坐标信息
-        return this.convertToWorldSpace(Vector3.BACK, 0);
+        return this.convertToWorldSpace(Vector3.FORWARD, 0);
     }
 
     public get up(): Vector3 {
