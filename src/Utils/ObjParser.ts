@@ -1,34 +1,6 @@
 import { Vector3 } from '../Math/Vector3';
 import { Vector2 } from '../Math/Vector2';
-
-/**
- * OBJ模型解析结果接口
- */
-export interface OBJModel {
-    vertices: Vector3[];
-    textureCoords: Vector2[];
-    vertexNormals: Vector3[];
-    faces: Face[];
-    materials: Record<string, Material>;
-}
-
-/**
- * 面接口，支持三角形和多边形
- */
-interface Face {
-    vertexIndices: number[];
-    textureIndices?: number[];
-    normalIndices?: number[];
-    materialName?: string;
-}
-
-/**
- * 材质信息接口
- */
-interface Material {
-    name: string;
-    // 可根据需要扩展材质属性
-}
+import { Face, OBJModel } from '../Model';
 
 /**
  * OBJ文件解析器类

@@ -1,6 +1,6 @@
+import { GameObject } from "../GameObject";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
-import { Instance, Transform } from "../Model";
 import { Dictionary } from "./Dictionary";
 import { OBJParser } from "./ObjParser";
 
@@ -99,8 +99,8 @@ export class AssetLoader {
     }
     */
    
-    public static async loadInstanceFromModel(name: string, modelPath: string, scale: number = 1, reverse: boolean = false): Promise<Instance> {
-        var instance = new Instance(name);
+    public static async loadInstanceFromModel(name: string, modelPath: string, scale: number = 1, reverse: boolean = false): Promise<GameObject> {
+        var instance = new GameObject(name);
         instance.transform.position = Vector3.ZERO;
         instance.transform.rotation = Quaternion.identity;
         instance.transform.scale = Vector3.ONE;

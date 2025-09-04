@@ -95,7 +95,7 @@ class OBB {
 
         // 3. 计算协方差矩阵的特征向量（主成分），作为OBB的轴
         const eigenvectors = OBB.calculateEigenvectors(covariance);
-        
+
         // 确保轴是单位向量
         const axes: [Vector3, Vector3, Vector3] = [
             eigenvectors[0].multiply(1 / eigenvectors[0].magnitude),
@@ -164,7 +164,7 @@ class OBB {
     private static calculateEigenvectors(cov: number[][]): [Vector3, Vector3, Vector3] {
         // 这里使用简化的特征向量计算方法
         // 实际应用中可能需要更精确的算法（如Jacobi迭代法）
-        
+
         // 对于演示目的，我们返回三个正交向量（实际项目中需替换为真实特征向量计算）
         // 注意：这只是占位实现，真实场景需要正确计算特征向量
         return [
@@ -176,48 +176,41 @@ class OBB {
 
     /** 计算每个轴方向上的半长度 */
     private static calculateExtents(
-        vertices: Vector3[], 
-        center: Vector3, 
+        vertices: Vector3[],
+        center: Vector3,
         axes: [Vector3, Vector3, Vector3]
     ): Vector3 {
-        const extents = new Vector3(0, 0, 0);
-        
+        let extentX = 0;
+        let extentY = 0;
+        let extentZ = 0;
+
         // 对每个轴计算顶点在该轴上的投影范围
         for (let i = 0; i < 3; i++) {
             const axis = axes[i];
             let min = Infinity;
             let max = -Infinity;
-            
+
             for (const v of vertices) {
                 // 计算顶点相对于中心点的向量
                 const dir = v.subtract(center);
                 // 计算在当前轴上的投影
                 const proj = Vector3.dot(dir, axis);
-                
+
                 min = Math.min(min, proj);
                 max = Math.max(max, proj);
             }
-            
+
             // 半长度取最大绝对值
-            extents.setComponent(i, Math.max(Math.abs(min), Math.abs(max)));
-        }
-        
-        return extents;
-    }
+            const extent = Math.max(Math.abs(min), Math.abs(max));
 
-    /** 设置向量的分量 */
-    private setComponent(index: number, value: number): void {
-        switch (index) {
-            case 0: this.x = value; break;
-            case 1: this.y = value; break;
-            case 2: this.z = value; break;
+            // 直接赋值给对应分量
+            if (i === 0) extentX = extent;
+            else if (i === 1) extentY = extent;
+            else extentZ = extent;
         }
-    }
 
-    // 为了setComponent能访问，临时添加的属性
-    private x: number = 0;
-    private y: number = 0;
-    private z: number = 0;
+        return new Vector3(extentX, extentY, extentZ);
+    }
 }
 
 /**
@@ -262,7 +255,7 @@ class Sphere {
             const dy = v.y - center.y;
             const dz = v.z - center.z;
             const distanceSquared = dx * dx + dy * dy + dz * dz;
-            
+
             if (distanceSquared > maxDistanceSquared) {
                 maxDistanceSquared = distanceSquared;
             }
@@ -315,6 +308,3 @@ function exampleUsage() {
     console.log("  Center:", `(${sphere.center.x}, ${sphere.center.y}, ${sphere.center.z})`);
     console.log("  Radius:", sphere.radius);
 }
-
-// 运行示例
-exampleUsage();

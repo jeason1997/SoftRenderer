@@ -4,12 +4,12 @@ import { Config } from "./Config";
 import { Input } from "./Input";
 import { Quaternion } from "./Math/Quaternion";
 import { Vector3 } from "./Math/Vector3";
-import { Instance } from "./Model";
+import { GameObject } from "./GameObject";
 import { Renderer } from "./Renderer";
 import { AssetLoader } from "./Utils/AssetLoader";
 
 // 对象列表
-const instances: Instance[] = [];
+const instances: GameObject[] = [];
 
 // 当DOM内容加载完成后执行
 document.addEventListener('DOMContentLoaded', () => {
@@ -56,7 +56,7 @@ document.addEventListener('mousemove', (event) => {
 });
 
 function Init() {
-    let lee: Instance;
+    let lee: GameObject;
 
     // 相机
     const camera = new Camera("camera");

@@ -1,10 +1,11 @@
 import { Color } from "./Color";
-import { Instance, Transform } from "./Model";
 import { Vector2 } from "./Math/Vector2";
 import { Vector3 } from "./Math/Vector3";
 import { Camera } from "./Camera";
 import { Config } from "./Config";
 import { Vector4 } from "./Math/Vector4";
+import { GameObject } from "./GameObject";
+import { Transform } from "./Transfrom";
 
 enum DrawMode {
     Wireframe,
@@ -13,7 +14,7 @@ enum DrawMode {
 }
 
 export class Renderer {
-    public drawMode: DrawMode = DrawMode.Wireframe;
+    public drawMode: DrawMode = DrawMode.Point;
     private uint32View: Uint32Array;
 
     constructor(uint32View: Uint32Array) {
@@ -327,7 +328,7 @@ export class Renderer {
     /*
      * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
-    public VertexProcessingStage(obj: Instance) {
+    public VertexProcessingStage(obj: GameObject) {
         const model = obj.model;
         const vertices = model.vertices;
         const clipSpaceVertices = new Array(vertices.length);
@@ -393,7 +394,7 @@ export class Renderer {
     /*
      * 简单变换阶段：没有通过矩阵计算，而是简单的相似三角形原理，三角函数算出MVP变换跟屏幕映射，理解起来比较简单，但每个顶点都经过从头到尾的计算，比较耗性能
      */
-    public EasyVertexProcessingStage(obj: Instance) {
+    public EasyVertexProcessingStage(obj: GameObject) {
         const model = obj.model;
         const vertices = model.vertices;
         const clipSpaceVertices = new Array(vertices.length);
@@ -456,7 +457,7 @@ export class Renderer {
 
     //#region 绘制物体
 
-    public DrawObject(obj: Instance) {
+    public DrawObject(obj: GameObject) {
         const model = obj.model;
         const indices = model.faces.flatMap(face => face.vertexIndices);
 

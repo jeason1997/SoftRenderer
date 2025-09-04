@@ -1,7 +1,7 @@
 import { Color } from "./Color";
 import { Config } from "./Config";
+import { GameObject } from "./GameObject";
 import { Vector4 } from "./Math/Vector4";
-import { Instance } from "./Model";
 
 export enum CameraClearFlags {
     NONE = 0,
@@ -10,7 +10,7 @@ export enum CameraClearFlags {
     Depth = 256,    //gl.DEPTH_BUFFER_BIT
 }
 
-export class Camera extends Instance {
+export class Camera extends GameObject {
     public static mainCamera: Camera;
     private static cameras: Array<Camera> = new Array<Camera>();
 
