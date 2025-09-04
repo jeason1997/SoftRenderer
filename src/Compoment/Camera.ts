@@ -1,7 +1,7 @@
-import { Color } from "./Color";
-import { Config } from "./Config";
-import { GameObject } from "./GameObject";
-import { Vector4 } from "./Math/Vector4";
+import { Color } from "../Color";
+import { Compoment } from "./Compoment";
+import { Config } from "../Config";
+import { Vector4 } from "../Math/Vector4";
 
 export enum CameraClearFlags {
     NONE = 0,
@@ -10,7 +10,7 @@ export enum CameraClearFlags {
     Depth = 256,    //gl.DEPTH_BUFFER_BIT
 }
 
-export class Camera extends GameObject {
+export class Camera extends Compoment {
     public static mainCamera: Camera;
     private static cameras: Array<Camera> = new Array<Camera>();
 
@@ -28,25 +28,24 @@ export class Camera extends GameObject {
         return (v.z * Config.canvasWidth) / (v.w * Config.canvasHeight);
     }
 
-    constructor(name: string) {
-        super(name);
+    public awake(): void {
         if (Camera.mainCamera == null) {
             Camera.mainCamera = this;
         }
         Camera.cameras.push(this);
     }
 
-    // public destroy() {
-    //     var index = Camera.cameras.indexOf(this, 0);
-    //     if (index > -1) {
-    //         Camera.cameras.splice(index, 1);
-    //     }
+    public onDestroy() {
+        var index = Camera.cameras.indexOf(this, 0);
+        if (index > -1) {
+            Camera.cameras.splice(index, 1);
+        }
 
-    //     if (Camera.mainCamera == this) {
-    //         if (Camera.cameras.length > 0)
-    //             Camera.mainCamera = Camera.cameras[0];
-    //         else
-    //             Camera.mainCamera = null;
-    //     }
-    // }
+        if (Camera.mainCamera == this) {
+            if (Camera.cameras.length > 0)
+                Camera.mainCamera = Camera.cameras[0];
+            else
+                Camera.mainCamera = undefined as unknown as Camera;
+        }
+    }
 }

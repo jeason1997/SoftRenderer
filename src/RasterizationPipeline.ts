@@ -1,11 +1,12 @@
 import { Color } from "./Color";
 import { Vector2 } from "./Math/Vector2";
 import { Vector3 } from "./Math/Vector3";
-import { Camera } from "./Camera";
+import { Camera } from "./Compoment/Camera";
 import { Config } from "./Config";
 import { Vector4 } from "./Math/Vector4";
 import { GameObject } from "./GameObject";
 import { Transform } from "./Transfrom";
+import { Renderer } from "./Compoment/Renderer";
 
 enum DrawMode {
     Wireframe,
@@ -13,8 +14,8 @@ enum DrawMode {
     Shader
 }
 
-export class Renderer {
-    public drawMode: DrawMode = DrawMode.Point;
+export class RasterizationPipeline {
+    public drawMode: DrawMode = DrawMode.Wireframe;
     private uint32View: Uint32Array;
 
     constructor(uint32View: Uint32Array) {
@@ -387,7 +388,7 @@ export class Renderer {
 
             screenVertices[i] = { x: screenX, y: screenY }; // 存储屏幕坐标
         }
-        
+
         return screenVertices;
     }
 
@@ -411,7 +412,7 @@ export class Renderer {
             // 再视口映射
             this.ViewportToCanvas(clipSpaceVertices[i]);
         }
-        
+
         return clipSpaceVertices;
     }
 
@@ -455,17 +456,54 @@ export class Renderer {
 
     //#endregion
 
+    //#region 剔除裁剪
+
+    // 视锥体剔除
+    public FrustumCulling() {
+
+    }
+
+    // 背面剔除
+    public BackfaceCulling() {
+
+    }
+
+    // 遮挡剔除
+    public OcclusionCulling() {
+
+    }
+
+    public ClipTriangle(triangle: Vector3[]) {
+        // 1.计算三角形的中心
+        const center = new Vector3(
+            (triangle[0].x + triangle[1].x + triangle[2].x) / 3,
+            (triangle[0].y + triangle[1].y + triangle[2].y) / 3,
+            (triangle[0].z + triangle[1].z + triangle[2].z) / 3
+        );
+    }
+
+    //#endregion
+
     //#region 绘制物体
 
-    public DrawObject(obj: GameObject) {
-        const model = obj.model;
+    public DrawObject(renderer: Renderer) {
+        const model = renderer.model;
         const indices = model.faces.flatMap(face => face.vertexIndices);
 
+        // 1.剔除
+        this.FrustumCulling();
+        this.BackfaceCulling();
+        this.OcclusionCulling();
+
+        // 2.变换
         // MVP变换
-        const screenVertices = this.VertexProcessingStage(obj);
+        const screenVertices = this.VertexProcessingStage(renderer);
         // 简单MVP变换
         // const screenVertices = this.EasyVertexProcessingStage(obj);
 
+        // 3.裁剪
+
+        // 4.光栅化与像素绘画
         // 最后绘制三角形到屏幕上
         for (let i = 0; i < indices.length; i += 3) {
             const p1 = screenVertices[indices[i]];

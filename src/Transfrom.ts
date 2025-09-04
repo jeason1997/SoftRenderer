@@ -1,10 +1,11 @@
+import { GameObject } from "./GameObject";
 import { Matrix4x4 } from "./Math/Matrix4x4";
 import { Quaternion } from "./Math/Quaternion";
 import { Vector3 } from "./Math/Vector3";
 import { Vector4 } from "./Math/Vector4";
 
 export class Transform {
-    public readonly tag: string;
+    public readonly gameObject: GameObject;
     public readonly children: Array<Transform>;
 
     private _parent: Transform | null = null;
@@ -12,8 +13,8 @@ export class Transform {
     private _tempRot: Quaternion;
     private _tempScale: Vector3;
 
-    constructor(tag: string) {
-        this.tag = tag;
+    constructor(gameObject: GameObject) {
+        this.gameObject = gameObject;
         this.children = new Array<Transform>();
         this._parent = null;
         this._tempPos = Vector3.ZERO;
@@ -196,19 +197,6 @@ export class Transform {
             return true;
         }
         return false;
-    }
-
-    public getChildByTag(tag: string): Transform | null {
-
-        var nodes = this.children;
-
-        for (var i = 0; i < nodes.length; ++i) {
-            if (nodes[i].tag == tag) {
-                return nodes[i];
-            }
-        }
-
-        return null;
     }
 
     public convertToNodeSpace(v: Vector3, w: number = 1): Vector3 {
