@@ -11,6 +11,7 @@ import { Renderer } from "./Component/Renderer";
 import { MeshRenderer } from "./Component/MeshRenderer";
 import { ObjRotate } from "./Component/ObjRotate";
 import { Color } from "./Color";
+import { CameraController } from "./Component/CameraController";
 
 // 当DOM内容加载完成后执行
 document.addEventListener('DOMContentLoaded', () => {
@@ -33,10 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 创建渲染器实例
     const pipeline = new RasterizationPipeline(uint32View);
 
-    Init();
-
+    // 初始化输入系统
+    Input.initialize();
+    
+    InitScene();
+    
     // 渲染函数
     function mainLoop() {
+        // 更新输入状态
+        Input.update();
         // 处理逻辑
         Update();
         // 渲染
@@ -52,26 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(mainLoop);
 });
 
-// 获取鼠标事件
-document.addEventListener('mousemove', (event) => {
-    // 获取鼠标相对于canvas的坐标
-    const rect = (event.target as HTMLCanvasElement).getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    Input.mouseX = mouseX;
-    Input.mouseY = mouseY;
-});
-
-document.addEventListener('wheel', function (event) {
-    Input.deltaY = event.deltaY;
-    console.log(event.deltaY);
-});
-
-document.addEventListener('scrollend', function (event) {
-    Input.deltaY = 0;
-});
-
-function Init() {
+function InitScene() {
     // 初始化场景
     const mainScene = SceneManager.instance.createScene("MainScene");
     SceneManager.instance.setActiveScene(mainScene);
@@ -80,6 +67,7 @@ function Init() {
     const camera = new GameObject("camera");
     mainScene.addGameObject(camera);
     camera.addComponent(Camera);
+    //camera.addComponent(CameraController);
 
     let lee: GameObject;
     // 加载模型
