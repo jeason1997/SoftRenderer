@@ -28,14 +28,14 @@ export class Camera extends Component {
         return (v.z * Config.canvasWidth) / (v.w * Config.canvasHeight);
     }
 
-    public override awake(): void {
+    public awake(): void {
         if (Camera.mainCamera == null) {
             Camera.mainCamera = this;
         }
         Camera.cameras.push(this);
     }
 
-    public override onDestroy() {
+    public onDestroy() {
         var index = Camera.cameras.indexOf(this, 0);
         if (index > -1) {
             Camera.cameras.splice(index, 1);

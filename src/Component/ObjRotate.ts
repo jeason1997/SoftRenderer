@@ -5,7 +5,7 @@ import { Component } from "./Component";
 export class ObjRotate extends Component {
     private angle = 0;
 
-    public override update(): void {
+    public update(): void {
         if (this.gameObject.name == "cube") {
             // 使用sin函数实现缩放在0.9到1.1之间循环
             const scaleOffset = Math.sin(Date.now() * 0.002) * 0.1 + 0.1;

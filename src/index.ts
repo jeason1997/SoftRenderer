@@ -1,15 +1,15 @@
 import { Config } from "./Config";
 import { Logger } from "./Logger";
 import { SceneManager } from "./Scene/SceneManager";
-//import { RasterizationPipeline } from "./RasterizationPipeline";
+import { RasterizationPipeline } from "./RasterizationPipeline";
 import { Input } from "./Input";
 import { AssetLoader } from "./Utils/AssetLoader";
 import { GameObject } from "./GameObject";
 import { Vector3 } from "./Math/Vector3";
-//import { Camera } from "./Component/Camera";
-//import { Renderer } from "./Component/Renderer";
-//import { MeshRenderer } from "./Component/MeshRenderer";
-//import { ObjRotate } from "./Component/ObjRotate";
+import { Camera } from "./Component/Camera";
+import { Renderer } from "./Component/Renderer";
+import { MeshRenderer } from "./Component/MeshRenderer";
+import { ObjRotate } from "./Component/ObjRotate";
 import { Color } from "./Color";
 
 // 当DOM内容加载完成后执行
