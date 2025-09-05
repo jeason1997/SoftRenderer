@@ -1,12 +1,12 @@
 import { Color } from "./Color";
 import { Vector2 } from "./Math/Vector2";
 import { Vector3 } from "./Math/Vector3";
-import { Camera } from "./Compoment/Camera";
 import { Config } from "./Config";
 import { Vector4 } from "./Math/Vector4";
-import { GameObject } from "./GameObject";
 import { Transform } from "./Transfrom";
-import { Renderer } from "./Compoment/Renderer";
+import { Renderer } from "./Component/Renderer";
+import { MeshRenderer } from "./Component/MeshRenderer";
+import { Camera } from "./Component/Camera";
 
 enum DrawMode {
     Wireframe,
@@ -329,13 +329,11 @@ export class RasterizationPipeline {
     /*
      * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
-    public VertexProcessingStage(obj: GameObject) {
-        const model = obj.model;
-        const vertices = model.vertices;
+    public VertexProcessingStage(vertices: Vector3[], transform: Transform) {
         const clipSpaceVertices = new Array(vertices.length);
 
         // 构建MVP矩阵
-        const modelMatrix = obj.transform.localToWorldMatrix;
+        const modelMatrix = transform.localToWorldMatrix;
         const camera = Camera.mainCamera;
         const cameraForward = camera.transform.forward;
         const cameraUp = camera.transform.up;
@@ -395,18 +393,16 @@ export class RasterizationPipeline {
     /*
      * 简单变换阶段：没有通过矩阵计算，而是简单的相似三角形原理，三角函数算出MVP变换跟屏幕映射，理解起来比较简单，但每个顶点都经过从头到尾的计算，比较耗性能
      */
-    public EasyVertexProcessingStage(obj: GameObject) {
-        const model = obj.model;
-        const vertices = model.vertices;
+    public EasyVertexProcessingStage(vertices: Vector3[], transform: Transform) {
         const clipSpaceVertices = new Array(vertices.length);
 
         // 简单变换
         for (let i = 0; i < vertices.length; i += 1) {
             let vertice = vertices[i].clone();
             // 先变换，必须严格按照先缩放，再旋转，再平移
-            this.ScaleVertex(vertice, obj.transform);
-            this.RotateVertex(vertice, obj.transform);
-            this.TranslateVertex(vertice, obj.transform);
+            this.ScaleVertex(vertice, transform);
+            this.RotateVertex(vertice, transform);
+            this.TranslateVertex(vertice, transform);
             // 再投影
             clipSpaceVertices[i] = this.ProjectVertex(vertice);
             // 再视口映射
@@ -487,7 +483,11 @@ export class RasterizationPipeline {
     //#region 绘制物体
 
     public DrawObject(renderer: Renderer) {
-        const model = renderer.model;
+        const model = (renderer as MeshRenderer).mesh;
+        if (!model) {
+            return;
+        }
+
         const indices = model.faces.flatMap(face => face.vertexIndices);
 
         // 1.剔除
@@ -497,7 +497,7 @@ export class RasterizationPipeline {
 
         // 2.变换
         // MVP变换
-        const screenVertices = this.VertexProcessingStage(renderer);
+        const screenVertices = this.VertexProcessingStage(model.vertices, renderer.transform);
         // 简单MVP变换
         // const screenVertices = this.EasyVertexProcessingStage(obj);
 

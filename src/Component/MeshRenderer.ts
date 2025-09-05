@@ -34,11 +34,11 @@ export class MeshRenderer extends Renderer {
     }
     
     // 实现渲染方法
-    public render(): void {
+    public override render(): void {
         // 渲染逻辑将由RasterizationPipeline调用
     }
 
-    public onDestroy(): void {
+    public override onDestroy(): void {
         // 清理资源
         this._mesh = null;
         super.material = null;

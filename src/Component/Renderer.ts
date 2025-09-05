@@ -1,9 +1,8 @@
-import { Compoment } from "./Compoment";
-import { GameObject } from "../GameObject";
+import { Component } from "./Component";
 import { Material } from "../Material";
 
 // Renderer是所有渲染组件的基类
-export abstract class Renderer extends Compoment {
+export abstract class Renderer extends Component {
     private _material: Material | null = null;
     private _sortingLayerID: number = 0;
     private _sortingOrder: number = 0;

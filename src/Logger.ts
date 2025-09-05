@@ -7,6 +7,7 @@ enum LogType {
 interface ILog {
     message: string;
     type: LogType;
+    duration: number;
 }
 
 export class Logger {
@@ -27,22 +28,23 @@ export class Logger {
         this.logs = [];
     }
 
-    static log(message: string) {
-        this.push(message, LogType.Info);
+    static log(message: string, duration?: number) {
+        this.push(message, LogType.Info, duration);
     }
 
-    static warning(message: string) {
-        this.push(message, LogType.Warning);
+    static warning(message: string, duration?: number) {
+        this.push(message, LogType.Warning, duration);
     }
 
-    static error(message: string) {
-        this.push(message, LogType.Error);
+    static error(message: string, duration?: number) {
+        this.push(message, LogType.Error, duration);
     }
 
-    private static push(message: string, type: LogType) {
+    private static push(message: string, type: LogType, duration?: number) {
         const log: ILog = {
             message,
             type,
+            duration: duration ?? 0,
         }
         this.logs.push(log);
     }

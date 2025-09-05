@@ -1,6 +1,5 @@
-import { OBJModel } from "./Model";
 import { Transform } from "./Transfrom";
-import { Compoment } from "./Compoment/Compoment";
+import { Component } from "./Component/Component";
 import { Vector3 } from "./Math/Vector3";
 import { Quaternion } from "./Math/Quaternion";
 
@@ -10,8 +9,8 @@ export class GameObject {
     public tag: string = "Untagged"; // 添加标签属性
     public layer: number = 0; // 默认层
 
-    private components: Compoment[] = [];
-    private startedComponents: Set<Compoment> = new Set<Compoment>();
+    private components: Component[] = [];
+    private startedComponents: Set<Component> = new Set<Component>();
 
     constructor(name: string) {
         this.name = name;
@@ -23,7 +22,7 @@ export class GameObject {
     public set active(value: boolean) {
         if (this._active !== value) {
             this._active = value;
-            
+
             // 处理组件的启用/禁用
             for (const component of this.components) {
                 if (value) {
@@ -37,7 +36,7 @@ export class GameObject {
     // 检查游戏对象是否处于活动状态（考虑父对象）
     public get active(): boolean {
         if (!this._active) return false;
-        
+
         // 检查父对象的激活状态
         let parent = this.transform.parent;
         while (parent) {
@@ -47,21 +46,21 @@ export class GameObject {
             }
             parent = parent.parent;
         }
-        
+
         return true;
     }
 
     // 调用所有组件的Start方法（如果尚未调用）
     public startComponents(): void {
         if (!this.active) return;
-        
+
         for (const component of this.components) {
             if (!this.startedComponents.has(component) && component.enabled) {
                 component.start();
                 this.startedComponents.add(component);
             }
         }
-        
+
         // 递归调用子对象的startComponents
         for (const child of this.transform.children) {
             if (child.gameObject) {
@@ -73,13 +72,13 @@ export class GameObject {
     // 更新所有组件
     public updateComponents(): void {
         if (!this.active) return;
-        
+
         for (const component of this.components) {
             if (component.enabled) {
                 component.update();
             }
         }
-        
+
         // 递归调用子对象的updateComponents
         for (const child of this.transform.children) {
             if (child.gameObject) {
@@ -89,7 +88,7 @@ export class GameObject {
     }
 
     // 添加组件
-    public addComponent<T extends Compoment>(type: { new(gameObject: GameObject): T }): T {
+    public addComponent<T extends Component>(type: { new(gameObject: GameObject): T }): T {
         var comp = this.getComponent(type);
         if (comp == null) {
             comp = new type(this);
@@ -99,7 +98,7 @@ export class GameObject {
     }
 
     // 获取指定类型的组件
-    public getComponent<T extends Compoment>(componentType: new (gameObject: GameObject) => T): T | null {
+    public getComponent<T extends Component>(componentType: new (gameObject: GameObject) => T): T | null {
         for (const component of this.components) {
             if (component instanceof componentType) {
                 return component as T;
@@ -109,7 +108,7 @@ export class GameObject {
     }
 
     // 获取所有指定类型的组件
-    public getComponents<T extends Compoment>(componentType: new (gameObject: GameObject) => T): T[] {
+    public getComponents<T extends Component>(componentType: new (gameObject: GameObject) => T): T[] {
         const result: T[] = [];
         for (const component of this.components) {
             if (component instanceof componentType) {
@@ -120,7 +119,7 @@ export class GameObject {
     }
 
     // 获取子节点上的组件
-    public getComponentInChildren<T extends Compoment>(type: new (...args: any[]) => T): T | null {
+    public getComponentInChildren<T extends Component>(type: { new(gameObject: GameObject): T }): T | null {
         // 先检查自身
         const comp = this.getComponent(type);
         if (comp != null) {
@@ -148,7 +147,7 @@ export class GameObject {
     }
 
     // 获取子节点上的所有组件
-    public getComponentsInChildren<T extends Compoment>(type: new (...args: any[]) => T): T[] {
+    public getComponentsInChildren<T extends Component>(type: { new(gameObject: GameObject): T }): T[] {
         const result: T[] = [];
 
         // 添加自身的组件
@@ -168,7 +167,7 @@ export class GameObject {
     }
 
     // 移除组件
-    public removeComponent<T extends Compoment>(type: new (...args: any[]) => T): boolean {
+    public removeComponent<T extends Component>(type: { new(gameObject: GameObject): T }): boolean {
         const index = this.components.findIndex(component => component instanceof type);
         if (index !== -1) {
             const component = this.components[index];
@@ -200,13 +199,13 @@ export class GameObject {
     }
 
     // 静态方法：查找特定类型的第一个组件
-    public static findObjectOfType<T extends Compoment>(type: new (...args: any[]) => T): T | null {
+    public static findObjectOfType<T extends Component>(type: new (...args: any[]) => T): T | null {
         // 实现查找逻辑
         return null;
     }
 
     // 静态方法：查找特定类型的所有组件
-    public static findObjectsOfType<T extends Compoment>(type: new (...args: any[]) => T): T[] {
+    public static findObjectsOfType<T extends Component>(type: new (...args: any[]) => T): T[] {
         // 实现查找逻辑
         return [];
     }
@@ -215,23 +214,23 @@ export class GameObject {
     public static instantiate(original: GameObject, position?: Vector3, rotation?: Quaternion): GameObject {
         // 创建新的游戏对象
         const clone = new GameObject(original.name);
-        
+
         // 复制属性
         clone.tag = original.tag;
         clone.layer = original.layer;
         clone.active = original.active;
-        
+
         // 设置位置和旋转（如果提供）
         if (position) {
             clone.transform.position = position;
         }
-        
+
         if (rotation) {
             clone.transform.rotation = rotation;
         }
-        
+
         // 复制组件（这需要一个深度复制机制）
-        
+
         return clone;
     }
 

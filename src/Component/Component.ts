@@ -1,7 +1,7 @@
 import { GameObject } from "../GameObject";
 import { Transform } from "../Transfrom";
 
-export abstract class Compoment {
+export abstract class Component {
     public readonly gameObject: GameObject;
     
     public get transform(): Transform {
@@ -38,9 +38,6 @@ export abstract class Compoment {
     
     // 每帧更新后调用
     //public lateUpdate(): void {}
-    
-    // 用于渲染
-    //public render(): void {}
     
     // 当组件被启用时调用
     public onEnable(): void {}

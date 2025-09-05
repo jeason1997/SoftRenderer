@@ -1,6 +1,7 @@
 import { GameObject } from "../GameObject";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
+import { OBJModel } from "../Model";
 import { Dictionary } from "./Dictionary";
 import { OBJParser } from "./ObjParser";
 
@@ -98,18 +99,13 @@ export class AssetLoader {
         });
     }
     */
-   
-    public static async loadInstanceFromModel(name: string, modelPath: string, scale: number = 1, reverse: boolean = false): Promise<GameObject> {
-        var instance = new GameObject(name);
-        instance.transform.position = Vector3.ZERO;
-        instance.transform.rotation = Quaternion.identity;
-        instance.transform.scale = Vector3.ONE;
 
+    public static async loadModel(name: string, modelPath: string, scale: number = 1, reverse: boolean = false): Promise<OBJModel | null> {
+        let model: OBJModel | null = null;
         var objDoc = await AssetLoader.loadTextFile(modelPath);
-        if (objDoc != null) {
-            const model = OBJParser.parseOBJ(objDoc);
-            instance.model = model;
 
+        if (objDoc != null) {
+            model = OBJParser.parseOBJ(objDoc);
             // 输出统计信息
             console.log(OBJParser.getModelStats(model));
 
@@ -128,6 +124,6 @@ export class AssetLoader {
             //     instance.model.push(model);
             // });
         }
-        return instance;
+        return model;
     }
 }

@@ -1,7 +1,7 @@
 import { Color } from "../Color";
-import { Compoment } from "./Compoment";
 import { Config } from "../Config";
 import { Vector4 } from "../Math/Vector4";
+import { Component } from "./Component";
 
 export enum CameraClearFlags {
     NONE = 0,
@@ -10,7 +10,7 @@ export enum CameraClearFlags {
     Depth = 256,    //gl.DEPTH_BUFFER_BIT
 }
 
-export class Camera extends Compoment {
+export class Camera extends Component {
     public static mainCamera: Camera;
     private static cameras: Array<Camera> = new Array<Camera>();
 
@@ -28,14 +28,14 @@ export class Camera extends Compoment {
         return (v.z * Config.canvasWidth) / (v.w * Config.canvasHeight);
     }
 
-    public awake(): void {
+    public override awake(): void {
         if (Camera.mainCamera == null) {
             Camera.mainCamera = this;
         }
         Camera.cameras.push(this);
     }
 
-    public onDestroy() {
+    public override onDestroy() {
         var index = Camera.cameras.indexOf(this, 0);
         if (index > -1) {
             Camera.cameras.splice(index, 1);
