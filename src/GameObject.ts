@@ -88,10 +88,10 @@ export class GameObject {
     }
 
     // 添加组件
-    public addComponent<T extends Component>(type: { new(gameObject: GameObject): T }): T {
-        var comp = this.getComponent(type);
+    public addComponent<T extends Component>(componentType: { new(gameObject: GameObject): T }): T {
+        var comp = this.getComponent(componentType);
         if (comp == null) {
-            comp = new type(this);
+            comp = new componentType(this);
             this.components.push(comp);
         }
         return comp;
@@ -119,9 +119,9 @@ export class GameObject {
     }
 
     // 获取子节点上的组件
-    public getComponentInChildren<T extends Component>(type: Function & { prototype: T }): T | null {
+    public getComponentInChildren<T extends Component>(componentType: Function & { prototype: T }): T | null {
         // 先检查自身
-        const comp = this.getComponent(type);
+        const comp = this.getComponent(componentType);
         if (comp != null) {
             return comp;
         }
@@ -130,13 +130,13 @@ export class GameObject {
         for (const child of this.transform.children) {
             const childGameObject = child.gameObject;
             if (childGameObject) {
-                const childComp = childGameObject.getComponent(type);
+                const childComp = childGameObject.getComponent(componentType);
                 if (childComp != null) {
                     return childComp;
                 }
 
                 // 递归检查子节点的子节点
-                const deepChildComp = childGameObject.getComponentInChildren(type);
+                const deepChildComp = childGameObject.getComponentInChildren(componentType);
                 if (deepChildComp != null) {
                     return deepChildComp;
                 }
@@ -147,11 +147,11 @@ export class GameObject {
     }
 
     // 获取子节点上的所有组件
-    public getComponentsInChildren<T extends Component>(type: Function & { prototype: T }): T[] {
+    public getComponentsInChildren<T extends Component>(componentType: Function & { prototype: T }): T[] {
         const result: T[] = [];
 
         // 添加自身的组件
-        result.push(...this.getComponents(type));
+        result.push(...this.getComponents(componentType));
 
         // 遍历所有子节点
         for (const child of this.transform.children) {
@@ -159,7 +159,7 @@ export class GameObject {
             const childGameObject = child.gameObject;
             if (childGameObject) {
                 // 递归获取子节点的所有组件
-                result.push(...childGameObject.getComponentsInChildren(type));
+                result.push(...childGameObject.getComponentsInChildren(componentType));
             }
         }
 
@@ -167,8 +167,8 @@ export class GameObject {
     }
 
     // 移除组件
-    public removeComponent<T extends Component>(type: Function & { prototype: T }): boolean {
-        const index = this.components.findIndex(component => component instanceof type);
+    public removeComponent<T extends Component>(componentType: Function & { prototype: T }): boolean {
+        const index = this.components.findIndex(component => component instanceof componentType);
         if (index !== -1) {
             const component = this.components[index];
             component.onDestroy();
