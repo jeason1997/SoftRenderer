@@ -115,7 +115,8 @@ function Render(pipeline: RasterizationPipeline) {
     const rootObjects = SceneManager.instance.getActiveScene()?.getRootGameObjects();
     if (rootObjects) {
         for (const gameObject of rootObjects) {
-            const renders = gameObject.getComponentsInChildren<Renderer>(Renderer as any);
+            // 显式指定类型参数
+            const renders = gameObject.getComponentsInChildren(Renderer);
             for (const render of renders) {
                 pipeline.DrawObject(render);
                 Logger.log(render.gameObject.name);

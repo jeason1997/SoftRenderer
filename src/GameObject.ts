@@ -98,7 +98,7 @@ export class GameObject {
     }
 
     // 获取指定类型的组件
-    public getComponent<T extends Component>(componentType: new (gameObject: GameObject) => T): T | null {
+    public getComponent<T extends Component>(componentType: Function & { prototype: T }): T | null {
         for (const component of this.components) {
             if (component instanceof componentType) {
                 return component as T;
@@ -108,7 +108,7 @@ export class GameObject {
     }
 
     // 获取所有指定类型的组件
-    public getComponents<T extends Component>(componentType: new (gameObject: GameObject) => T): T[] {
+    public getComponents<T extends Component>(componentType: Function & { prototype: T }): T[] {
         const result: T[] = [];
         for (const component of this.components) {
             if (component instanceof componentType) {
@@ -119,7 +119,7 @@ export class GameObject {
     }
 
     // 获取子节点上的组件
-    public getComponentInChildren<T extends Component>(type: { new(gameObject: GameObject): T }): T | null {
+    public getComponentInChildren<T extends Component>(type: Function & { prototype: T }): T | null {
         // 先检查自身
         const comp = this.getComponent(type);
         if (comp != null) {
@@ -147,7 +147,7 @@ export class GameObject {
     }
 
     // 获取子节点上的所有组件
-    public getComponentsInChildren<T extends Component>(type: { new(gameObject: GameObject): T }): T[] {
+    public getComponentsInChildren<T extends Component>(type: Function & { prototype: T }): T[] {
         const result: T[] = [];
 
         // 添加自身的组件
@@ -167,7 +167,7 @@ export class GameObject {
     }
 
     // 移除组件
-    public removeComponent<T extends Component>(type: { new(gameObject: GameObject): T }): boolean {
+    public removeComponent<T extends Component>(type: Function & { prototype: T }): boolean {
         const index = this.components.findIndex(component => component instanceof type);
         if (index !== -1) {
             const component = this.components[index];
