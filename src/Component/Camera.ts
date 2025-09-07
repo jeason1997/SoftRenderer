@@ -1,5 +1,5 @@
 import { Color } from "../Color";
-import { Config } from "../Config";
+import { EngineConfig } from "../Engine";
 import { Vector4 } from "../Math/Vector4";
 import { Component } from "./Component";
 
@@ -25,7 +25,7 @@ export class Camera extends Component {
 
     public get aspect(): number {
         var v = this.viewPort;
-        return (v.z * Config.canvasWidth) / (v.w * Config.canvasHeight);
+        return (v.z * EngineConfig.canvasWidth) / (v.w * EngineConfig.canvasHeight);
     }
 
     public awake(): void {

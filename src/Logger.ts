@@ -1,3 +1,5 @@
+import { Engine } from "./Engine";
+
 enum LogType {
     Info,
     Warning,
@@ -19,11 +21,11 @@ export class Logger {
         [LogType.Error]: 'red'
     };
 
-    static printLogs(ctx: CanvasRenderingContext2D) {
+    static printLogs() {
         for (let i = 0; i < this.logs.length; i++) {
             const log = this.logs[i];
-            ctx.fillStyle = Logger.logColors[log.type];
-            ctx.fillText(log.message, 10, 20 + i * 15);
+            Engine.context.fillStyle = Logger.logColors[log.type];
+            Engine.context.fillText(log.message, 10, 20 + i * 15);
         }
         this.logs = [];
     }

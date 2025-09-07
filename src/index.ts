@@ -1,4 +1,3 @@
-import { Config } from "./Config";
 import { Logger } from "./Logger";
 import { SceneManager } from "./Scene/SceneManager";
 import { RasterizationPipeline } from "./RasterizationPipeline";
@@ -12,22 +11,22 @@ import { MeshRenderer } from "./Component/MeshRenderer";
 import { ObjRotate } from "./Component/ObjRotate";
 import { Color } from "./Color";
 import { CameraController } from "./Component/CameraController";
+import { Engine, EngineConfig } from "./Engine";
 
 // 当DOM内容加载完成后执行
 document.addEventListener('DOMContentLoaded', () => {
     // 获取canvas元素和2D渲染上下文
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+    Engine.canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    Engine.context = Engine.canvas.getContext('2d') as CanvasRenderingContext2D;
     // 设置canvas尺寸
-    canvas.width = Config.canvasWidth;
-    canvas.height = Config.canvasHeight;
-
+    Engine.canvas.width = EngineConfig.canvasWidth;
+    Engine.canvas.height = EngineConfig.canvasHeight;
     // 设置文本样式
-    ctx.font = 'Arial';
-    ctx.textAlign = 'left';
+    Engine.context.font = 'Arial';
+    Engine.context.textAlign = 'left';
 
     // 创建图像数据对象
-    const imageData = ctx.createImageData(Config.canvasWidth, Config.canvasHeight);
+    const imageData = Engine.context.createImageData(EngineConfig.canvasWidth, EngineConfig.canvasHeight);
     // 创建32位无符号整型数组视图，用于直接操作像素数据
     const uint32View = new Uint32Array(imageData.data.buffer);
 
@@ -41,18 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 渲染函数
     function mainLoop() {
-        // 更新输入状态
-        Input.update();
         // 处理逻辑
         Update();
+        // 更新输入状态(注：输入已经由WEB引擎在每帧开始之前获取了，这里是更新输入的上一帧状态)
+        Input.update();
         // 渲染
         Render(pipeline);
         // 将图像数据绘制到canvas上
-        ctx.putImageData(imageData, 0, 0);
+        Engine.context.putImageData(imageData, 0, 0);
         // 请求下一帧动画
         requestAnimationFrame(mainLoop);
         // 屏幕输出日志
-        Logger.printLogs(ctx);
+        Logger.printLogs();
     }
     // 开始动画循环
     requestAnimationFrame(mainLoop);
@@ -67,7 +66,7 @@ function InitScene() {
     const camera = new GameObject("camera");
     mainScene.addGameObject(camera);
     camera.addComponent(Camera);
-    //camera.addComponent(CameraController);
+    camera.addComponent(CameraController);
 
     let lee: GameObject;
     // 加载模型
@@ -76,7 +75,7 @@ function InitScene() {
         lee.transform.position = new Vector3(0, 0, 2);
         const renderer = lee.addComponent(MeshRenderer);
         renderer.mesh = model;
-        lee.addComponent(ObjRotate);
+        //lee.addComponent(ObjRotate);
         mainScene.addGameObject(lee);
     });
 
@@ -86,7 +85,7 @@ function InitScene() {
         cube.transform.scale = new Vector3(0.1, 0.1, 0.1);
         const renderer = cube.addComponent(MeshRenderer);
         renderer.mesh = model;
-        cube.addComponent(ObjRotate);
+        //cube.addComponent(ObjRotate);
         cube.transform.setParent(lee.transform, false);
     });
 }

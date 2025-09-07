@@ -1,12 +1,12 @@
 import { Color } from "./Color";
 import { Vector2 } from "./Math/Vector2";
 import { Vector3 } from "./Math/Vector3";
-import { Config } from "./Config";
 import { Vector4 } from "./Math/Vector4";
 import { Transform } from "./Transfrom";
 import { Renderer } from "./Component/Renderer";
 import { MeshRenderer } from "./Component/MeshRenderer";
 import { Camera } from "./Component/Camera";
+import { EngineConfig } from "./Engine";
 
 enum DrawMode {
     Wireframe,
@@ -43,11 +43,11 @@ export class RasterizationPipeline {
         // x = Math.floor(x);
         // y = Math.floor(y);
 
-        if (x < 0 || x >= Config.canvasWidth || y < 0 || y >= Config.canvasHeight) {
+        if (x < 0 || x >= EngineConfig.canvasWidth || y < 0 || y >= EngineConfig.canvasHeight) {
             return;
         }
 
-        this.uint32View[y * Config.canvasWidth + x] = color;
+        this.uint32View[y * EngineConfig.canvasWidth + x] = color;
     }
 
     public DrawLine(x1: number, y1: number, x2: number, y2: number, color: number) {
@@ -292,13 +292,13 @@ export class RasterizationPipeline {
         // 因为aspectRatio = canvasWidth / canvasHeight，
         // 所以视口高度 = 1 / aspectRatio = canvasHeight / canvasWidth
         const viewportWidth = 1;
-        const viewportHeight = 1 / Config.aspectRatio;
+        const viewportHeight = 1 / EngineConfig.aspectRatio;
 
         // 将投影坐标映射到Canvas像素坐标
         // X坐标：从 [-viewportWidth/2, viewportWidth/2] 映射到 [0, canvasWidth]
         // Y坐标：从 [-viewportHeight/2, viewportHeight/2] 映射到 [0, canvasHeight] (注意Y轴方向)
-        const canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * Config.canvasWidth;
-        const canvasY = Config.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * Config.canvasHeight); // Canvas的Y轴通常是向下的
+        const canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * EngineConfig.canvasWidth;
+        const canvasY = EngineConfig.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * EngineConfig.canvasHeight); // Canvas的Y轴通常是向下的
         point.x = canvasX;
         point.y = canvasY;
     }
@@ -378,9 +378,9 @@ export class RasterizationPipeline {
             const ndc = clipSpaceVertices[i]; // 此时ndc应该是经过透视除法后的NDC坐标
 
             // 将NDC的x从[-1, 1]映射到[0, screenWidth]
-            const screenX = ((ndc.x + 1) / 2) * Config.canvasWidth;
+            const screenX = ((ndc.x + 1) / 2) * EngineConfig.canvasWidth;
             // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-            const screenY = Config.canvasHeight - (((ndc.y + 1) / 2) * Config.canvasHeight);
+            const screenY = EngineConfig.canvasHeight - (((ndc.y + 1) / 2) * EngineConfig.canvasHeight);
             // z分量通常用于深度测试，这里我们只关心屏幕x,y
             // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
 

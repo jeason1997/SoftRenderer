@@ -1,19 +1,10 @@
+import { Engine } from "../Engine";
+import { Input, InputAxis } from "../Input";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Component } from "./Component";
 
-const KEYCODE = {
-    W: 'W'.charCodeAt(0),
-    S: 'S'.charCodeAt(0),
-    A: 'A'.charCodeAt(0),
-    D: 'D'.charCodeAt(0),
-    Q: 'Q'.charCodeAt(0),
-    E: 'E'.charCodeAt(0),
-    SHIFT: 16,
-};
-
 export class CameraController extends Component {
-
     public moveSpeed = 0.5;
     public moveSpeedShiftScale = 2.5;
     public damp = 0.2;
@@ -23,76 +14,44 @@ export class CameraController extends Component {
     private _velocity = new Vector3();
     private _position = new Vector3();
     private _speedScale = 1;
-
+    private _rotateCamera = false;
 
     start() {
         this._euler = this.transform.rotation.eulerAngles;
         this._position = this.transform.position;
     }
 
-    onKeyDown(e: KeyboardEvent) {
+    updateInput() {
+        // 相机移动以及加速
         const v = this._velocity;
-        if (e.keyCode === KEYCODE.SHIFT) { this._speedScale = this.moveSpeedShiftScale; }
-        else if (e.keyCode === KEYCODE.W) { if (v.z === 0) { v.z = -1; } }
-        else if (e.keyCode === KEYCODE.S) { if (v.z === 0) { v.z = 1; } }
-        else if (e.keyCode === KEYCODE.A) { if (v.x === 0) { v.x = -1; } }
-        else if (e.keyCode === KEYCODE.D) { if (v.x === 0) { v.x = 1; } }
-        else if (e.keyCode === KEYCODE.Q) { if (v.y === 0) { v.y = -1; } }
-        else if (e.keyCode === KEYCODE.E) { if (v.y === 0) { v.y = 1; } }
-    }
+        v.x = -Input.GetAxis(InputAxis.Horizontal);
+        v.z = Input.GetAxis(InputAxis.Vertical);
+        v.y = Input.GetKey(Input.KeyCode.Q) ? -1 : Input.GetKey(Input.KeyCode.E) ? 1 : 0;
+        this._speedScale = Input.GetKey(Input.KeyCode.Shift) ? this.moveSpeedShiftScale : 1;
 
-    onKeyUp(e: KeyboardEvent) {
-        const v = this._velocity;
-        if (e.keyCode === KEYCODE.SHIFT) { this._speedScale = 1; }
-        else if (e.keyCode === KEYCODE.W) { if (v.z < 0) { v.z = 0; } }
-        else if (e.keyCode === KEYCODE.S) { if (v.z > 0) { v.z = 0; } }
-        else if (e.keyCode === KEYCODE.A) { if (v.x < 0) { v.x = 0; } }
-        else if (e.keyCode === KEYCODE.D) { if (v.x > 0) { v.x = 0; } }
-        else if (e.keyCode === KEYCODE.Q) { if (v.y < 0) { v.y = 0; } }
-        else if (e.keyCode === KEYCODE.E) { if (v.y > 0) { v.y = 0; } }
-    }
-
-    onWheel(e: WheelEvent) {
-        const delta = e.deltaY * this.moveSpeed * 0.1;
+        // 相机缩放
+        const scrollDelta = -Input.mouseScrollDelta.y * this.moveSpeed * 0.1;
         var pos = this.transform.rotation.transformQuat(Vector3.FORWARD);
-        this._position = this.scaleAndAdd(this.transform.position, pos, delta);
-    }
+        this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta);
 
-    onTouchStart(e: TouchEvent) {
-        Engine.canvas.requestPointerLock();
-    }
-
-    onTouchMove(e: TouchEvent) {
-        var startPos = e.startPosition;
-
-        // rotation
-        //if (startPos.x > Engine.screenSize.width * 0.5) 
-        {
-            var delta = e.delta;
-            this._euler.y -= delta.x * this.rotateSpeed * 0.1;
-            this._euler.x -= delta.y * this.rotateSpeed * 0.1;
+        if (Input.GetMouseButtonDown(0)) {
+            Engine.canvas.requestPointerLock();
+            this._rotateCamera = true;
         }
-        // position 
-        // else {
-        //     var pos = e.position;
-        //     pos.subtract(startPos);
-        //     this._velocity.x = pos.x * 0.01;
-        //     this._velocity.z = pos.y * 0.01;
-        // }
-    }
-
-    onTouchEnd(e: TouchEvent) {
-        if (document.exitPointerLock) document.exitPointerLock();
-
-        var startPos = e.startPosition;
-        // position
-        // if (startPos.x < Engine.screenSize.width * 0.5) {
-        //     this._velocity.x = 0;
-        //     this._velocity.z = 0;
-        // }
+        if (Input.GetMouseButtonUp(0)) {
+            if (document.exitPointerLock) document.exitPointerLock();
+            this._rotateCamera = false;
+        }
+        if (this._rotateCamera) {
+            const moveDelta = Input.mouseDelta;
+            this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
+            this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
+        }
     }
 
     update() {
+        this.updateInput();
+
         // position
         var v = this.transform.rotation.transformQuat(this._velocity);
         this._position = this.scaleAndAdd(this._position, v, this.moveSpeed * this._speedScale);

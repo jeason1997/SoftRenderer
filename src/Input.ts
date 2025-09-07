@@ -1,3 +1,5 @@
+import { Vector2 } from "./Math/Vector2";
+
 export class Input {
     // 键盘状态
     private static currentKeys: Map<string, boolean> = new Map<string, boolean>();
@@ -6,9 +8,9 @@ export class Input {
     // 鼠标状态
     private static currentMouseButtons: boolean[] = [false, false, false]; // 左、中、右键
     private static previousMouseButtons: boolean[] = [false, false, false];
-    public static mouseX: number = 0;
-    public static mouseY: number = 0;
-    public static deltaY: number = 0; // 鼠标滚轮
+    public static mousePosition: Vector2 = Vector2.ZERO;
+    public static mouseDelta: Vector2 = Vector2.ZERO;
+    public static mouseScrollDelta: Vector2 = Vector2.ZERO;
 
     // 触摸状态
     private static touches: Touch[] = [];
@@ -74,16 +76,18 @@ export class Input {
         document.addEventListener('mousemove', (event) => {
             const canvas = document.getElementById('canvas') as HTMLCanvasElement;
             const rect = canvas.getBoundingClientRect();
-            Input.mouseX = event.clientX - rect.left;
-            Input.mouseY = event.clientY - rect.top;
+            Input.mousePosition.x = event.clientX - rect.left;
+            Input.mousePosition.y = event.clientY - rect.top;
+            Input.mouseDelta.x = event.movementX;
+            Input.mouseDelta.y = event.movementY;
         });
 
         document.addEventListener('wheel', (event) => {
-            Input.deltaY = event.deltaY;
+            Input.mouseScrollDelta.y = event.deltaY;
         });
 
         document.addEventListener('scrollend', () => {
-            Input.deltaY = 0;
+            Input.mouseScrollDelta.y = 0;
         });
 
         // 触摸事件
@@ -111,9 +115,16 @@ export class Input {
 
         // 更新鼠标状态
         Input.previousMouseButtons = [...Input.currentMouseButtons];
+
+        // 复位鼠标滚轮
+        Input.mouseScrollDelta.y = 0;
+
+        // 复位鼠标移动
+        Input.mouseDelta.x = 0;
+        Input.mouseDelta.y = 0;
     }
 
-    // 键盘输入检测
+    //#region 键盘输入检测
 
     // 检查按键是否被按下（持续触发）
     public static GetKey(keyCode: string): boolean {
@@ -130,7 +141,37 @@ export class Input {
         return Input.currentKeys.get(keyCode) !== true && Input.previousKeys.get(keyCode) === true;
     }
 
-    // 鼠标输入检测
+    // 获取指定轴向的输入值
+    public static GetAxis(axis: InputAxis): number {
+        switch (axis) {
+            case InputAxis.Horizontal:
+                // 水平轴 A/D 或 左右方向键
+                if (Input.GetKey(Input.KeyCode.D) || Input.GetKey(Input.KeyCode.RightArrow)) {
+                    return 1;
+                }
+                if (Input.GetKey(Input.KeyCode.A) || Input.GetKey(Input.KeyCode.LeftArrow)) {
+                    return -1;
+                }
+                return 0;
+            
+            case InputAxis.Vertical:
+                // 垂直轴 W/S 或 上下方向键
+                if (Input.GetKey(Input.KeyCode.W) || Input.GetKey(Input.KeyCode.UpArrow)) {
+                    return 1;
+                }
+                if (Input.GetKey(Input.KeyCode.S) || Input.GetKey(Input.KeyCode.DownArrow)) {
+                    return -1;
+                }
+                return 0;
+                
+            default:
+                return 0;
+        }
+    }
+
+    //#endregion
+
+    //#region 鼠标输入检测
 
     // 检查鼠标按钮是否被按下（持续触发）
     public static GetMouseButton(button: number): boolean {
@@ -149,7 +190,9 @@ export class Input {
             (!Input.currentMouseButtons[button] && Input.previousMouseButtons[button]) : false;
     }
 
-    // 触摸输入检测
+    //#endregion
+
+    //#region 触摸输入检测
 
     // 更新触摸状态
     private static updateTouches(touchList: TouchList): void {
@@ -181,6 +224,14 @@ export class Input {
     public static get touchCount(): number {
         return Input.touches.length;
     }
+
+    //#endregion
+}
+
+// 轴向枚举
+export enum InputAxis {
+    Horizontal,
+    Vertical,
 }
 
 // 触摸阶段枚举
