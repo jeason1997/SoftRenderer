@@ -21,6 +21,7 @@ export class OBJParser {
         mesh.triangles = [];
         mesh.bounds = [];
         mesh.subMeshes = [];
+        mesh.material = []; // 初始化材质数组
 
         // 临时存储OBJ文件中的原始数据（索引从1开始）
         const tempVertices: Vector3[] = [];
@@ -29,6 +30,10 @@ export class OBJParser {
 
         // 顶点索引映射表：用于去重 (格式: "vIndex/vtIndex/vnIndex" => 合并后的索引)
         const vertexMap = new Map<string, number>();
+
+        // 材质相关变量
+        let currentMaterial = ""; // 当前使用的材质名称
+        const materialSet = new Set<string>(); // 用于收集所有唯一材质
 
         // 按行分割内容并处理
         const lines = content.split(/\r?\n/);
@@ -74,19 +79,36 @@ export class OBJParser {
                     }
                     break;
 
+                case 'mtllib': // 材质库引用（暂存材质库文件名，实际加载需额外实现）
+                    // 这里可以记录材质库文件路径，用于后续加载材质
+                    // 示例: const mtlPath = data.join(' ');
+                    break;
+
+                case 'usemtl': // 使用材质
+                    if (data.length > 0) {
+                        currentMaterial = data.join(' '); // 支持带空格的材质名
+                        materialSet.add(currentMaterial);
+
+                        if (currentSubMesh) {
+                            currentSubMesh.material = currentMaterial; // 关联材质
+                        }
+                    }
+                    break;
+
                 case 'g': // 处理组指令，创建新的子网格
                     // 结算当前子网格
                     if (currentSubMesh) {
                         currentSubMesh.vertexCount = mesh.vertices.length - currentSubMesh.firstVertex;
                         currentSubMesh.indexCount = mesh.triangles.length - currentSubMesh.indexStart;
                     }
-                    // 创建新子网格
+                    // 创建新子网格并继承当前材质
                     currentSubMesh = new SubMesh();
                     currentSubMesh.firstVertex = mesh.vertices.length;
                     currentSubMesh.indexStart = mesh.triangles.length;
                     currentSubMesh.vertexCount = 0;
                     currentSubMesh.indexCount = 0;
                     currentSubMesh.bounds = new Bounds();
+                    currentSubMesh.material = currentMaterial; // 继承当前材质
                     mesh.subMeshes.push(currentSubMesh);
                     break;
 
@@ -101,6 +123,7 @@ export class OBJParser {
                         currentSubMesh.vertexCount = 0;
                         currentSubMesh.indexCount = 0;
                         currentSubMesh.bounds = new Bounds();
+                        currentSubMesh.material = currentMaterial; // 使用当前材质
                         mesh.subMeshes.push(currentSubMesh);
                     }
 
@@ -119,7 +142,7 @@ export class OBJParser {
                         [0, i - 1, i].forEach(idx => {
                             const { v, vt, vn } = faceVertices[idx];
 
-                            // 创建唯一标识键
+                            // 创建唯一标识键 (处理可能的负数索引和默认值)
                             const key = `${v >= 0 ? v : -1}/${vt >= 0 ? vt : -1}/${vn >= 0 ? vn : -1}`;
 
                             if (vertexMap.has(key)) {
@@ -163,6 +186,9 @@ export class OBJParser {
             );
             subMesh.bounds = Bounds.fromPoints(subVertices);
         });
+
+        // 收集所有材质到mesh.material数组
+        mesh.material = Array.from(materialSet);
 
         // 计算切线向量
         this.calculateTangents(mesh);
