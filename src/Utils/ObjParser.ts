@@ -1,214 +1,270 @@
-import { Vector3 } from '../Math/Vector3';
-import { Vector2 } from '../Math/Vector2';
-import { Face, OBJModel } from '../Model';
+import { Mesh } from "../Mesh";
+import { SubMesh } from "../Mesh";
+import { Vector2 } from "../Math/Vector2";
+import { Vector3 } from "../Math/Vector3";
+import { Vector4 } from "../Math/Vector4";
+import { Bounds } from "../Math/Bounds";
 
-/**
- * OBJ文件解析器类
- */
 export class OBJParser {
     /**
-     * 解析OBJ文件
-     * @param fileContent OBJ文件内容
-     * @returns 解析后的OBJ模型数据
+     * 解析OBJ文件内容并生成Mesh对象
+     * @param content OBJ文件的文本内容
+     * @param scale 模型缩放比例，默认1.0
+     * @returns 解析后的Mesh对象
      */
-    public static parseOBJ(fileContent: string): OBJModel {
-        const lines = fileContent.split('\n');
+    static parse(content: string, scale: number = 1): Mesh {
+        const mesh = new Mesh();
+        mesh.vertices = [];
+        mesh.uv = [];
+        mesh.normals = [];
+        mesh.tangents = [];
+        mesh.triangles = [];
+        mesh.bounds = [];
+        mesh.subMeshes = [];
 
-        const result: OBJModel = {
-            vertices: [],
-            textureCoords: [],
-            vertexNormals: [],
-            faces: [],
-            materials: {},
-        };
+        // 临时存储OBJ文件中的原始数据（索引从1开始）
+        const tempVertices: Vector3[] = [];
+        const tempUvs: Vector2[] = [];
+        const tempNormals: Vector3[] = [];
 
-        let currentMaterial = '';
+        // 顶点索引映射表：用于去重 (格式: "vIndex/vtIndex/vnIndex" => 合并后的索引)
+        const vertexMap = new Map<string, number>();
+
+        // 按行分割内容并处理
+        const lines = content.split(/\r?\n/);
+        let currentSubMesh: SubMesh | null = null;
 
         for (const line of lines) {
             const trimmedLine = line.trim();
+            if (!trimmedLine || trimmedLine.startsWith('#')) {
+                continue; // 跳过空行和注释
+            }
 
-            // 跳过空行和注释
-            if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+            const parts = trimmedLine.split(/\s+/);
+            const type = parts[0];
+            const data = parts.slice(1);
 
-            const lineParts = trimmedLine.split(/\s+/);
-            const keyword = lineParts[0];
-
-            switch (keyword) {
-                case 'v': // 顶点坐标
-                    if (lineParts.length >= 4) {
-                        const vertex = new Vector3(
-                            parseFloat(lineParts[1]),
-                            parseFloat(lineParts[2]),
-                            parseFloat(lineParts[3])
-                        );
-                        result.vertices.push(vertex);
+            switch (type) {
+                case 'v': // 顶点坐标 (x, y, z) - 应用缩放
+                    if (data.length >= 3) {
+                        tempVertices.push(new Vector3(
+                            parseFloat(data[0]) * scale,
+                            parseFloat(data[1]) * scale,
+                            parseFloat(data[2]) * scale
+                        ));
                     }
                     break;
 
-                case 'vt': // 纹理坐标
-                    if (lineParts.length >= 2) {
-                        const texCoord = new Vector2(
-                            parseFloat(lineParts[1]),
-                            parseFloat(lineParts[2])
-                        );
-                        result.textureCoords.push(texCoord);
+                case 'vt': // 纹理坐标 (u, v)
+                    if (data.length >= 2) {
+                        tempUvs.push(new Vector2(
+                            parseFloat(data[0]),
+                            1 - parseFloat(data[1]) // 翻转V轴
+                        ));
                     }
                     break;
 
-                case 'vn': // 顶点法线
-                    if (lineParts.length >= 4) {
-                        const normal = new Vector3(
-                            parseFloat(lineParts[1]),
-                            parseFloat(lineParts[2]),
-                            parseFloat(lineParts[3])
-                        );
-                        result.vertexNormals.push(normal);
+                case 'vn': // 法线 (x, y, z)
+                    if (data.length >= 3) {
+                        tempNormals.push(new Vector3(
+                            parseFloat(data[0]),
+                            parseFloat(data[1]),
+                            parseFloat(data[2])
+                        ));
                     }
                     break;
 
-                case 'f': // 面定义
-                    if (lineParts.length >= 4) {
-                        const face: Face = {
-                            vertexIndices: [],
-                            textureIndices: [],
-                            normalIndices: []
+                case 'g': // 处理组指令，创建新的子网格
+                    // 结算当前子网格
+                    if (currentSubMesh) {
+                        currentSubMesh.vertexCount = mesh.vertices.length - currentSubMesh.firstVertex;
+                        currentSubMesh.indexCount = mesh.triangles.length - currentSubMesh.indexStart;
+                    }
+                    // 创建新子网格
+                    currentSubMesh = new SubMesh();
+                    currentSubMesh.firstVertex = mesh.vertices.length;
+                    currentSubMesh.indexStart = mesh.triangles.length;
+                    currentSubMesh.vertexCount = 0;
+                    currentSubMesh.indexCount = 0;
+                    currentSubMesh.bounds = new Bounds();
+                    mesh.subMeshes.push(currentSubMesh);
+                    break;
+
+                case 'f': // 面
+                    if (data.length < 3) break;
+
+                    // 初始化当前子网格（如果没有）
+                    if (!currentSubMesh) {
+                        currentSubMesh = new SubMesh();
+                        currentSubMesh.firstVertex = mesh.vertices.length;
+                        currentSubMesh.indexStart = mesh.triangles.length;
+                        currentSubMesh.vertexCount = 0;
+                        currentSubMesh.indexCount = 0;
+                        currentSubMesh.bounds = new Bounds();
+                        mesh.subMeshes.push(currentSubMesh);
+                    }
+
+                    // 处理面的顶点数据
+                    const faceVertices = data.map(vertexStr => {
+                        const indices = vertexStr.split('/').map(idx => parseInt(idx) || 0);
+                        return {
+                            v: indices[0] - 1, // 转换为0基索引
+                            vt: indices[1] - 1,
+                            vn: indices[2] - 1
                         };
+                    });
 
-                        // 解析面的每个顶点定义
-                        for (let i = 1; i < lineParts.length; i++) {
-                            const vertexDef = lineParts[i];
+                    // 处理三角形化和顶点去重
+                    for (let i = 2; i < faceVertices.length; i++) {
+                        [0, i - 1, i].forEach(idx => {
+                            const { v, vt, vn } = faceVertices[idx];
 
-                            // 支持v、v/vt、v//vn、v/vt/vn等多种格式
-                            const vertexParts = vertexDef.split('/');
+                            // 创建唯一标识键
+                            const key = `${v >= 0 ? v : -1}/${vt >= 0 ? vt : -1}/${vn >= 0 ? vn : -1}`;
 
-                            // 顶点索引（OBJ索引从1开始，需要转换为从0开始）
-                            if (vertexParts[0]) {
-                                face.vertexIndices.push(parseInt(vertexParts[0]) - 1);
+                            if (vertexMap.has(key)) {
+                                // 复用已存在的顶点索引
+                                mesh.triangles.push(vertexMap.get(key)!);
+                            } else {
+                                // 添加新顶点数据
+                                const newIndex = mesh.vertices.length;
+                                vertexMap.set(key, newIndex);
+
+                                // 顶点数据
+                                mesh.vertices.push(v >= 0 && v < tempVertices.length ? tempVertices[v] : new Vector3(0, 0, 0));
+
+                                // UV数据
+                                mesh.uv.push(vt >= 0 && vt < tempUvs.length ? tempUvs[vt] : new Vector2(0, 0));
+
+                                // 法线数据
+                                mesh.normals.push(vn >= 0 && vn < tempNormals.length ? tempNormals[vn] : new Vector3(0, 0, 1));
+
+                                // 先初始化切线为零向量，后续会计算
+                                mesh.tangents.push(new Vector4(0, 0, 0, 1));
+
+                                // 添加索引
+                                mesh.triangles.push(newIndex);
                             }
-
-                            // 纹理坐标索引（可选）
-                            if (vertexParts[1] && vertexParts[1] !== '') {
-                                face.textureIndices!.push(parseInt(vertexParts[1]) - 1);
-                            }
-
-                            // 法线索引（可选）
-                            if (vertexParts[2] && vertexParts[2] !== '') {
-                                face.normalIndices!.push(parseInt(vertexParts[2]) - 1);
-                            }
-                        }
-
-                        // 如果没有纹理或法线索引，清空数组以保持数据整洁
-                        if (face.textureIndices!.length === 0) {
-                                delete face.textureIndices;
-                        }
-                        if (face.normalIndices!.length === 0) {
-                                delete face.normalIndices;
-                        }
-
-                        // 添加材质信息（如果有）
-                        if (currentMaterial) {
-                            face.materialName = currentMaterial;
-                        }
-
-                        result.faces.push(face);
+                        });
                     }
-                    break;
-
-                case 'mtllib': // 材质库引用
-                    if (lineParts.length >= 2) {
-                        const materialLibName = lineParts[1];
-                        // 实际应用中需要加载并解析对应的.mtl文件
-                        console.log(`发现材质库引用: ${materialLibName}`);
-                    }
-                    break;
-
-                case 'usemtl': // 使用材质
-                    if (lineParts.length >= 2) {
-                        currentMaterial = lineParts[1];
-                        // 初始化材质记录（实际使用时需要从.mtl文件加载完整信息）
-                        if (!result.materials[currentMaterial]) {
-                                result.materials[currentMaterial] = { name: currentMaterial };
-                        }
-                    }
-                    break;
-
-                // 可以添加更多OBJ格式关键字的处理
-                default:
-                    // 忽略不支持的关键字
                     break;
             }
         }
 
-        return result;
+        // 更新子网格信息
+        mesh.subMeshes.forEach(subMesh => {
+            subMesh.vertexCount = mesh.vertices.length - subMesh.firstVertex;
+            subMesh.indexCount = mesh.triangles.length - subMesh.indexStart;
+
+            // 计算子网格包围盒
+            const subVertices = mesh.vertices.slice(
+                subMesh.firstVertex,
+                subMesh.firstVertex + subMesh.vertexCount
+            );
+            subMesh.bounds = Bounds.fromPoints(subVertices);
+        });
+
+        // 计算切线向量
+        this.calculateTangents(mesh);
+
+        // 计算整体包围盒
+        mesh.bounds = mesh.subMeshes.map(sm => sm.bounds);
+
+        return mesh;
     }
 
     /**
-     * 将解析后的模型数据转换为JSON字符串
-     * @param model OBJ模型数据
-     * @returns JSON字符串
+     * 计算网格的切线向量
+     * 基于顶点位置、UV和三角形索引计算
      */
-    public static toJSON(model: OBJModel): string {
-        return JSON.stringify(model, null, 2);
-    }
+    private static calculateTangents(mesh: Mesh) {
+        if (mesh.vertices.length === 0 || mesh.triangles.length === 0) return;
 
-    /**
-     * 获取模型统计信息
-     * @param model OBJ模型数据
-     * @returns 统计信息
-     */
-    public static getModelStats(model: OBJModel): string {
-        const textureCount = model.textureCoords.length;
-        const normalCount = model.vertexNormals.length;
-        const facesWithTextures = model.faces.filter(face => face.textureIndices).length;
-        const facesWithNormals = model.faces.filter(face => face.normalIndices).length;
+        // 临时数组存储每个顶点的切线计算数据
+        const tan1 = new Array(mesh.vertices.length).fill(0).map(() => new Vector3(0, 0, 0));
+        const tan2 = new Array(mesh.vertices.length).fill(0).map(() => new Vector3(0, 0, 0));
 
-        return `
-模型统计信息:
-- 顶点数: ${model.vertices.length}
-- 纹理坐标数: ${textureCount}
-- 法线向量数: ${normalCount}
-- 面数: ${model.faces.length}
-- 带纹理的面: ${facesWithTextures}
-- 带法线的面: ${facesWithNormals}
-- 材质数: ${Object.keys(model.materials).length}
-        `.trim();
-    }
+        // 遍历所有三角形
+        for (let i = 0; i < mesh.triangles.length; i += 3) {
+            const i0 = mesh.triangles[i];
+            const i1 = mesh.triangles[i + 1];
+            const i2 = mesh.triangles[i + 2];
 
-    /**
-     * 验证解析数据的完整性
-     * @param model OBJ模型数据
-     * @returns 验证结果消息
-     */
-    public static validateModel(model: OBJModel): string {
-        const errors: string[] = [];
+            // 获取三角形的三个顶点
+            const v0 = mesh.vertices[i0];
+            const v1 = mesh.vertices[i1];
+            const v2 = mesh.vertices[i2];
 
-        // 检查面索引是否越界
-        for (const face of model.faces) {
-            for (const vertexIndex of face.vertexIndices) {
-                if (vertexIndex < 0 || vertexIndex >= model.vertices.length) {
-                    errors.push(`顶点索引越界: ${vertexIndex} (最大: ${model.vertices.length - 1})`);
-                }
-            }
+            // 获取对应的UV坐标
+            const w0 = mesh.uv[i0];
+            const w1 = mesh.uv[i1];
+            const w2 = mesh.uv[i2];
 
-            if (face.textureIndices) {
-                for (const texIndex of face.textureIndices) {
-                    if (texIndex < 0 || texIndex >= model.textureCoords.length) {
-                        errors.push(`纹理坐标索引越界: ${texIndex} (最大: ${model.textureCoords.length - 1})`);
-                    }
-                }
-            }
+            // 计算边向量
+            const x1 = v1.x - v0.x;
+            const y1 = v1.y - v0.y;
+            const z1 = v1.z - v0.z;
 
-            if (face.normalIndices) {
-                for (const normalIndex of face.normalIndices) {
-                    if (normalIndex < 0 || normalIndex >= model.vertexNormals.length) {
-                        errors.push(`法线索引越界: ${normalIndex} (最大: ${model.vertexNormals.length - 1})`);
-                    }
-                }
-            }
+            const x2 = v2.x - v0.x;
+            const y2 = v2.y - v0.y;
+            const z2 = v2.z - v0.z;
+
+            // 计算UV差值
+            const s1 = w1.x - w0.x;
+            const t1 = w1.y - w0.y;
+            const s2 = w2.x - w0.x;
+            const t2 = w2.y - w0.y;
+
+            // 计算切线向量
+            const r = 1.0 / (s1 * t2 - s2 * t1);
+            const tx = (t2 * x1 - t1 * x2) * r;
+            const ty = (t2 * y1 - t1 * y2) * r;
+            const tz = (t2 * z1 - t1 * z2) * r;
+
+            // 累加切线数据
+            tan1[i0].x += tx;
+            tan1[i0].y += ty;
+            tan1[i0].z += tz;
+
+            tan1[i1].x += tx;
+            tan1[i1].y += ty;
+            tan1[i1].z += tz;
+
+            tan1[i2].x += tx;
+            tan1[i2].y += ty;
+            tan1[i2].z += tz;
+
+            // 计算副切线向量
+            const bx = (s1 * x2 - s2 * x1) * r;
+            const by = (s1 * y2 - s2 * y1) * r;
+            const bz = (s1 * z2 - s2 * z1) * r;
+
+            tan2[i0].x += bx;
+            tan2[i0].y += by;
+            tan2[i0].z += bz;
+
+            tan2[i1].x += bx;
+            tan2[i1].y += by;
+            tan2[i1].z += bz;
+
+            tan2[i2].x += bx;
+            tan2[i2].y += by;
+            tan2[i2].z += bz;
         }
 
-        return errors.length > 0 
-            ? `发现 ${errors.length} 个错误:\n${errors.join('\n')}`
-            : '模型数据验证通过';
+        // 计算最终切线并规范化
+        for (let i = 0; i < mesh.vertices.length; i++) {
+            const n = mesh.normals[i];
+            const t = tan1[i];
+
+            // 正交化切线（Gram-Schmidt过程）
+            const tangent = Vector3.subtract(t, Vector3.multiply(n, Vector3.dot(n, t))).normalize();
+
+            // 计算切线方向（ handedness ）
+            const handedness = Vector3.dot(Vector3.cross(n, t), tan2[i]) < 0.0 ? -1 : 1;
+
+            // 存储切线（w分量表示方向）
+            mesh.tangents[i] = new Vector4(tangent.x, tangent.y, tangent.z, handedness);
+        }
     }
 }

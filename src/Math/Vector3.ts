@@ -100,6 +100,14 @@ export class Vector3 {
         return this.divide(length);
     }
 
+    public dot(v: Vector3): number {
+        return Vector3.dot(this, v);
+    }
+
+    public cross(v: Vector3): Vector3 {
+        return Vector3.cross(this, v);
+    }
+
     public get magnitude(): number {
         return Math.sqrt(Vector3.dot(this, this));
     }
@@ -134,6 +142,18 @@ export class Vector3 {
         v.y = v1.y + t * (v2.y - v1.y);
         v.z = v1.z + t * (v2.z - v1.z);
         return v;
+    }
+
+    public static multiply(v: Vector3, s: number): Vector3 {
+        return new Vector3(v.x * s, v.y * s, v.z * s);
+    } 
+
+    public static add(v1: Vector3, v2: Vector3): Vector3 {
+        return new Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+    }
+
+    public static subtract(v1: Vector3, v2: Vector3): Vector3 {
+        return new Vector3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
     }
 
     public static dot(v1: Vector3, v2: Vector3): number {

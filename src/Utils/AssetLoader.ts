@@ -1,9 +1,6 @@
-import { GameObject } from "../GameObject";
-import { Quaternion } from "../Math/Quaternion";
-import { Vector3 } from "../Math/Vector3";
-import { OBJModel } from "../Model";
+import { Mesh } from "../Mesh";
 import { Dictionary } from "./Dictionary";
-import { OBJParser } from "./ObjParser";
+import { OBJParser } from "./ObjParser.ts";
 
 export class AssetLoader {
     private static fileCache: Dictionary = new Dictionary();
@@ -63,66 +60,11 @@ export class AssetLoader {
         });
     }
 
-    /*
-    public static loadModelFile(fileName: string): Promise<OBJDoc> {
-        return new Promise<OBJDoc>((resolve) => {
-
-            if (AssetLoader.fileCache.has(fileName)) {
-                resolve(AssetLoader.fileCache.get(fileName));
-            }
-            else {
-                var request = new XMLHttpRequest();
-                request.onreadystatechange = async function () {
-                    if (request.readyState === 4) {
-                        if (request.status === 200) {
-                            var objDoc = new OBJDoc(fileName);
-                            var result = await objDoc.parse(request.responseText, 1, false);
-
-                            if (!result) {
-                                console.error("OBJ file parsing error: " + fileName);
-                                return;
-                            }
-
-                            AssetLoader.fileCache.set(fileName, objDoc);
-                            resolve(objDoc);
-                        }
-                        else {
-                            resolve(null);
-                        }
-                    }
-                };
-
-                //这里不要开启异步，设置为false，否则容易卡在readyState = 1，原因不明
-                request.open("GET", fileName, false);
-                request.send();
-            }
-        });
-    }
-    */
-
-    public static async loadModel(name: string, modelPath: string, scale: number = 1, reverse: boolean = false): Promise<OBJModel | null> {
-        let model: OBJModel | null = null;
+    public static async loadModel(modelPath: string, scale: number = 1): Promise<Mesh | null> {
+        let model: Mesh | null = null;
         var objDoc = await AssetLoader.loadTextFile(modelPath);
-
         if (objDoc != null) {
-            model = OBJParser.parseOBJ(objDoc);
-            // 输出统计信息
-            console.log(OBJParser.getModelStats(model));
-
-            // var objs = objDoc.getObjs(scale, reverse);
-            // objs.forEach(async obj => {
-            //     //todo:临死写死，只加载漫反射贴图
-            //     // if (obj.material != null && obj.material.map_Kd != null) {
-            //     //     render.material.createTexture(obj.material.map_Kd);
-            //     // }
-            //     var model = new Model();
-            //     model.name = name;
-            //     model.vertices = obj.vertices;
-            //     model.indices = obj.indices;
-            //     model.uvs = obj.uvs;
-            //     model.normals = obj.normals;
-            //     instance.model.push(model);
-            // });
+            model = OBJParser.parse(objDoc, scale);
         }
         return model;
     }

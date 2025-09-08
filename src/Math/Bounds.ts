@@ -1,8 +1,62 @@
 import { Vector3 } from "./Vector3";
 
-export abstract class Bounds {
-    abstract getCenter(): Vector3;
-    abstract getHalfExtents(): Vector3;
+export class Bounds {
+    min: Vector3;
+    max: Vector3;
+
+    public constructor();
+    public constructor(min: Vector3, max: Vector3);
+    public constructor(min?: Vector3, max?: Vector3) {
+        this.min = min || Vector3.ZERO;
+        this.max = max || Vector3.ZERO;
+    }
+
+    getCenter(): Vector3 {
+        return new Vector3(
+            (this.min.x + this.max.x) / 2,
+            (this.min.y + this.max.y) / 2,
+            (this.min.z + this.max.z) / 2
+        );
+    }
+
+    getHalfExtents(): Vector3 {
+        return new Vector3(
+            (this.max.x - this.min.x) / 2,
+            (this.max.y - this.min.y) / 2,
+            (this.max.z - this.min.z) / 2
+        );
+    }
+
+    setMin(min: Vector3) {
+        this.min = min;
+    }
+
+    setMax(max: Vector3) {
+        this.max = max;
+    }
+
+    static fromPoints(points: Vector3[]): Bounds {
+        if (points.length === 0) return new Bounds();
+
+        let min = new Vector3(points[0].x, points[0].y, points[0].z);
+        let max = new Vector3(points[0].x, points[0].y, points[0].z);
+
+        for (const p of points) {
+            min.x = Math.min(min.x, p.x);
+            min.y = Math.min(min.y, p.y);
+            min.z = Math.min(min.z, p.z);
+
+            max.x = Math.max(max.x, p.x);
+            max.y = Math.max(max.y, p.y);
+            max.z = Math.max(max.z, p.z);
+        }
+
+        // 假设Bounds有min和max属性
+        const bounds = new Bounds();
+        bounds.min = min;
+        bounds.max = max;
+        return bounds;
+    }
 }
 
 /**

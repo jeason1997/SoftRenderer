@@ -1,15 +1,15 @@
 import { Renderer } from "./Renderer";
-import { OBJModel } from "../Model";
+import { Mesh } from "../Mesh";
 
 export class MeshRenderer extends Renderer {
-    private _mesh: OBJModel | null = null;
+    private _mesh: Mesh | null = null;
 
     // 网格属性
-    public get mesh(): OBJModel | null {
+    public get mesh(): Mesh | null {
         return this._mesh;
     }
 
-    public set mesh(value: OBJModel | null) {
+    public set mesh(value: Mesh | null) {
         this._mesh = value;
     }
     

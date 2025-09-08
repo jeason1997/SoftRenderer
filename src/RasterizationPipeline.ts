@@ -12,11 +12,13 @@ import { Logger } from "./Logger";
 enum DrawMode {
     Wireframe,
     Point,
+    UV,
+    Normal,
     Shader
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.Shader;
+    public drawMode: DrawMode = DrawMode.UV;
     private uint32View: Uint32Array;
 
     constructor(uint32View: Uint32Array) {
@@ -369,6 +371,26 @@ export class RasterizationPipeline {
 
     //#region 变换
 
+    public ObjectToClipPos(vertex: Vector3): Vector3 {
+        //TODO
+        return Vector3.ZERO;
+    }
+
+    public ObjectToWorldNormal(normal: Vector3, transform: Transform): Vector3 {
+        // 获取模型矩阵（局部到世界空间的变换矩阵）
+        const modelMatrix = transform.localToWorldMatrix;
+
+        // 计算模型矩阵的逆转置矩阵
+        // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
+        const inverseTransposeModel = modelMatrix.clone().inverse().transpose();
+
+        // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
+        const worldNormal = inverseTransposeModel.multiplyVector3(normal);
+
+        // 归一化结果，确保法线保持单位长度
+        return worldNormal.normalize();
+    }
+
     /*
      * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
@@ -526,12 +548,12 @@ export class RasterizationPipeline {
     //#region 绘制物体
 
     public DrawObject(renderer: Renderer) {
-        const model = (renderer as MeshRenderer).mesh;
-        if (!model) {
+        const mesh = (renderer as MeshRenderer).mesh;
+        if (!mesh) {
             return;
         }
 
-        const indices = model.faces.flatMap(face => face.vertexIndices);
+        const triangles = mesh.triangles;
 
         // 1.剔除
         this.FrustumCulling();
@@ -540,7 +562,7 @@ export class RasterizationPipeline {
 
         // 2.变换
         // MVP变换
-        const screenVertices = this.VertexProcessingStage(model.vertices, renderer.transform);
+        const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
         // 简单MVP变换
         // const screenVertices = this.EasyVertexProcessingStage(obj);
 
@@ -548,10 +570,10 @@ export class RasterizationPipeline {
 
         // 4.光栅化与像素绘画
         // 最后绘制三角形到屏幕上
-        for (let i = 0; i < indices.length; i += 3) {
-            const p1 = screenVertices[indices[i]];
-            const p2 = screenVertices[indices[i + 1]];
-            const p3 = screenVertices[indices[i + 2]];
+        for (let i = 0; i < triangles.length; i += 3) {
+            const p1 = screenVertices[triangles[i]];
+            const p2 = screenVertices[triangles[i + 1]];
+            const p3 = screenVertices[triangles[i + 2]];
 
             // 线框模式，暂不支持顶点色
             if (this.drawMode === DrawMode.Wireframe) {
@@ -562,12 +584,36 @@ export class RasterizationPipeline {
                 this.DrawPixel(p2.x, p2.y, Color.WHITE);
                 this.DrawPixel(p3.x, p3.y, Color.WHITE);
             }
+            else if (this.drawMode === DrawMode.UV) {
+                const p1_uv = mesh.uv[triangles[i]];
+                const p2_uv = mesh.uv[triangles[i + 1]];
+                const p3_uv = mesh.uv[triangles[i + 2]];
+                const p1_color = new Color(p1_uv.x * 255, p1_uv.y * 255, 0).ToUint32();
+                const p2_color = new Color(p2_uv.x * 255, p2_uv.y * 255, 0).ToUint32();
+                const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0).ToUint32();
+                this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
+            }
+            else if (this.drawMode === DrawMode.Normal) {
+                const p1_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+                const p2_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+                const p3_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
+                // 将法线分量从 [-1, 1] 映射到 [0, 255]
+                let r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
+                let g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
+                let b = Math.floor((p1_normal.z + 1) * 0.5 * 255);
+                const p1_color = new Color(r, g, b).ToUint32();
+                r = Math.floor((p2_normal.x + 1) * 0.5 * 255);
+                g = Math.floor((p2_normal.y + 1) * 0.5 * 255);
+                b = Math.floor((p2_normal.z + 1) * 0.5 * 255);
+                const p2_color = new Color(r, g, b).ToUint32();
+                r = Math.floor((p3_normal.x + 1) * 0.5 * 255);
+                g = Math.floor((p3_normal.y + 1) * 0.5 * 255);
+                b = Math.floor((p3_normal.z + 1) * 0.5 * 255);
+                const p3_color = new Color(r, g, b).ToUint32();
+                this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
+            }
             else if (this.drawMode === DrawMode.Shader) {
-                const r = 127 + 128 * Math.sin(i * 0.05);
-                const g = 127 + 128 * Math.sin(i * 0.07 + 2);
-                const b = 127 + 128 * Math.sin(i * 0.11 + 4);
-                const color = new Color(r, g, b).ToUint32();
-                this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, color);
+                this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
             }
         }
     }
