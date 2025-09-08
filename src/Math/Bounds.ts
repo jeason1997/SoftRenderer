@@ -1,5 +1,9 @@
 import { Vector3 } from "./Vector3";
 
+export abstract class Bounds {
+    abstract getCenter(): Vector3;
+    abstract getHalfExtents(): Vector3;
+}
 
 /**
  * 轴对齐包围盒 (AABB)

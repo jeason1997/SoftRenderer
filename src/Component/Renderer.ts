@@ -1,12 +1,16 @@
 import { Component } from "./Component";
 import { Material } from "../Material";
+import { Bounds } from "../Math/Bounds";
 
 // Renderer是所有渲染组件的基类
 export abstract class Renderer extends Component {
+    private _bounds: Bounds;
     private _material: Material | null = null;
     private _sortingLayerID: number = 0;
     private _sortingOrder: number = 0;
-    
+    private _castShadows: boolean = true;
+    private _receiveShadows: boolean = true;
+
     // 材质属性
     public get material(): Material | null {
         return this._material;
@@ -32,6 +36,24 @@ export abstract class Renderer extends Component {
     
     public set sortingOrder(value: number) {
         this._sortingOrder = value;
+    }
+
+    // 是否投射阴影
+    public get castShadows(): boolean {
+        return this._castShadows;
+    }
+
+    public set castShadows(value: boolean) {
+        this._castShadows = value;
+    }
+
+    // 是否接收阴影
+    public get receiveShadows(): boolean {
+        return this._receiveShadows;
+    }
+
+    public set receiveShadows(value: boolean) {
+        this._receiveShadows = value;
     }
     
     // 是否应该被渲染

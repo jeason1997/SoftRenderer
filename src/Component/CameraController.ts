@@ -34,11 +34,11 @@ export class CameraController extends Component {
         var pos = this.transform.rotation.transformQuat(Vector3.FORWARD);
         this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta);
 
-        if (Input.GetMouseButtonDown(0)) {
+        if (Input.GetMouseButtonDown(2)) {
             Engine.canvas.requestPointerLock();
             this._rotateCamera = true;
         }
-        if (Input.GetMouseButtonUp(0)) {
+        if (Input.GetMouseButtonUp(2)) {
             if (document.exitPointerLock) document.exitPointerLock();
             this._rotateCamera = false;
         }

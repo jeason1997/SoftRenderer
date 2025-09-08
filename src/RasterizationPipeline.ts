@@ -6,7 +6,8 @@ import { Transform } from "./Transfrom";
 import { Renderer } from "./Component/Renderer";
 import { MeshRenderer } from "./Component/MeshRenderer";
 import { Camera } from "./Component/Camera";
-import { EngineConfig } from "./Engine";
+import { Engine, EngineConfig } from "./Engine";
+import { Logger } from "./Logger";
 
 enum DrawMode {
     Wireframe,
@@ -15,11 +16,28 @@ enum DrawMode {
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.Wireframe;
+    public drawMode: DrawMode = DrawMode.Shader;
     private uint32View: Uint32Array;
 
     constructor(uint32View: Uint32Array) {
         this.uint32View = uint32View;
+    }
+
+    public Render() {
+        this.Clear(Color.BLACK);
+
+        // 获取场景中的所有根游戏对象并渲染
+        const rootObjects = Engine.sceneManager.getActiveScene()?.getRootGameObjects();
+        if (rootObjects) {
+            for (const gameObject of rootObjects) {
+                // 显式指定类型参数
+                const renders = gameObject.getComponentsInChildren(Renderer);
+                for (const render of renders) {
+                    this.DrawObject(render);
+                    Logger.log(render.gameObject.name);
+                }
+            }
+        }
     }
 
     //#region 基础绘制接口
@@ -51,6 +69,15 @@ export class RasterizationPipeline {
     }
 
     public DrawLine(x1: number, y1: number, x2: number, y2: number, color: number) {
+        // 使用位运算优化边界检查
+        // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
+        const w = EngineConfig.canvasWidth;
+        const h = EngineConfig.canvasHeight;
+        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h)) {
+            //TODO:裁剪掉超出屏幕的部分
+            return;
+        }
+
         // 取整
         x1 = x1 | 0;
         y1 = y1 | 0;
@@ -117,6 +144,14 @@ export class RasterizationPipeline {
     public DrawTriangleFilled(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, color: number) {
         // 注：以下提到的长边，特指y轴跨度最长的边，而不是实际上的边长
 
+        // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
+        const w = EngineConfig.canvasWidth;
+        const h = EngineConfig.canvasHeight;
+        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
+            //TODO:裁剪掉超出屏幕的部分
+            return;
+        }
+
         // 实际绘制到屏幕上的点，必须是整数，取整一下。使用位运算代替Math.floor，提升性能
         x1 = x1 | 0;
         y1 = y1 | 0;
@@ -165,6 +200,14 @@ export class RasterizationPipeline {
         x3: number, y3: number,
         color1: number, color2: number, color3: number
     ) {
+        // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
+        const w = EngineConfig.canvasWidth;
+        const h = EngineConfig.canvasHeight;
+        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
+            //TODO:裁剪掉超出屏幕的部分
+            return;
+        }
+
         // 实际绘制到屏幕上的点，必须是整数，取整一下。使用位运算代替Math.floor，提升性能
         x1 = x1 | 0;
         y1 = y1 | 0;
@@ -520,7 +563,11 @@ export class RasterizationPipeline {
                 this.DrawPixel(p3.x, p3.y, Color.WHITE);
             }
             else if (this.drawMode === DrawMode.Shader) {
-                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
+                const r = 127 + 128 * Math.sin(i * 0.05);
+                const g = 127 + 128 * Math.sin(i * 0.07 + 2);
+                const b = 127 + 128 * Math.sin(i * 0.11 + 4);
+                const color = new Color(r, g, b).ToUint32();
+                this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, color);
             }
         }
     }
