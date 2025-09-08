@@ -7,6 +7,7 @@ import { Component } from "./Component";
 export class CameraController extends Component {
     public moveSpeed = 0.5;
     public moveSpeedShiftScale = 2.5;
+    public dragSpeed = 0.3;
     public damp = 0.2;
     public rotateSpeed = 1;
 
@@ -22,18 +23,26 @@ export class CameraController extends Component {
     }
 
     updateInput() {
-        // 相机移动以及加速
-        const v = this._velocity;
-        v.x = -Input.GetAxis(InputAxis.Horizontal);
-        v.z = Input.GetAxis(InputAxis.Vertical);
-        v.y = Input.GetKey(Input.KeyCode.Q) ? -1 : Input.GetKey(Input.KeyCode.E) ? 1 : 0;
+        // WSADQE+SHIFT相机移动以及加速
+        this._velocity.x = -Input.GetAxis(InputAxis.Horizontal);
+        this._velocity.z = Input.GetAxis(InputAxis.Vertical);
+        this._velocity.y = Input.GetKey(Input.KeyCode.Q) ? -1 : Input.GetKey(Input.KeyCode.E) ? 1 : 0;
         this._speedScale = Input.GetKey(Input.KeyCode.Shift) ? this.moveSpeedShiftScale : 1;
 
-        // 相机缩放
+        // 鼠标中键相机拖动
+        if (Input.GetMouseButton(1)) {
+            const moveDelta = Input.mouseDelta;
+            //TODO:这里应该是托多少就移动多少，而不是乘一个系数
+            this._velocity.x += moveDelta.x * this.dragSpeed;
+            this._velocity.y += moveDelta.y * this.dragSpeed;
+        }
+
+        // 鼠标滚轮相机缩放
         const scrollDelta = -Input.mouseScrollDelta.y * this.moveSpeed * 0.1;
         var pos = this.transform.rotation.transformQuat(Vector3.FORWARD);
         this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta);
 
+        // 鼠标右键相机旋转
         if (Input.GetMouseButtonDown(2)) {
             Engine.canvas.requestPointerLock();
             this._rotateCamera = true;
@@ -47,6 +56,21 @@ export class CameraController extends Component {
             this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
             this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
         }
+
+        // ALT+鼠标左键相机绕中心点旋转
+        if (Input.GetKey(Input.KeyCode.Alt) && Input.GetMouseButton(0)) {
+            const moveDelta = Input.mouseDelta;
+            this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
+            this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
+        }
+    }
+
+    scaleAndAdd(a: Vector3, b: Vector3, scale: number): Vector3 {
+        var out = new Vector3();
+        out.x = a.x + b.x * scale;
+        out.y = a.y + b.y * scale;
+        out.z = a.z + b.z * scale;
+        return out;
     }
 
     update() {
@@ -62,13 +86,5 @@ export class CameraController extends Component {
         var q = new Quaternion(new Vector3(this._euler.x, this._euler.y, this._euler.z));
         q = Quaternion.slerp(this.transform.rotation, q, Engine.deltaTime / this.damp);
         this.transform.rotation = q;
-    }
-
-    scaleAndAdd(a: Vector3, b: Vector3, scale: number): Vector3 {
-        var out = new Vector3();
-        out.x = a.x + b.x * scale;
-        out.y = a.y + b.y * scale;
-        out.z = a.z + b.z * scale;
-        return out;
     }
 }
