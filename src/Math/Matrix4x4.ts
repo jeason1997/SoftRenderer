@@ -252,9 +252,9 @@ export class Matrix4x4 {
     }
 
     public rotate(q: Quaternion): Matrix4x4;
-    public rotate(eulerAngles: Vector3);
+    public rotate(eulerAngles: Vector3): Matrix4x4;
     public rotate(angle: number, axis: Vector3): Matrix4x4;
-    public rotate() {
+    public rotate(): Matrix4x4 {
         let m = new Matrix4x4();
 
         if (arguments[0] instanceof Quaternion) {

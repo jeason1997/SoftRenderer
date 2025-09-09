@@ -2,10 +2,10 @@ import { Vector3 } from "./Vector3";
 import { Matrix4x4 } from "./Matrix4x4";
 
 export class Quaternion {
-    public x: number;
-    public y: number;
-    public z: number;
-    public w: number;
+    public x: number = 0;
+    public y: number = 0;
+    public z: number = 0;
+    public w: number = 0;
 
     public constructor();
     public constructor(x: number, y: number, z: number, w: number);

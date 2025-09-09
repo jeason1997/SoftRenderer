@@ -354,11 +354,13 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Renderer = void 0;
 var Component_1 = require("./Component");
+var Bounds_1 = require("../Math/Bounds");
 // Renderer是所有渲染组件的基类
 var Renderer = /** @class */ (function (_super) {
     __extends(Renderer, _super);
     function Renderer() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this._bounds = new Bounds_1.Bounds();
         _this._material = null;
         _this._sortingLayerID = 0;
         _this._sortingOrder = 0;
@@ -437,7 +439,7 @@ var Renderer = /** @class */ (function (_super) {
 }(Component_1.Component));
 exports.Renderer = Renderer;
 
-},{"./Component":3}],7:[function(require,module,exports){
+},{"../Math/Bounds":11,"./Component":3}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EngineConfig = exports.Engine = void 0;
@@ -2038,6 +2040,10 @@ var Vector3_1 = require("./Vector3");
 var Matrix4x4_1 = require("./Matrix4x4");
 var Quaternion = /** @class */ (function () {
     function Quaternion() {
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
+        this.w = 0;
         if (arguments.length == 4) {
             this.x = arguments[0];
             this.y = arguments[1];
@@ -2742,8 +2748,17 @@ exports.Vector4 = Vector4;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubMesh = exports.Mesh = void 0;
+var Bounds_1 = require("../Math/Bounds");
 var Mesh = /** @class */ (function () {
     function Mesh() {
+        this.bounds = [];
+        this.material = [];
+        this.triangles = [];
+        this.vertices = [];
+        this.uv = [];
+        this.normals = [];
+        this.tangents = [];
+        this.subMeshes = [];
     }
     // 检查网格是否有效
     Mesh.prototype.checkValid = function () {
@@ -2763,12 +2778,18 @@ var Mesh = /** @class */ (function () {
 exports.Mesh = Mesh;
 var SubMesh = /** @class */ (function () {
     function SubMesh() {
+        this.vertexCount = 0;
+        this.firstVertex = 0;
+        this.indexCount = 0;
+        this.indexStart = 0;
+        this.bounds = new Bounds_1.Bounds();
+        this.material = "";
     }
     return SubMesh;
 }());
 exports.SubMesh = SubMesh;
 
-},{}],18:[function(require,module,exports){
+},{"../Math/Bounds":11}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -3613,7 +3634,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dictionary = void 0;
 var Dictionary = /** @class */ (function () {
     function Dictionary() {
-        this.items = {};
+        // 关键修复：添加索引签名 { [key: string]: any }，允许用 string 类型索引
+        this.items = {}; // 直接初始化，避免“未赋值”隐患
+        // 无需重复赋值，已在声明时初始化
     }
     Object.defineProperty(Dictionary.prototype, "count", {
         get: function () {
@@ -3622,15 +3645,19 @@ var Dictionary = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    // 键类型统一为 string（更符合对象索引的实际场景）
     Dictionary.prototype.has = function (key) {
-        return this.items.hasOwnProperty(key);
+        // 推荐用 Object.prototype.hasOwnProperty，避免原型链污染
+        return Object.prototype.hasOwnProperty.call(this.items, key);
     };
     Dictionary.prototype.set = function (key, val) {
-        this.items[key] = val;
+        this.items[key] = val; // 现在 TS 能识别 key 是合法索引
     };
+    // 修复逻辑：删除成功返回 true
     Dictionary.prototype.delete = function (key) {
         if (this.has(key)) {
             delete this.items[key];
+            return true; // 关键修正：删除成功返回 true
         }
         return false;
     };
@@ -3649,9 +3676,12 @@ var Dictionary = /** @class */ (function () {
         }
         return values;
     };
+    // 关键修复：定义 fun 的类型（key 为 string，val 为 any）
     Dictionary.prototype.forEach = function (fun) {
         for (var k in this.items) {
-            fun(k, this.items[k]);
+            if (this.has(k)) {
+                fun(k, this.items[k]);
+            }
         }
     };
     return Dictionary;

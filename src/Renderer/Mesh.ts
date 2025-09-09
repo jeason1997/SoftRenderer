@@ -4,14 +4,25 @@ import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
 
 export class Mesh {
-    bounds: Bounds[];                       // 包围盒
-    material: string[];                     // 材质
-    triangles: number[];                    // 三角形
-    vertices: Vector3[];                    // 顶点
-    uv: Vector2[];                          // UV
-    normals: Vector3[];                     // 法线
-    tangents: Vector4[];                    // 切线，可从模型中获取或通过法线计算得到
-    subMeshes: SubMesh[];                   // 子网格
+    public bounds: Bounds[];                       // 包围盒
+    public material: string[];                     // 材质
+    public triangles: number[];                    // 三角形
+    public vertices: Vector3[];                    // 顶点
+    public uv: Vector2[];                          // UV
+    public normals: Vector3[];                     // 法线
+    public tangents: Vector4[];                    // 切线，可从模型中获取或通过法线计算得到
+    public subMeshes: SubMesh[];                   // 子网格
+
+    public constructor() {
+        this.bounds = [];
+        this.material = [];
+        this.triangles = [];
+        this.vertices = [];
+        this.uv = [];
+        this.normals = [];
+        this.tangents = [];
+        this.subMeshes = [];
+    }
 
     // 检查网格是否有效
     public checkValid(): Boolean {
@@ -30,10 +41,19 @@ export class Mesh {
 }
 
 export class SubMesh {
-    vertexCount: number;
-    firstVertex: number;
-    indexCount: number;
-    indexStart: number;
-    bounds: Bounds;
-    material: string;
+    public vertexCount: number;
+    public firstVertex: number;
+    public indexCount: number;
+    public indexStart: number;
+    public bounds: Bounds;
+    public material: string;
+    
+    public constructor() {
+        this.vertexCount = 0;
+        this.firstVertex = 0;
+        this.indexCount = 0;
+        this.indexStart = 0;
+        this.bounds = new Bounds();
+        this.material = "";
+    }
 }
