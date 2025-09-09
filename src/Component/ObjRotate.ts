@@ -1,4 +1,3 @@
-import { Input, InputAxis } from "../Input";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Component } from "./Component";

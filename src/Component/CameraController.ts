@@ -1,5 +1,5 @@
-import { Engine } from "../Engine";
-import { Input, InputAxis } from "../Input";
+import { Engine } from "../Core/Engine";
+import { Input, InputAxis } from "../Core/Input";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Component } from "./Component";

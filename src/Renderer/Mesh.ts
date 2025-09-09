@@ -1,7 +1,7 @@
-import { Bounds } from "./Math/Bounds";
-import { Vector2 } from "./Math/Vector2";
-import { Vector3 } from "./Math/Vector3";
-import { Vector4 } from "./Math/Vector4";
+import { Bounds } from "../Math/Bounds";
+import { Vector2 } from "../Math/Vector2";
+import { Vector3 } from "../Math/Vector3";
+import { Vector4 } from "../Math/Vector4";
 
 export class Mesh {
     bounds: Bounds[];                       // 包围盒

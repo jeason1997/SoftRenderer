@@ -1,8 +1,8 @@
 import { GameObject } from "./GameObject";
-import { Matrix4x4 } from "./Math/Matrix4x4";
-import { Quaternion } from "./Math/Quaternion";
-import { Vector3 } from "./Math/Vector3";
-import { Vector4 } from "./Math/Vector4";
+import { Matrix4x4 } from "../Math/Matrix4x4";
+import { Quaternion } from "../Math/Quaternion";
+import { Vector3 } from "../Math/Vector3";
+import { Vector4 } from "../Math/Vector4";
 
 export class Transform {
     public readonly gameObject: GameObject;

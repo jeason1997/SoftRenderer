@@ -1,5 +1,5 @@
-import { Color } from "./Color";
-import { Vector2 } from "./Math/Vector2";
+import { Color } from "../Utils/Color";
+import { Vector2 } from "../Math/Vector2";
 
 export class Material {
     public name: string;

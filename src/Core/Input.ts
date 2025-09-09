@@ -1,4 +1,4 @@
-import { Vector2 } from "./Math/Vector2";
+import { Vector2 } from "../Math/Vector2";
 
 export class Input {
     // 键盘状态

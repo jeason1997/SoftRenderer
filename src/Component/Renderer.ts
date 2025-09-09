@@ -1,5 +1,5 @@
 import { Component } from "./Component";
-import { Material } from "../Material";
+import { Material } from "../Renderer/Material";
 import { Bounds } from "../Math/Bounds";
 
 // Renderer是所有渲染组件的基类
@@ -63,4 +63,9 @@ export abstract class Renderer extends Component {
     
     // 渲染方法，子类需要实现
     public abstract render(): void;
+
+    public onDestroy(): void {
+        // 清理资源
+        this._material = null;
+    }
 }

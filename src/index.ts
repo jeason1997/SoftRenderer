@@ -1,5 +1,5 @@
-import { Logger } from "./Logger";
-import { Engine } from "./Engine";
+import { Engine } from "./Core/Engine";
+import { Logger } from "./Utils/Logger";
 
 // 当DOM内容加载完成后执行
 document.addEventListener('DOMContentLoaded', () => {

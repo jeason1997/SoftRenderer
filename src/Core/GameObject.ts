@@ -1,7 +1,7 @@
-import { Transform } from "./Transfrom";
-import { Component } from "./Component/Component";
-import { Vector3 } from "./Math/Vector3";
-import { Quaternion } from "./Math/Quaternion";
+import { Transform } from "./Transform";
+import { Component } from "../Component/Component";
+import { Vector3 } from "../Math/Vector3";
+import { Quaternion } from "../Math/Quaternion";
 
 export class GameObject {
     public name: string;

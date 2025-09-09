@@ -1,7 +1,7 @@
 import { Input } from "./Input";
-import { RasterizationPipeline } from "./RasterizationPipeline";
-import { MainScene } from "./Scene/MainScene";
-import { SceneManager } from "./Scene/SceneManager";
+import { RasterizationPipeline } from "../Renderer/RasterizationPipeline";
+import { MainScene } from "../Scene/MainScene";
+import { SceneManager } from "../Scene/SceneManager";
 
 export class Engine {
     public static sceneManager: SceneManager = new SceneManager();

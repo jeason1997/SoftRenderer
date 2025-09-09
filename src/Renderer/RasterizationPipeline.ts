@@ -1,13 +1,13 @@
-import { Color } from "./Color";
-import { Vector2 } from "./Math/Vector2";
-import { Vector3 } from "./Math/Vector3";
-import { Vector4 } from "./Math/Vector4";
-import { Transform } from "./Transfrom";
-import { Renderer } from "./Component/Renderer";
-import { MeshRenderer } from "./Component/MeshRenderer";
-import { Camera } from "./Component/Camera";
-import { Engine, EngineConfig } from "./Engine";
-import { Logger } from "./Logger";
+import { Color } from "../Utils/Color";
+import { Vector2 } from "../Math/Vector2";
+import { Vector3 } from "../Math/Vector3";
+import { Vector4 } from "../Math/Vector4";
+import { Transform } from "../Core/Transform";
+import { Renderer } from "../Component/Renderer";
+import { MeshRenderer } from "../Component/MeshRenderer";
+import { Camera } from "../Component/Camera";
+import { Engine, EngineConfig } from "../Core/Engine";
+import { Logger } from "../Utils/Logger";
 
 enum DrawMode {
     Wireframe,

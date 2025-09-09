@@ -1,6 +1,6 @@
-import { Mesh } from "../Mesh";
+import { Mesh } from "../Renderer/Mesh";
 import { Dictionary } from "./Dictionary";
-import { OBJParser } from "./ObjParser.ts";
+import { OBJParser } from "./ObjParser";
 
 export class AssetLoader {
     private static fileCache: Dictionary = new Dictionary();

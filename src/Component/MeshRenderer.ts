@@ -1,5 +1,5 @@
 import { Renderer } from "./Renderer";
-import { Mesh } from "../Mesh";
+import { Mesh } from "../Renderer/Mesh";
 
 export class MeshRenderer extends Renderer {
     private _mesh: Mesh | null = null;
@@ -19,8 +19,8 @@ export class MeshRenderer extends Renderer {
     }
 
     public onDestroy(): void {
+        super.onDestroy();
         // 清理资源
         this._mesh = null;
-        super.material = null;
     }
 }

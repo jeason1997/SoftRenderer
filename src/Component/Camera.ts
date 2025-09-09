@@ -1,5 +1,5 @@
-import { Color } from "../Color";
-import { EngineConfig } from "../Engine";
+import { Color } from "../Utils/Color";
+import { EngineConfig } from "../Core/Engine";
 import { Vector4 } from "../Math/Vector4";
 import { Component } from "./Component";
 

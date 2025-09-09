@@ -1,4 +1,4 @@
-import { GameObject } from "../GameObject";
+import { GameObject } from "../Core/GameObject";
 
 export class Scene {
     public name: string;

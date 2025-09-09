@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {
-  },
   "devDependencies": {
     "@types/node": "^12.7.3",
-    "browserify": "^16.5.0",
-    "gulp": "^4.0.2",
+    "browserify": "^16.5.2",
+    "gulp": "^5.0.1",
+    "gulp-sourcemaps": "^3.0.0",
     "gulp-typescript": "^5.0.1",
     "gulp-util": "^3.0.8",
-    "tsify": "^4.0.1",
-    "typescript": "^3.5.3",
+    "tsify": "^4.0.2",
+    "typescript": "^5.9.2",
+    "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0",
     "watchify": "^3.11.1"
   }

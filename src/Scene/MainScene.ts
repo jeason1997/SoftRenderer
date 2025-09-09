@@ -2,7 +2,7 @@ import { Camera } from "../Component/Camera";
 import { CameraController } from "../Component/CameraController";
 import { MeshRenderer } from "../Component/MeshRenderer";
 import { ObjRotate } from "../Component/ObjRotate";
-import { GameObject } from "../GameObject";
+import { GameObject } from "../Core/GameObject";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { AssetLoader } from "../Utils/AssetLoader";
