@@ -232,6 +232,7 @@ export class Matrix4x4 {
         return v;
     }
 
+    // 转置矩阵
     public transpose(): Matrix4x4 {
         let m1 = this.matrix;
         var m2 = new Matrix4x4().matrix;
@@ -356,7 +357,8 @@ export class Matrix4x4 {
         return this;
     }
 
-    public inverse(): Matrix4x4 {
+    // 通过​​代数余子式法（Cofactor Method）​​ 来计算一个 4x4 方阵的逆矩阵
+    public invert(): Matrix4x4 {
         var mat = this.matrix;
 
         const a00 = mat[0][0];
@@ -576,6 +578,18 @@ export class Matrix4x4 {
         m[3][0] = 0; m[3][1] = 0; m[3][2] = 0; m[3][3] = 1;
 
         return result;
+    }
+
+    public static perspective(fov: number, aspect: number, near: number, far: number): Matrix4x4 {
+        const fovRad = fov / 180 * Math.PI;
+        const tanHalfFov = Math.tan(fovRad / 2);
+        const mat = new Matrix4x4(
+            new Vector4(1 / (aspect * tanHalfFov), 0, 0, 0),
+            new Vector4(0, -1 / tanHalfFov, 0, 0),
+            new Vector4(0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near)),
+            new Vector4(0, 0, -1, 0)
+        );
+        return mat;
     }
 
     public static get identity(): Matrix4x4 {

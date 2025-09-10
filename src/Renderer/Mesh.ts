@@ -7,16 +7,21 @@ export class Mesh {
     public bounds: Bounds[];                       // 包围盒
     public material: string[];                     // 材质
     public triangles: number[];                    // 三角形
+    public faceNormals: Vector3[];                 // 面法线
     public vertices: Vector3[];                    // 顶点
     public uv: Vector2[];                          // UV
     public normals: Vector3[];                     // 法线
     public tangents: Vector4[];                    // 切线，可从模型中获取或通过法线计算得到
     public subMeshes: SubMesh[];                   // 子网格
 
+    // 调试信息
+    public _debug_faceNormalLine: Line[] = [];
+
     public constructor() {
         this.bounds = [];
         this.material = [];
         this.triangles = [];
+        this.faceNormals = [];
         this.vertices = [];
         this.uv = [];
         this.normals = [];
@@ -47,7 +52,7 @@ export class SubMesh {
     public indexStart: number;
     public bounds: Bounds;
     public material: string;
-    
+
     public constructor() {
         this.vertexCount = 0;
         this.firstVertex = 0;
@@ -55,5 +60,15 @@ export class SubMesh {
         this.indexStart = 0;
         this.bounds = new Bounds();
         this.material = "";
+    }
+}
+
+export class Line {
+    public start: Vector3;
+    public end: Vector3;
+
+    public constructor(start: Vector3, end: Vector3) {
+        this.start = start;
+        this.end = end;
     }
 }

@@ -21,21 +21,21 @@ export const MainScene = {
 
         let obj: GameObject;
         // 加载模型
-        AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
-            obj = new GameObject("female02");
-            const renderer = obj.addComponent(MeshRenderer);
-            renderer.mesh = model;
-            obj.addComponent(ObjRotate);
-            scene.addGameObject(obj);
-        });
+        // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
+        //     obj = new GameObject("female02");
+        //     const renderer = obj.addComponent(MeshRenderer);
+        //     renderer.mesh = model;
+        //     //obj.addComponent(ObjRotate);
+        //     scene.addGameObject(obj);
+        // });
 
         AssetLoader.loadModel('resources/cube.obj').then((model) => {
             const cube = new GameObject("cube");
-            cube.transform.position = new Vector3(2, 0, 0);
-            cube.transform.scale = new Vector3(0.1, 0.1, 0.1);
+            //cube.transform.position = new Vector3(1, 0, 0);
             const renderer = cube.addComponent(MeshRenderer);
             renderer.mesh = model;
-            cube.transform.setParent(obj.transform, false);
+            //cube.transform.setParent(obj.transform, false);
+            scene.addGameObject(cube);
         });
     }
 }

@@ -33,7 +33,7 @@ export class Transform {
 
     public get worldToLocalMatrix(): Matrix4x4 {
         var p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4.identity;
-        return this.selfMatrix.inverse().multiply(p);
+        return this.selfMatrix.invert().multiply(p);
     }
 
     public get x(): number {

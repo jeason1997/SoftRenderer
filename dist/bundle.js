@@ -21,6 +21,7 @@ var Color_1 = require("../Utils/Color");
 var Engine_1 = require("../Core/Engine");
 var Vector4_1 = require("../Math/Vector4");
 var Component_1 = require("./Component");
+var Matrix4x4_1 = require("../Math/Matrix4x4");
 var CameraClearFlags;
 (function (CameraClearFlags) {
     CameraClearFlags[CameraClearFlags["NONE"] = 0] = "NONE";
@@ -55,6 +56,9 @@ var Camera = /** @class */ (function (_super) {
             Camera.mainCamera = this;
         }
         Camera.cameras.push(this);
+        this.transform.forward;
+    };
+    Camera.prototype.update = function () {
     };
     Camera.prototype.onDestroy = function () {
         var index = Camera.cameras.indexOf(this, 0);
@@ -68,12 +72,22 @@ var Camera = /** @class */ (function (_super) {
                 Camera.mainCamera = undefined;
         }
     };
+    Camera.prototype.getViewMatrix = function () {
+        // 1. 获取相机的世界变换矩阵
+        var worldMatrix = this.transform.localToWorldMatrix;
+        // 2. 计算逆矩阵（世界空间 → 视图空间）
+        var viewMatrix = worldMatrix.clone().invert();
+        return viewMatrix;
+    };
+    Camera.prototype.getProjectionMatrix = function () {
+        return Matrix4x4_1.Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
+    };
     Camera.cameras = new Array();
     return Camera;
 }(Component_1.Component));
 exports.Camera = Camera;
 
-},{"../Core/Engine":7,"../Math/Vector4":16,"../Utils/Color":23,"./Component":3}],2:[function(require,module,exports){
+},{"../Core/Engine":6,"../Math/Matrix4x4":11,"../Math/Vector4":15,"../Utils/Color":22,"./Component":3}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -179,7 +193,7 @@ var CameraController = /** @class */ (function (_super) {
 }(Component_1.Component));
 exports.CameraController = CameraController;
 
-},{"../Core/Engine":7,"../Core/Input":9,"../Math/Quaternion":13,"../Math/Vector3":15,"./Component":3}],3:[function(require,module,exports){
+},{"../Core/Engine":6,"../Core/Input":8,"../Math/Quaternion":12,"../Math/Vector3":14,"./Component":3}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Component = void 0;
@@ -282,59 +296,7 @@ var MeshRenderer = /** @class */ (function (_super) {
 }(Renderer_1.Renderer));
 exports.MeshRenderer = MeshRenderer;
 
-},{"./Renderer":6}],5:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ObjRotate = void 0;
-var Quaternion_1 = require("../Math/Quaternion");
-var Vector3_1 = require("../Math/Vector3");
-var Component_1 = require("./Component");
-var ObjRotate = /** @class */ (function (_super) {
-    __extends(ObjRotate, _super);
-    function ObjRotate() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.angleX = 0;
-        _this.angleY = 0;
-        return _this;
-    }
-    ObjRotate.prototype.update = function () {
-        // // 键盘输入
-        // const horizontalInput = Input.GetAxis(InputAxis.Horizontal);
-        // const verticalInput = Input.GetAxis(InputAxis.Vertical);
-        // this.angleX += verticalInput;
-        // this.angleY += horizontalInput;
-        // this.transform.rotation = new Quaternion(new Vector3(this.angleX, this.angleY, 0));
-        // // 鼠标滚轮
-        // if (Input.mouseScrollDelta.y !== 0) {
-        //     // 缩放
-        //     const zoomFactor = Input.mouseScrollDelta.y > 0 ? 0.9 : 1.1;
-        //     const sacle = this.transform.scale;
-        //     sacle.multiply(zoomFactor);
-        //     this.transform.scale = sacle;
-        // }
-        this.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this.angleX, this.angleY, 0));
-        this.angleY += 1;
-    };
-    return ObjRotate;
-}(Component_1.Component));
-exports.ObjRotate = ObjRotate;
-
-},{"../Math/Quaternion":13,"../Math/Vector3":15,"./Component":3}],6:[function(require,module,exports){
+},{"./Renderer":5}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -439,7 +401,7 @@ var Renderer = /** @class */ (function (_super) {
 }(Component_1.Component));
 exports.Renderer = Renderer;
 
-},{"../Math/Bounds":11,"./Component":3}],7:[function(require,module,exports){
+},{"../Math/Bounds":10,"./Component":3}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EngineConfig = exports.Engine = void 0;
@@ -500,7 +462,7 @@ var EngineConfig = /** @class */ (function () {
 }());
 exports.EngineConfig = EngineConfig;
 
-},{"../Renderer/RasterizationPipeline":18,"../Scene/MainScene":19,"../Scene/SceneManager":21,"./Input":9}],8:[function(require,module,exports){
+},{"../Renderer/RasterizationPipeline":17,"../Scene/MainScene":18,"../Scene/SceneManager":20,"./Input":8}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -728,7 +690,7 @@ var GameObject = /** @class */ (function () {
 }());
 exports.GameObject = GameObject;
 
-},{"./Transform":10}],9:[function(require,module,exports){
+},{"./Transform":9}],8:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -951,7 +913,7 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":14}],10:[function(require,module,exports){
+},{"../Math/Vector2":13}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transform = void 0;
@@ -987,7 +949,7 @@ var Transform = /** @class */ (function () {
     Object.defineProperty(Transform.prototype, "worldToLocalMatrix", {
         get: function () {
             var p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4_1.Matrix4x4.identity;
-            return this.selfMatrix.inverse().multiply(p);
+            return this.selfMatrix.invert().multiply(p);
         },
         enumerable: false,
         configurable: true
@@ -1209,7 +1171,7 @@ var Transform = /** @class */ (function () {
 }());
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":12,"../Math/Quaternion":13,"../Math/Vector3":15,"../Math/Vector4":16}],11:[function(require,module,exports){
+},{"../Math/Matrix4x4":11,"../Math/Quaternion":12,"../Math/Vector3":14,"../Math/Vector4":15}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
@@ -1510,7 +1472,7 @@ function exampleUsage() {
     console.log("  Radius:", sphere.radius);
 }
 
-},{"./Vector3":15}],12:[function(require,module,exports){
+},{"./Vector3":14}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -1708,6 +1670,7 @@ var Matrix4x4 = /** @class */ (function () {
         v.z = Math.sqrt(m[0][2] * m[0][2] + m[1][2] * m[1][2] + m[2][2] * m[2][2]);
         return v;
     };
+    // 转置矩阵
     Matrix4x4.prototype.transpose = function () {
         var m1 = this.matrix;
         var m2 = new Matrix4x4().matrix;
@@ -1801,7 +1764,8 @@ var Matrix4x4 = /** @class */ (function () {
         this.matrix = mat.multiply(this).matrix;
         return this;
     };
-    Matrix4x4.prototype.inverse = function () {
+    // 通过​​代数余子式法（Cofactor Method）​​ 来计算一个 4x4 方阵的逆矩阵
+    Matrix4x4.prototype.invert = function () {
         var mat = this.matrix;
         var a00 = mat[0][0];
         var a01 = mat[0][1];
@@ -2016,6 +1980,12 @@ var Matrix4x4 = /** @class */ (function () {
         m[3][3] = 1;
         return result;
     };
+    Matrix4x4.perspective = function (fov, aspect, near, far) {
+        var fovRad = fov / 180 * Math.PI;
+        var tanHalfFov = Math.tan(fovRad / 2);
+        var mat = new Matrix4x4(new Vector4_1.Vector4(1 / (aspect * tanHalfFov), 0, 0, 0), new Vector4_1.Vector4(0, -1 / tanHalfFov, 0, 0), new Vector4_1.Vector4(0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near)), new Vector4_1.Vector4(0, 0, -1, 0));
+        return mat;
+    };
     Object.defineProperty(Matrix4x4, "identity", {
         get: function () {
             var m = new Matrix4x4();
@@ -2032,7 +2002,7 @@ var Matrix4x4 = /** @class */ (function () {
 }());
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":13,"./Vector3":15,"./Vector4":16}],13:[function(require,module,exports){
+},{"./Quaternion":12,"./Vector3":14,"./Vector4":15}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
@@ -2169,7 +2139,7 @@ var Quaternion = /** @class */ (function () {
 }());
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":12,"./Vector3":15}],14:[function(require,module,exports){
+},{"./Matrix4x4":11,"./Vector3":14}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -2347,7 +2317,7 @@ var Vector2 = /** @class */ (function () {
 }());
 exports.Vector2 = Vector2;
 
-},{"./Vector3":15,"./Vector4":16}],15:[function(require,module,exports){
+},{"./Vector3":14,"./Vector4":15}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
@@ -2566,7 +2536,7 @@ var Vector3 = /** @class */ (function () {
 }());
 exports.Vector3 = Vector3;
 
-},{"./Vector2":14,"./Vector4":16}],16:[function(require,module,exports){
+},{"./Vector2":13,"./Vector4":15}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
@@ -2744,16 +2714,19 @@ var Vector4 = /** @class */ (function () {
 }());
 exports.Vector4 = Vector4;
 
-},{"./Vector2":14,"./Vector3":15}],17:[function(require,module,exports){
+},{"./Vector2":13,"./Vector3":14}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SubMesh = exports.Mesh = void 0;
+exports.Line = exports.SubMesh = exports.Mesh = void 0;
 var Bounds_1 = require("../Math/Bounds");
 var Mesh = /** @class */ (function () {
     function Mesh() {
+        // 调试信息
+        this._debug_faceNormalLine = [];
         this.bounds = [];
         this.material = [];
         this.triangles = [];
+        this.faceNormals = [];
         this.vertices = [];
         this.uv = [];
         this.normals = [];
@@ -2788,8 +2761,16 @@ var SubMesh = /** @class */ (function () {
     return SubMesh;
 }());
 exports.SubMesh = SubMesh;
+var Line = /** @class */ (function () {
+    function Line(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+    return Line;
+}());
+exports.Line = Line;
 
-},{"../Math/Bounds":11}],18:[function(require,module,exports){
+},{"../Math/Bounds":10}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -2803,15 +2784,15 @@ var Engine_1 = require("../Core/Engine");
 var Logger_1 = require("../Utils/Logger");
 var DrawMode;
 (function (DrawMode) {
-    DrawMode[DrawMode["Wireframe"] = 0] = "Wireframe";
-    DrawMode[DrawMode["Point"] = 1] = "Point";
-    DrawMode[DrawMode["UV"] = 2] = "UV";
-    DrawMode[DrawMode["Normal"] = 3] = "Normal";
-    DrawMode[DrawMode["Shader"] = 4] = "Shader";
+    DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
+    DrawMode[DrawMode["Point"] = 2] = "Point";
+    DrawMode[DrawMode["UV"] = 4] = "UV";
+    DrawMode[DrawMode["Normal"] = 8] = "Normal";
+    DrawMode[DrawMode["Shader"] = 16] = "Shader";
 })(DrawMode || (DrawMode = {}));
 var RasterizationPipeline = /** @class */ (function () {
     function RasterizationPipeline(uint32View) {
-        this.drawMode = DrawMode.UV;
+        this.drawMode = DrawMode.Wireframe;
         this.uint32View = uint32View;
     }
     RasterizationPipeline.prototype.Render = function () {
@@ -2855,8 +2836,8 @@ var RasterizationPipeline = /** @class */ (function () {
         }
         this.uint32View[y * Engine_1.EngineConfig.canvasWidth + x] = color;
     };
-    RasterizationPipeline.prototype.DrawLine = function (x1, y1, x2, y2, color) {
-        var _a, _b;
+    RasterizationPipeline.prototype.DrawLine = function (x1, y1, x2, y2, color1, color2) {
+        var _a, _b, _c;
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
         var w = Engine_1.EngineConfig.canvasWidth;
@@ -2872,6 +2853,7 @@ var RasterizationPipeline = /** @class */ (function () {
         y2 = y2 | 0;
         var dx = x2 - x1;
         var dy = y2 - y1;
+        var length = Math.max(Math.abs(dx), Math.abs(dy));
         // 为何要区分斜率是否偏水平还是垂直呢？因为如果不区分，例如当斜率大于1时，会导致直线绘制不连续，因为y会跳变，而不是连续的增加。
         // 只有斜率刚好为1时，x跟y才是连续同步自增的，x+1，则y也+1
         // 所以，当斜率大于1时，我们需要使用y作为循环变量，而当斜率小于1时，我们需要使用x作为循环变量。
@@ -2879,8 +2861,12 @@ var RasterizationPipeline = /** @class */ (function () {
         // 斜率小于1，直线偏水平情况，使用x作为循环变量
         if (Math.abs(dx) > Math.abs(dy)) {
             // 下面的循环绘制函数是从左往右的，这里要确保结束点在开始点的右边
-            if (x2 < x1)
+            if (x2 < x1) {
                 _a = [x2, y2, x1, y1], x1 = _a[0], y1 = _a[1], x2 = _a[2], y2 = _a[3];
+                // 同时交换颜色
+                if (color2 !== undefined)
+                    _b = [color2, color1], color1 = _b[0], color2 = _b[1];
+            }
             // 斜率
             var a = dy / dx;
             // 截距（y=ax+b，b=y-ax）
@@ -2888,6 +2874,10 @@ var RasterizationPipeline = /** @class */ (function () {
             var y = y1;
             // 绘制直线
             for (var x = x1; x <= x2; x++) {
+                // 计算插值因子 (0 到 1)
+                var t = length > 0 ? (x - x1) / length : 0;
+                // 根据是否有第二个颜色决定使用单一颜色还是插值
+                var color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
                 this.DrawPixel(x, y, color);
                 // 直线公式y=ax+b，这里不必计算这个公式，因为当x加1自增时，y也会加a，所以可以直接用y+a代替ax+b，算是一个性能优化点
                 // y = a * x + b;
@@ -2902,10 +2892,14 @@ var RasterizationPipeline = /** @class */ (function () {
         // 斜率大于1，直线偏垂直情况，使用y作为循环变量
         else {
             if (y2 < y1)
-                _b = [x2, y2, x1, y1], x1 = _b[0], y1 = _b[1], x2 = _b[2], y2 = _b[3];
+                _c = [x2, y2, x1, y1], x1 = _c[0], y1 = _c[1], x2 = _c[2], y2 = _c[3];
             var a = dx / dy;
             var x = x1;
             for (var y = y1; y <= y2; y++) {
+                // 计算插值因子 (0 到 1)
+                var t = length > 0 ? (y - y1) / length : 0;
+                // 根据是否有第二个颜色决定使用单一颜色还是插值
+                var color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
                 this.DrawPixel(x, y, color);
                 x = x + a;
             }
@@ -3114,16 +3108,51 @@ var RasterizationPipeline = /** @class */ (function () {
     };
     //#endregion
     //#region 变换
-    RasterizationPipeline.prototype.ObjectToClipPos = function (vertex) {
-        //TODO
-        return Vector3_1.Vector3.ZERO;
+    // 将模型空间坐标转换为裁剪空间坐标（Clip Space）
+    RasterizationPipeline.prototype.ObjectToClipPos = function (vertex, transform) {
+        // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
+        // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
+        var modelMatrix = transform.localToWorldMatrix;
+        var camera = Camera_1.Camera.mainCamera;
+        var viewMatrix = camera.getViewMatrix();
+        var projectionMatrix = camera.getProjectionMatrix();
+        var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
+        // const cameraForward = camera.transform.forward;
+        // const cameraUp = camera.transform.up;
+        // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
+        // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+        return mvpMatrix.multiplyVector4(new Vector4_1.Vector4(vertex.clone(), 1));
+    };
+    // 将裁剪空间坐标最终转换为屏幕空间坐标（Screen Space）
+    RasterizationPipeline.prototype.ClipToScreenPos = function (vertex) {
+        // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
+        var w = vertex.w;
+        var ndcX = vertex.x / w;
+        var ndcY = vertex.y / w;
+        var ndcZ = vertex.z / w;
+        // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
+        // 将 NDC 转换为屏幕像素坐标：
+        // X 轴：screenX = (xNDC + 1) * 屏幕宽度 / 2
+        // Y 轴：screenY = (1 - yNDC) * 屏幕高度 / 2（注意 Y 轴翻转，因屏幕坐标系 Y 向下）
+        // 将NDC的x从[-1, 1]映射到[0, screenWidth]
+        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
+        // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
+        var screenY = Engine_1.EngineConfig.canvasHeight - (((ndcY + 1) / 2) * Engine_1.EngineConfig.canvasHeight);
+        // z分量通常用于深度测试，这里我们只关心屏幕x,y
+        // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
+        return new Vector2_1.Vector2(screenX, screenY);
+    };
+    RasterizationPipeline.prototype.ObjectToScreenPos = function (vertex, transform) {
+        var clipPos = this.ObjectToClipPos(vertex, transform);
+        return this.ClipToScreenPos(clipPos);
     };
     RasterizationPipeline.prototype.ObjectToWorldNormal = function (normal, transform) {
         // 获取模型矩阵（局部到世界空间的变换矩阵）
         var modelMatrix = transform.localToWorldMatrix;
         // 计算模型矩阵的逆转置矩阵
         // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
-        var inverseTransposeModel = modelMatrix.clone().inverse().transpose();
+        var inverseTransposeModel = modelMatrix.clone().invert().transpose();
         // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
         var worldNormal = inverseTransposeModel.multiplyVector3(normal);
         // 归一化结果，确保法线保持单位长度
@@ -3133,55 +3162,20 @@ var RasterizationPipeline = /** @class */ (function () {
      * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
     RasterizationPipeline.prototype.VertexProcessingStage = function (vertices, transform) {
-        var clipSpaceVertices = new Array(vertices.length);
-        // 构建MVP矩阵
-        var modelMatrix = transform.localToWorldMatrix;
-        var camera = Camera_1.Camera.mainCamera;
-        var cameraForward = camera.transform.forward;
-        var cameraUp = camera.transform.up;
-        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
-        var modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
-        var mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+        var outVertices = new Array(vertices.length);
         // 1. MVP变换到裁剪空间
         // 模型空间 -> 世界空间 -> 观察空间 -> 裁剪空间
         for (var i = 0; i < vertices.length; i += 1) {
-            var vertice = vertices[i].clone();
-            var v = mvpMatrix.multiplyVector4(new Vector4_1.Vector4(vertice, 1));
-            clipSpaceVertices[i] = v;
+            outVertices[i] = this.ObjectToClipPos(vertices[i], transform);
         }
         // 2. 透视除法：将裁剪空间坐标转换为标准设备坐标（NDC）
         // 裁剪空间 -> 标准化设备坐标（NDC 空间）
-        for (var i = 0; i < clipSpaceVertices.length; i++) {
-            var v = clipSpaceVertices[i];
-            // w分量是透视投影产生的，用于透视除法
-            var w = v.w; // 假设你的Vector4/Vector3实现中，齐次坐标w存储在w属性中。如果没有，需要确保MVP变换时处理了齐次坐标。
-            // 如果没有显式的w分量，且mvpMatrix.multiplyVector3返回的是Vector3，那么通常认为w=1（正交投影）或者需要从变换矩阵中考虑透视
-            // 进行透视除法：xyz分别除以w
-            // 注意：如果你的矩阵乘法没有处理齐次坐标（即返回的vertice是三维向量），那么很可能你的变换没有包含透视投影产生的w分量。
-            // 假设你的mvpMatrix.multiplyVector3确实返回了包含齐次坐标的Vector4，或者有一个返回Vector4的方法。
-            // 这里假设 projectedVertices 中存储的是 Vector4，或者至少有 x, y, z, w 属性。
-            // 如果您的实现中，经过透视投影矩阵变换后，顶点已经是一个齐次坐标（x, y, z, w），则需要以下除法：
-            v.x = v.x / w;
-            v.y = v.y / w;
-            v.z = v.z / w; // 对于深度信息，可能还需要进一步处理，但屏幕映射通常主要关注x,y
-            // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
-            // 假设我们的NDC是[-1, 1]范围。
-        }
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
-        // 获取画布（或视口）的宽度和高度
-        var screenVertices = new Array(clipSpaceVertices.length);
-        for (var i = 0; i < clipSpaceVertices.length; i++) {
-            var ndc = clipSpaceVertices[i]; // 此时ndc应该是经过透视除法后的NDC坐标
-            // 将NDC的x从[-1, 1]映射到[0, screenWidth]
-            var screenX_1 = ((ndc.x + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
-            // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-            var screenY_1 = Engine_1.EngineConfig.canvasHeight - (((ndc.y + 1) / 2) * Engine_1.EngineConfig.canvasHeight);
-            // z分量通常用于深度测试，这里我们只关心屏幕x,y
-            // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
-            screenVertices[i] = { x: screenX_1, y: screenY_1 }; // 存储屏幕坐标
+        for (var i = 0; i < outVertices.length; i++) {
+            outVertices[i] = this.ClipToScreenPos(outVertices[i]);
         }
-        return screenVertices;
+        return outVertices;
     };
     /*
      * 简单变换阶段：没有通过矩阵计算，而是简单的相似三角形原理，三角函数算出MVP变换跟屏幕映射，理解起来比较简单，但每个顶点都经过从头到尾的计算，比较耗性能
@@ -3242,14 +3236,36 @@ var RasterizationPipeline = /** @class */ (function () {
     RasterizationPipeline.prototype.FrustumCulling = function () {
     };
     // 背面剔除
-    RasterizationPipeline.prototype.BackfaceCulling = function () {
+    RasterizationPipeline.prototype.BackfaceCulling = function (triangles, mesh, renderer) {
+        var visibleTriangles = [];
+        var faceNormals = mesh.faceNormals;
+        var modelMatrix = renderer.transform.localToWorldMatrix;
+        var camera = Camera_1.Camera.mainCamera;
+        // 1. 计算模型视图矩阵（模型空间 → 视图空间）
+        var viewMatrix = camera.getViewMatrix(); // 获取相机的视图矩阵（世界空间 → 视图空间）
+        var modelViewMatrix = viewMatrix.multiply(modelMatrix); // 模型空间 → 世界空间 → 视图空间
+        // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
+        var normalMatrix = modelViewMatrix.clone().invert().transpose();
+        // 3. 视图空间中的相机观察方向（通常是 (0, 0, 1)，因为相机看向 Z 方向）
+        var cameraViewDirection = Vector3_1.Vector3.BACK;
+        for (var i = 0; i < faceNormals.length; i++) {
+            // 原始法向量（模型空间）
+            var normalModel = faceNormals[i];
+            // 4. 将法向量从模型空间变换到视图空间
+            var normalView = normalMatrix.multiplyVector3(normalModel);
+            // 5. 计算法向量与观察方向的点积
+            var dot = normalView.dot(cameraViewDirection);
+            // 6. 点积 > 0 表示面向相机（可见）
+            if (dot > 0) {
+                visibleTriangles.push(triangles[i * 3], triangles[i * 3 + 1], triangles[i * 3 + 2]);
+            }
+        }
+        return visibleTriangles;
     };
     // 遮挡剔除
     RasterizationPipeline.prototype.OcclusionCulling = function () {
     };
     RasterizationPipeline.prototype.ClipTriangle = function (triangle) {
-        // 1.计算三角形的中心
-        var center = new Vector3_1.Vector3((triangle[0].x + triangle[1].x + triangle[2].x) / 3, (triangle[0].y + triangle[1].y + triangle[2].y) / 3, (triangle[0].z + triangle[1].z + triangle[2].z) / 3);
     };
     //#endregion
     //#region 绘制物体
@@ -3261,7 +3277,7 @@ var RasterizationPipeline = /** @class */ (function () {
         var triangles = mesh.triangles;
         // 1.剔除
         this.FrustumCulling();
-        this.BackfaceCulling();
+        triangles = this.BackfaceCulling(triangles, mesh, renderer);
         this.OcclusionCulling();
         // 2.变换
         // MVP变换
@@ -3275,16 +3291,15 @@ var RasterizationPipeline = /** @class */ (function () {
             var p1 = screenVertices[triangles[i]];
             var p2 = screenVertices[triangles[i + 1]];
             var p3 = screenVertices[triangles[i + 2]];
-            // 线框模式，暂不支持顶点色
-            if (this.drawMode === DrawMode.Wireframe) {
+            if (this.drawMode & DrawMode.Wireframe) {
                 this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
             }
-            else if (this.drawMode === DrawMode.Point) {
+            if (this.drawMode & DrawMode.Point) {
                 this.DrawPixel(p1.x, p1.y, Color_1.Color.WHITE);
                 this.DrawPixel(p2.x, p2.y, Color_1.Color.WHITE);
                 this.DrawPixel(p3.x, p3.y, Color_1.Color.WHITE);
             }
-            else if (this.drawMode === DrawMode.UV) {
+            if (this.drawMode & DrawMode.UV) {
                 var p1_uv = mesh.uv[triangles[i]];
                 var p2_uv = mesh.uv[triangles[i + 1]];
                 var p3_uv = mesh.uv[triangles[i + 2]];
@@ -3293,7 +3308,7 @@ var RasterizationPipeline = /** @class */ (function () {
                 var p3_color = new Color_1.Color(p3_uv.x * 255, p3_uv.y * 255, 0).ToUint32();
                 this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             }
-            else if (this.drawMode === DrawMode.Normal) {
+            if (this.drawMode & DrawMode.Normal) {
                 var p1_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
                 var p2_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
                 var p3_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
@@ -3312,9 +3327,16 @@ var RasterizationPipeline = /** @class */ (function () {
                 var p3_color = new Color_1.Color(r, g, b).ToUint32();
                 this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             }
-            else if (this.drawMode === DrawMode.Shader) {
+            if (this.drawMode & DrawMode.Shader) {
                 this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
             }
+        }
+        // 调试：绘制面法线
+        for (var i = 0; i < mesh._debug_faceNormalLine.length; i++) {
+            var normal = mesh._debug_faceNormalLine[i];
+            var start = this.ObjectToScreenPos(normal.start, renderer.transform);
+            var end = this.ObjectToScreenPos(normal.end, renderer.transform);
+            this.DrawLine(start.x, start.y, end.x, end.y, Color_1.Color.RED, Color_1.Color.GREEN);
         }
     };
     //#endregion
@@ -3341,18 +3363,42 @@ var RasterizationPipeline = /** @class */ (function () {
         }
         return value;
     };
+    /**
+     * 颜色插值辅助函数
+     * @param color1 起始颜色 (32位整数，格式为0xAARRGGBB)
+     * @param color2 结束颜色 (32位整数，格式为0xAARRGGBB)
+     * @param t 插值因子 (0 到 1)
+     * @returns 插值后的颜色
+     */
+    RasterizationPipeline.prototype.interpolateColor = function (color1, color2, t) {
+        // 提取ARGB分量
+        var a1 = (color1 >> 24) & 0xFF;
+        var r1 = (color1 >> 16) & 0xFF;
+        var g1 = (color1 >> 8) & 0xFF;
+        var b1 = color1 & 0xFF;
+        var a2 = (color2 >> 24) & 0xFF;
+        var r2 = (color2 >> 16) & 0xFF;
+        var g2 = (color2 >> 8) & 0xFF;
+        var b2 = color2 & 0xFF;
+        // 线性插值每个分量
+        var a = Math.round(a1 + (a2 - a1) * t);
+        var r = Math.round(r1 + (r2 - r1) * t);
+        var g = Math.round(g1 + (g2 - g1) * t);
+        var b = Math.round(b1 + (b2 - b1) * t);
+        // 组合成32位颜色值
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    };
     return RasterizationPipeline;
 }());
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":1,"../Component/Renderer":6,"../Core/Engine":7,"../Math/Vector2":14,"../Math/Vector3":15,"../Math/Vector4":16,"../Utils/Color":23,"../Utils/Logger":25}],19:[function(require,module,exports){
+},{"../Component/Camera":1,"../Component/Renderer":5,"../Core/Engine":6,"../Math/Vector2":13,"../Math/Vector3":14,"../Math/Vector4":15,"../Utils/Color":22,"../Utils/Logger":24}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
 var Camera_1 = require("../Component/Camera");
 var CameraController_1 = require("../Component/CameraController");
 var MeshRenderer_1 = require("../Component/MeshRenderer");
-var ObjRotate_1 = require("../Component/ObjRotate");
 var GameObject_1 = require("../Core/GameObject");
 var Quaternion_1 = require("../Math/Quaternion");
 var Vector3_1 = require("../Math/Vector3");
@@ -3369,25 +3415,25 @@ exports.MainScene = {
         camera.addComponent(CameraController_1.CameraController);
         var obj;
         // 加载模型
-        AssetLoader_1.AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then(function (model) {
-            obj = new GameObject_1.GameObject("female02");
-            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-            renderer.mesh = model;
-            obj.addComponent(ObjRotate_1.ObjRotate);
-            scene.addGameObject(obj);
-        });
+        // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
+        //     obj = new GameObject("female02");
+        //     const renderer = obj.addComponent(MeshRenderer);
+        //     renderer.mesh = model;
+        //     //obj.addComponent(ObjRotate);
+        //     scene.addGameObject(obj);
+        // });
         AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
             var cube = new GameObject_1.GameObject("cube");
-            cube.transform.position = new Vector3_1.Vector3(2, 0, 0);
-            cube.transform.scale = new Vector3_1.Vector3(0.1, 0.1, 0.1);
+            //cube.transform.position = new Vector3(1, 0, 0);
             var renderer = cube.addComponent(MeshRenderer_1.MeshRenderer);
             renderer.mesh = model;
-            cube.transform.setParent(obj.transform, false);
+            //cube.transform.setParent(obj.transform, false);
+            scene.addGameObject(cube);
         });
     }
 };
 
-},{"../Component/Camera":1,"../Component/CameraController":2,"../Component/MeshRenderer":4,"../Component/ObjRotate":5,"../Core/GameObject":8,"../Math/Quaternion":13,"../Math/Vector3":15,"../Utils/AssetLoader":22}],20:[function(require,module,exports){
+},{"../Component/Camera":1,"../Component/CameraController":2,"../Component/MeshRenderer":4,"../Core/GameObject":7,"../Math/Quaternion":12,"../Math/Vector3":14,"../Utils/AssetLoader":21}],19:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -3429,7 +3475,7 @@ var Scene = /** @class */ (function () {
 }());
 exports.Scene = Scene;
 
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -3479,7 +3525,7 @@ var SceneManager = /** @class */ (function () {
 }());
 exports.SceneManager = SceneManager;
 
-},{"./Scene":20}],22:[function(require,module,exports){
+},{"./Scene":19}],21:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -3595,7 +3641,7 @@ var AssetLoader = /** @class */ (function () {
 }());
 exports.AssetLoader = AssetLoader;
 
-},{"./Dictionary":24,"./ObjParser":26}],23:[function(require,module,exports){
+},{"./Dictionary":23,"./ObjParser":25}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = void 0;
@@ -3628,7 +3674,7 @@ var Color = /** @class */ (function () {
 }());
 exports.Color = Color;
 
-},{}],24:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dictionary = void 0;
@@ -3688,7 +3734,7 @@ var Dictionary = /** @class */ (function () {
 }());
 exports.Dictionary = Dictionary;
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -3738,7 +3784,7 @@ var Logger = /** @class */ (function () {
 }());
 exports.Logger = Logger;
 
-},{"../Core/Engine":7}],26:[function(require,module,exports){
+},{"../Core/Engine":6}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -3905,7 +3951,31 @@ var OBJParser = /** @class */ (function () {
         this.calculateTangents(mesh);
         // 计算整体包围盒
         mesh.bounds = mesh.subMeshes.map(function (sm) { return sm.bounds; });
+        // 计算三角面的法向量
+        this.calculateFaceNormals(mesh);
         return mesh;
+    };
+    OBJParser.calculateFaceNormals = function (mesh) {
+        if (mesh.vertices.length === 0 || mesh.triangles.length === 0)
+            return;
+        mesh.faceNormals = [];
+        mesh._debug_faceNormalLine = [];
+        for (var i = 0; i < mesh.triangles.length; i += 3) {
+            var i0 = mesh.triangles[i];
+            var i1 = mesh.triangles[i + 1];
+            var i2 = mesh.triangles[i + 2];
+            var v0 = mesh.vertices[i0];
+            var v1 = mesh.vertices[i1];
+            var v2 = mesh.vertices[i2];
+            var e1 = Vector3_1.Vector3.subtract(v1, v0);
+            var e2 = Vector3_1.Vector3.subtract(v2, v0);
+            var faceNormal = Vector3_1.Vector3.cross(e1, e2).normalize();
+            mesh.faceNormals.push(faceNormal);
+            // 调试信息
+            var center = new Vector3_1.Vector3((v0.x + v1.x + v2.x) / 3, (v0.y + v1.y + v2.y) / 3, (v0.z + v1.z + v2.z) / 3);
+            var end = center.clone().add(faceNormal);
+            mesh._debug_faceNormalLine.push(new Mesh_1.Line(center, end));
+        }
     };
     /**
      * 计算网格的切线向量
@@ -3987,7 +4057,7 @@ var OBJParser = /** @class */ (function () {
 }());
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":11,"../Math/Vector2":14,"../Math/Vector3":15,"../Math/Vector4":16,"../Renderer/Mesh":17}],27:[function(require,module,exports){
+},{"../Math/Bounds":10,"../Math/Vector2":13,"../Math/Vector3":14,"../Math/Vector4":15,"../Renderer/Mesh":16}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Engine_1 = require("./Core/Engine");
@@ -4011,6 +4081,6 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":7,"./Utils/Logger":25}]},{},[27])
+},{"./Core/Engine":6,"./Utils/Logger":24}]},{},[26])
 
 //# sourceMappingURL=bundle.js.map

@@ -2,6 +2,9 @@ import { Color } from "../Utils/Color";
 import { EngineConfig } from "../Core/Engine";
 import { Vector4 } from "../Math/Vector4";
 import { Component } from "./Component";
+import { Matrix4x4 } from "../Math/Matrix4x4";
+import { Vector3 } from "../Math/Vector3";
+import { Logger } from "../Utils/Logger";
 
 export enum CameraClearFlags {
     NONE = 0,
@@ -33,6 +36,10 @@ export class Camera extends Component {
             Camera.mainCamera = this;
         }
         Camera.cameras.push(this);
+        this.transform.forward;
+    }
+    
+    public update(): void {
     }
 
     public onDestroy() {
@@ -47,5 +54,17 @@ export class Camera extends Component {
             else
                 Camera.mainCamera = undefined as unknown as Camera;
         }
+    }
+
+    public getViewMatrix(): Matrix4x4 {
+        // 1. 获取相机的世界变换矩阵
+        const worldMatrix = this.transform.localToWorldMatrix;
+        // 2. 计算逆矩阵（世界空间 → 视图空间）
+        const viewMatrix = worldMatrix.clone().invert();
+        return viewMatrix;
+    }
+
+    public getProjectionMatrix(): Matrix4x4 {
+        return Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
     }
 }

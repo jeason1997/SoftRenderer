@@ -8,17 +8,18 @@ import { MeshRenderer } from "../Component/MeshRenderer";
 import { Camera } from "../Component/Camera";
 import { Engine, EngineConfig } from "../Core/Engine";
 import { Logger } from "../Utils/Logger";
+import { Mesh } from "./Mesh";
 
 enum DrawMode {
-    Wireframe,
-    Point,
-    UV,
-    Normal,
-    Shader
+    Wireframe = 1,
+    Point = 2,
+    UV = 4,
+    Normal = 8,
+    Shader = 16
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.UV;
+    public drawMode: DrawMode = DrawMode.Wireframe;
     private uint32View: Uint32Array;
 
     constructor(uint32View: Uint32Array) {
@@ -70,7 +71,7 @@ export class RasterizationPipeline {
         this.uint32View[y * EngineConfig.canvasWidth + x] = color;
     }
 
-    public DrawLine(x1: number, y1: number, x2: number, y2: number, color: number) {
+    public DrawLine(x1: number, y1: number, x2: number, y2: number, color1: number, color2?: number) {
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
         const w = EngineConfig.canvasWidth;
@@ -88,6 +89,7 @@ export class RasterizationPipeline {
 
         const dx = x2 - x1;
         const dy = y2 - y1;
+        const length = Math.max(Math.abs(dx), Math.abs(dy));
 
         // 为何要区分斜率是否偏水平还是垂直呢？因为如果不区分，例如当斜率大于1时，会导致直线绘制不连续，因为y会跳变，而不是连续的增加。
         // 只有斜率刚好为1时，x跟y才是连续同步自增的，x+1，则y也+1
@@ -97,7 +99,11 @@ export class RasterizationPipeline {
         // 斜率小于1，直线偏水平情况，使用x作为循环变量
         if (Math.abs(dx) > Math.abs(dy)) {
             // 下面的循环绘制函数是从左往右的，这里要确保结束点在开始点的右边
-            if (x2 < x1) [x1, y1, x2, y2] = [x2, y2, x1, y1];
+            if (x2 < x1) {
+                [x1, y1, x2, y2] = [x2, y2, x1, y1];
+                // 同时交换颜色
+                if (color2 !== undefined) [color1, color2] = [color2, color1];
+            }
 
             // 斜率
             const a = dy / dx;
@@ -106,6 +112,11 @@ export class RasterizationPipeline {
             let y = y1;
             // 绘制直线
             for (let x = x1; x <= x2; x++) {
+                // 计算插值因子 (0 到 1)
+                const t = length > 0 ? (x - x1) / length : 0;
+                // 根据是否有第二个颜色决定使用单一颜色还是插值
+                const color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
+
                 this.DrawPixel(x, y, color);
                 // 直线公式y=ax+b，这里不必计算这个公式，因为当x加1自增时，y也会加a，所以可以直接用y+a代替ax+b，算是一个性能优化点
                 // y = a * x + b;
@@ -125,6 +136,11 @@ export class RasterizationPipeline {
             const a = dx / dy;
             let x = x1;
             for (let y = y1; y <= y2; y++) {
+                // 计算插值因子 (0 到 1)
+                const t = length > 0 ? (y - y1) / length : 0;
+                // 根据是否有第二个颜色决定使用单一颜色还是插值
+                const color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
+
                 this.DrawPixel(x, y, color);
                 x = x + a;
             }
@@ -371,9 +387,50 @@ export class RasterizationPipeline {
 
     //#region 变换
 
-    public ObjectToClipPos(vertex: Vector3): Vector3 {
-        //TODO
-        return Vector3.ZERO;
+    // 将模型空间坐标转换为裁剪空间坐标（Clip Space）
+    public ObjectToClipPos(vertex: Vector3, transform: Transform): Vector4 {
+        // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
+        // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
+        const modelMatrix = transform.localToWorldMatrix;
+        const camera = Camera.mainCamera;
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
+        // const cameraForward = camera.transform.forward;
+        // const cameraUp = camera.transform.up;
+        // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
+        // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+        return mvpMatrix.multiplyVector4(new Vector4(vertex.clone(), 1));
+    }
+
+    // 将裁剪空间坐标最终转换为屏幕空间坐标（Screen Space）
+    public ClipToScreenPos(vertex: Vector4): Vector2 {
+        // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
+        const w = vertex.w;
+        const ndcX = vertex.x / w;
+        const ndcY = vertex.y / w;
+        const ndcZ = vertex.z / w;
+
+        // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
+        // 将 NDC 转换为屏幕像素坐标：
+        // X 轴：screenX = (xNDC + 1) * 屏幕宽度 / 2
+        // Y 轴：screenY = (1 - yNDC) * 屏幕高度 / 2（注意 Y 轴翻转，因屏幕坐标系 Y 向下）
+
+        // 将NDC的x从[-1, 1]映射到[0, screenWidth]
+        const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
+        // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
+        const screenY = EngineConfig.canvasHeight - (((ndcY + 1) / 2) * EngineConfig.canvasHeight);
+
+        // z分量通常用于深度测试，这里我们只关心屏幕x,y
+        // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
+
+        return new Vector2(screenX, screenY);
+    }
+
+    public ObjectToScreenPos(vertex: Vector3, transform: Transform): Vector2 {
+        const clipPos = this.ObjectToClipPos(vertex, transform);
+        return this.ClipToScreenPos(clipPos);
     }
 
     public ObjectToWorldNormal(normal: Vector3, transform: Transform): Vector3 {
@@ -382,7 +439,7 @@ export class RasterizationPipeline {
 
         // 计算模型矩阵的逆转置矩阵
         // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
-        const inverseTransposeModel = modelMatrix.clone().inverse().transpose();
+        const inverseTransposeModel = modelMatrix.clone().invert().transpose();
 
         // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
         const worldNormal = inverseTransposeModel.multiplyVector3(normal);
@@ -395,64 +452,23 @@ export class RasterizationPipeline {
      * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
     public VertexProcessingStage(vertices: Vector3[], transform: Transform) {
-        const clipSpaceVertices = new Array(vertices.length);
-
-        // 构建MVP矩阵
-        const modelMatrix = transform.localToWorldMatrix;
-        const camera = Camera.mainCamera;
-        const cameraForward = camera.transform.forward;
-        const cameraUp = camera.transform.up;
-        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
-        const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
-        const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+        const outVertices = new Array(vertices.length);
 
         // 1. MVP变换到裁剪空间
         // 模型空间 -> 世界空间 -> 观察空间 -> 裁剪空间
         for (let i = 0; i < vertices.length; i += 1) {
-            let vertice = vertices[i].clone();
-            let v = mvpMatrix.multiplyVector4(new Vector4(vertice, 1));
-            clipSpaceVertices[i] = v;
+            outVertices[i] = this.ObjectToClipPos(vertices[i], transform);
         }
 
         // 2. 透视除法：将裁剪空间坐标转换为标准设备坐标（NDC）
         // 裁剪空间 -> 标准化设备坐标（NDC 空间）
-        for (let i = 0; i < clipSpaceVertices.length; i++) {
-            const v = clipSpaceVertices[i];
-            // w分量是透视投影产生的，用于透视除法
-            const w = v.w; // 假设你的Vector4/Vector3实现中，齐次坐标w存储在w属性中。如果没有，需要确保MVP变换时处理了齐次坐标。
-            // 如果没有显式的w分量，且mvpMatrix.multiplyVector3返回的是Vector3，那么通常认为w=1（正交投影）或者需要从变换矩阵中考虑透视
-
-            // 进行透视除法：xyz分别除以w
-            // 注意：如果你的矩阵乘法没有处理齐次坐标（即返回的vertice是三维向量），那么很可能你的变换没有包含透视投影产生的w分量。
-            // 假设你的mvpMatrix.multiplyVector3确实返回了包含齐次坐标的Vector4，或者有一个返回Vector4的方法。
-            // 这里假设 projectedVertices 中存储的是 Vector4，或者至少有 x, y, z, w 属性。
-
-            // 如果您的实现中，经过透视投影矩阵变换后，顶点已经是一个齐次坐标（x, y, z, w），则需要以下除法：
-            v.x = v.x / w;
-            v.y = v.y / w;
-            v.z = v.z / w; // 对于深度信息，可能还需要进一步处理，但屏幕映射通常主要关注x,y
-            // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
-            // 假设我们的NDC是[-1, 1]范围。
-        }
-
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
-        // 获取画布（或视口）的宽度和高度
-        const screenVertices = new Array(clipSpaceVertices.length);
-        for (let i = 0; i < clipSpaceVertices.length; i++) {
-            const ndc = clipSpaceVertices[i]; // 此时ndc应该是经过透视除法后的NDC坐标
-
-            // 将NDC的x从[-1, 1]映射到[0, screenWidth]
-            const screenX = ((ndc.x + 1) / 2) * EngineConfig.canvasWidth;
-            // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-            const screenY = EngineConfig.canvasHeight - (((ndc.y + 1) / 2) * EngineConfig.canvasHeight);
-            // z分量通常用于深度测试，这里我们只关心屏幕x,y
-            // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
-
-            screenVertices[i] = { x: screenX, y: screenY }; // 存储屏幕坐标
+        for (let i = 0; i < outVertices.length; i++) {
+            outVertices[i] = this.ClipToScreenPos(outVertices[i]);
         }
 
-        return screenVertices;
+        return outVertices;
     }
 
     /*
@@ -525,8 +541,43 @@ export class RasterizationPipeline {
     }
 
     // 背面剔除
-    public BackfaceCulling() {
+    public BackfaceCulling(triangles: number[], mesh: Mesh, renderer: Renderer) {
+        const visibleTriangles: number[] = [];
+        const faceNormals = mesh.faceNormals;
+        const modelMatrix = renderer.transform.localToWorldMatrix;
+        const camera = Camera.mainCamera;
 
+        // 1. 计算模型视图矩阵（模型空间 → 视图空间）
+        const viewMatrix = camera.getViewMatrix(); // 获取相机的视图矩阵（世界空间 → 视图空间）
+        const modelViewMatrix = viewMatrix.multiply(modelMatrix); // 模型空间 → 世界空间 → 视图空间
+
+        // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
+        const normalMatrix = modelViewMatrix.clone().invert().transpose();
+
+        // 3. 视图空间中的相机观察方向（通常是 (0, 0, 1)，因为相机看向 Z 方向）
+        const cameraViewDirection = Vector3.BACK;
+
+        for (let i = 0; i < faceNormals.length; i++) {
+            // 原始法向量（模型空间）
+            const normalModel = faceNormals[i];
+
+            // 4. 将法向量从模型空间变换到视图空间
+            const normalView = normalMatrix.multiplyVector3(normalModel);
+
+            // 5. 计算法向量与观察方向的点积
+            const dot = normalView.dot(cameraViewDirection);
+
+            // 6. 点积 > 0 表示面向相机（可见）
+            if (dot > 0) {
+                visibleTriangles.push(
+                    triangles[i * 3],
+                    triangles[i * 3 + 1],
+                    triangles[i * 3 + 2]
+                );
+            }
+        }
+
+        return visibleTriangles;
     }
 
     // 遮挡剔除
@@ -535,12 +586,7 @@ export class RasterizationPipeline {
     }
 
     public ClipTriangle(triangle: Vector3[]) {
-        // 1.计算三角形的中心
-        const center = new Vector3(
-            (triangle[0].x + triangle[1].x + triangle[2].x) / 3,
-            (triangle[0].y + triangle[1].y + triangle[2].y) / 3,
-            (triangle[0].z + triangle[1].z + triangle[2].z) / 3
-        );
+
     }
 
     //#endregion
@@ -553,11 +599,11 @@ export class RasterizationPipeline {
             return;
         }
 
-        const triangles = mesh.triangles;
+        let triangles = mesh.triangles;
 
         // 1.剔除
         this.FrustumCulling();
-        this.BackfaceCulling();
+        triangles = this.BackfaceCulling(triangles, mesh, renderer);
         this.OcclusionCulling();
 
         // 2.变换
@@ -575,16 +621,15 @@ export class RasterizationPipeline {
             const p2 = screenVertices[triangles[i + 1]];
             const p3 = screenVertices[triangles[i + 2]];
 
-            // 线框模式，暂不支持顶点色
-            if (this.drawMode === DrawMode.Wireframe) {
+            if (this.drawMode & DrawMode.Wireframe) {
                 this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
             }
-            else if (this.drawMode === DrawMode.Point) {
+            if (this.drawMode & DrawMode.Point) {
                 this.DrawPixel(p1.x, p1.y, Color.WHITE);
                 this.DrawPixel(p2.x, p2.y, Color.WHITE);
                 this.DrawPixel(p3.x, p3.y, Color.WHITE);
             }
-            else if (this.drawMode === DrawMode.UV) {
+            if (this.drawMode & DrawMode.UV) {
                 const p1_uv = mesh.uv[triangles[i]];
                 const p2_uv = mesh.uv[triangles[i + 1]];
                 const p3_uv = mesh.uv[triangles[i + 2]];
@@ -593,7 +638,7 @@ export class RasterizationPipeline {
                 const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0).ToUint32();
                 this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             }
-            else if (this.drawMode === DrawMode.Normal) {
+            if (this.drawMode & DrawMode.Normal) {
                 const p1_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
                 const p2_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
                 const p3_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
@@ -612,9 +657,17 @@ export class RasterizationPipeline {
                 const p3_color = new Color(r, g, b).ToUint32();
                 this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             }
-            else if (this.drawMode === DrawMode.Shader) {
+            if (this.drawMode & DrawMode.Shader) {
                 this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
             }
+        }
+
+        // 调试：绘制面法线
+        for (let i = 0; i < mesh._debug_faceNormalLine.length; i++) {
+            const normal = mesh._debug_faceNormalLine[i];
+            const start = this.ObjectToScreenPos(normal.start, renderer.transform);
+            const end = this.ObjectToScreenPos(normal.end, renderer.transform);
+            this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
         }
     }
 
@@ -644,6 +697,35 @@ export class RasterizationPipeline {
             d += a;
         }
         return value;
+    }
+
+    /**
+     * 颜色插值辅助函数
+     * @param color1 起始颜色 (32位整数，格式为0xAARRGGBB)
+     * @param color2 结束颜色 (32位整数，格式为0xAARRGGBB)
+     * @param t 插值因子 (0 到 1)
+     * @returns 插值后的颜色
+     */
+    private interpolateColor(color1: number, color2: number, t: number): number {
+        // 提取ARGB分量
+        const a1 = (color1 >> 24) & 0xFF;
+        const r1 = (color1 >> 16) & 0xFF;
+        const g1 = (color1 >> 8) & 0xFF;
+        const b1 = color1 & 0xFF;
+
+        const a2 = (color2 >> 24) & 0xFF;
+        const r2 = (color2 >> 16) & 0xFF;
+        const g2 = (color2 >> 8) & 0xFF;
+        const b2 = color2 & 0xFF;
+
+        // 线性插值每个分量
+        const a = Math.round(a1 + (a2 - a1) * t);
+        const r = Math.round(r1 + (r2 - r1) * t);
+        const g = Math.round(g1 + (g2 - g1) * t);
+        const b = Math.round(b1 + (b2 - b1) * t);
+
+        // 组合成32位颜色值
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
     //#endregion

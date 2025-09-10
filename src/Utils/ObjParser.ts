@@ -1,4 +1,4 @@
-import { Mesh } from "../Renderer/Mesh";
+import { Line, Mesh } from "../Renderer/Mesh";
 import { SubMesh } from "../Renderer/Mesh";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
@@ -196,7 +196,41 @@ export class OBJParser {
         // 计算整体包围盒
         mesh.bounds = mesh.subMeshes.map(sm => sm.bounds);
 
+        // 计算三角面的法向量
+        this.calculateFaceNormals(mesh);
+
         return mesh;
+    }
+
+    private static calculateFaceNormals(mesh: Mesh) {
+        if (mesh.vertices.length === 0 || mesh.triangles.length === 0) return;
+
+        mesh.faceNormals = [];
+        mesh._debug_faceNormalLine = [];
+
+        for (let i = 0; i < mesh.triangles.length; i += 3) {
+            const i0 = mesh.triangles[i];
+            const i1 = mesh.triangles[i + 1];
+            const i2 = mesh.triangles[i + 2];
+
+            const v0 = mesh.vertices[i0];
+            const v1 = mesh.vertices[i1];
+            const v2 = mesh.vertices[i2];
+
+            const e1 = Vector3.subtract(v1, v0);    
+            const e2 = Vector3.subtract(v2, v0);
+            const faceNormal = Vector3.cross(e1, e2).normalize();
+            mesh.faceNormals.push(faceNormal);
+
+            // 调试信息
+            const center = new Vector3(
+                (v0.x + v1.x + v2.x) / 3,
+                (v0.y + v1.y + v2.y) / 3,
+                (v0.z + v1.z + v2.z) / 3
+            );
+            const end = center.clone().add(faceNormal);
+            mesh._debug_faceNormalLine.push(new Line(center, end));
+        }
     }
 
     /**
