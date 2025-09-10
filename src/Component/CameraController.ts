@@ -39,8 +39,8 @@ export class CameraController extends Component {
         }
 
         // 鼠标滚轮相机缩放
-        const scrollDelta = -Input.mouseScrollDelta.y * this.moveSpeed * 0.1;
-        var pos = this.transform.rotation.transformQuat(Vector3.FORWARD);
+        const scrollDelta = Input.mouseScrollDelta.y * this.moveSpeed * 0.1;
+        var pos = this.transform.rotation.transformQuat(Vector3.BACK);
         this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta);
 
         // 鼠标右键相机旋转
@@ -54,7 +54,7 @@ export class CameraController extends Component {
         }
         if (this._rotateCamera) {
             const moveDelta = Input.mouseDelta;
-            this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
+            this._euler.y += moveDelta.x * this.rotateSpeed * 0.1;
             this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
         }
 

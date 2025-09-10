@@ -153,8 +153,8 @@ var CameraController = /** @class */ (function (_super) {
             this._velocity.y += moveDelta.y * this.dragSpeed;
         }
         // 鼠标滚轮相机缩放
-        var scrollDelta = -Input_1.Input.mouseScrollDelta.y * this.moveSpeed * 0.1;
-        var pos = this.transform.rotation.transformQuat(Vector3_1.Vector3.FORWARD);
+        var scrollDelta = Input_1.Input.mouseScrollDelta.y * this.moveSpeed * 0.1;
+        var pos = this.transform.rotation.transformQuat(Vector3_1.Vector3.BACK);
         this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta);
         // 鼠标右键相机旋转
         if (Input_1.Input.GetMouseButtonDown(2)) {
@@ -168,7 +168,7 @@ var CameraController = /** @class */ (function (_super) {
         }
         if (this._rotateCamera) {
             var moveDelta = Input_1.Input.mouseDelta;
-            this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
+            this._euler.y += moveDelta.x * this.rotateSpeed * 0.1;
             this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
         }
         // ALT+鼠标左键相机绕中心点旋转
@@ -3397,7 +3397,7 @@ var RasterizationPipeline = /** @class */ (function () {
         var modelViewMatrix = viewMatrix.multiply(modelMatrix); // 模型空间 → 世界空间 → 视图空间
         // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
         var normalMatrix = modelViewMatrix.clone().invert().transpose();
-        // 3. 视图空间中的相机观察方向（通常是 (0, 0, 1)，因为相机看向 Z 方向）
+        // 3. 视图空间中的相机观察方向（右手坐标系的话，Z轴指向观察者，即相机应该是看向Z轴负轴）
         var cameraViewDirection = Vector3_1.Vector3.BACK;
         for (var i = 0; i < faceNormals.length; i++) {
             var n = 10; //Camera.mainCamera.counter % 12;
@@ -3553,6 +3553,7 @@ var Camera_1 = require("../Component/Camera");
 var CameraController_1 = require("../Component/CameraController");
 var MeshRenderer_1 = require("../Component/MeshRenderer");
 var GameObject_1 = require("../Core/GameObject");
+var Quaternion_1 = require("../Math/Quaternion");
 var Vector3_1 = require("../Math/Vector3");
 var AssetLoader_1 = require("../Utils/AssetLoader");
 exports.MainScene = {
@@ -3560,8 +3561,8 @@ exports.MainScene = {
     initfun: function (scene) {
         // 相机
         var camera = new GameObject_1.GameObject("camera");
-        //camera.transform.rotation = new Quaternion(new Vector3(45, 0, 0));
-        camera.transform.position = new Vector3_1.Vector3(0, 0, -3);
+        camera.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(0, 180, 0));
+        camera.transform.position = new Vector3_1.Vector3(0, 0, 3);
         scene.addGameObject(camera);
         camera.addComponent(Camera_1.Camera);
         camera.addComponent(CameraController_1.CameraController);
@@ -3572,14 +3573,14 @@ exports.MainScene = {
         //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
-        // AssetLoader.loadModel('resources/cube.obj').then((model) => {
-        //     const obj = new GameObject("cube");
-        //     obj.transform.position = Vector3.RIGHT;
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     renderer.mesh = model;
-        //     //cube.transform.setParent(obj.transform, false);
-        //     scene.addGameObject(obj);
-        // });
+        AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
+            var obj = new GameObject_1.GameObject("cube");
+            //obj.transform.position = Vector3.BACK;
+            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            renderer.mesh = model;
+            //cube.transform.setParent(obj.transform, false);
+            scene.addGameObject(obj);
+        });
         AssetLoader_1.AssetLoader.loadModel('resources/models/bunny2.obj', 10).then(function (model) {
             var obj = new GameObject_1.GameObject("bunny");
             //obj.transform.position = Vector3.RIGHT;
@@ -3596,7 +3597,7 @@ exports.MainScene = {
     }
 };
 
-},{"../Component/Camera":1,"../Component/CameraController":2,"../Component/MeshRenderer":4,"../Core/GameObject":7,"../Math/Vector3":15,"../Utils/AssetLoader":22}],20:[function(require,module,exports){
+},{"../Component/Camera":1,"../Component/CameraController":2,"../Component/MeshRenderer":4,"../Core/GameObject":7,"../Math/Quaternion":13,"../Math/Vector3":15,"../Utils/AssetLoader":22}],20:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {

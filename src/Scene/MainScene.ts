@@ -13,8 +13,8 @@ export const MainScene = {
     initfun: (scene: Scene) => {
         // 相机
         const camera = new GameObject("camera");
-        //camera.transform.rotation = new Quaternion(new Vector3(45, 0, 0));
-        camera.transform.position = new Vector3(0, 0, -3);
+        camera.transform.rotation = new Quaternion(new Vector3(0, 180, 0));
+        camera.transform.position = new Vector3(0, 0, 3);
         scene.addGameObject(camera);
         camera.addComponent(Camera);
         camera.addComponent(CameraController);
@@ -27,14 +27,14 @@ export const MainScene = {
         //     scene.addGameObject(obj);
         // });
 
-        // AssetLoader.loadModel('resources/cube.obj').then((model) => {
-        //     const obj = new GameObject("cube");
-        //     obj.transform.position = Vector3.RIGHT;
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     renderer.mesh = model;
-        //     //cube.transform.setParent(obj.transform, false);
-        //     scene.addGameObject(obj);
-        // });
+        AssetLoader.loadModel('resources/cube.obj').then((model) => {
+            const obj = new GameObject("cube");
+            //obj.transform.position = Vector3.BACK;
+            const renderer = obj.addComponent(MeshRenderer);
+            renderer.mesh = model;
+            //cube.transform.setParent(obj.transform, false);
+            scene.addGameObject(obj);
+        });
 
         AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
             const obj = new GameObject("bunny");

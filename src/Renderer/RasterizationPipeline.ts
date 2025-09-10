@@ -559,7 +559,7 @@ export class RasterizationPipeline {
         // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
         const normalMatrix = modelViewMatrix.clone().invert().transpose();
 
-        // 3. 视图空间中的相机观察方向（通常是 (0, 0, 1)，因为相机看向 Z 方向）
+        // 3. 视图空间中的相机观察方向（右手坐标系的话，Z轴指向观察者，即相机应该是看向Z轴负轴）
         const cameraViewDirection = Vector3.BACK;
 
         for (let i = 0; i < faceNormals.length; i++) {
