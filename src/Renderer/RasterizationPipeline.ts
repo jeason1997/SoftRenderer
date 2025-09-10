@@ -9,7 +9,6 @@ import { Camera } from "../Component/Camera";
 import { Engine, EngineConfig } from "../Core/Engine";
 import { Logger } from "../Utils/Logger";
 import { Mesh } from "./Mesh";
-import { Time } from "../Core/Time";
 import { Bounds } from "../Math/Bounds";
 
 enum DrawMode {

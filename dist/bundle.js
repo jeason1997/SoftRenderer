@@ -1378,21 +1378,37 @@ exports.Bounds = void 0;
 var Vector3_1 = require("./Vector3");
 var Bounds = /** @class */ (function () {
     function Bounds(min, max) {
-        this.min = min || Vector3_1.Vector3.ZERO;
-        this.max = max || Vector3_1.Vector3.ZERO;
-    }
-    Bounds.prototype.getCenter = function () {
-        return new Vector3_1.Vector3((this.min.x + this.max.x) / 2, (this.min.y + this.max.y) / 2, (this.min.z + this.max.z) / 2);
-    };
-    Bounds.prototype.getHalfExtents = function () {
-        return new Vector3_1.Vector3((this.max.x - this.min.x) / 2, (this.max.y - this.min.y) / 2, (this.max.z - this.min.z) / 2);
-    };
-    Bounds.prototype.setMin = function (min) {
+        if (min === void 0) { min = Vector3_1.Vector3.ZERO; }
+        if (max === void 0) { max = Vector3_1.Vector3.ZERO; }
+        // 定义12条边的顶点索引对 (每个面4条边，共6个面，但共享边只画一次)
+        this.edges = [
+            [0, 1], [1, 2], [2, 3], [3, 0], // 后面
+            [4, 5], [5, 6], [6, 7], [7, 4], // 前面
+            [0, 4], [1, 5], [2, 6], [3, 7] // 连接前后的边
+        ];
         this.min = min;
-    };
-    Bounds.prototype.setMax = function (max) {
         this.max = max;
-    };
+        // 计算中心点
+        this.center = new Vector3_1.Vector3();
+        this.center.x = (this.min.x + this.max.x) / 2;
+        this.center.y = (this.min.y + this.max.y) / 2;
+        this.center.z = (this.min.z + this.max.z) / 2;
+        // 计算半长（从中心到各边的距离）
+        this.halfExtents = new Vector3_1.Vector3();
+        this.halfExtents.x = (this.max.x - this.min.x) / 2;
+        this.halfExtents.y = (this.max.y - this.min.y) / 2;
+        this.halfExtents.z = (this.max.z - this.min.z) / 2;
+        // 计算8个顶点
+        this.vertices = new Array(8);
+        this.vertices[0] = new Vector3_1.Vector3(this.min.x, this.min.y, this.min.z); // 左下后
+        this.vertices[1] = new Vector3_1.Vector3(this.max.x, this.min.y, this.min.z); // 右下后
+        this.vertices[2] = new Vector3_1.Vector3(this.max.x, this.max.y, this.min.z); // 右上后
+        this.vertices[3] = new Vector3_1.Vector3(this.min.x, this.max.y, this.min.z); // 左上后
+        this.vertices[4] = new Vector3_1.Vector3(this.min.x, this.min.y, this.max.z); // 左下前
+        this.vertices[5] = new Vector3_1.Vector3(this.max.x, this.min.y, this.max.z); // 右下前
+        this.vertices[6] = new Vector3_1.Vector3(this.max.x, this.max.y, this.max.z); // 右上前
+        this.vertices[7] = new Vector3_1.Vector3(this.min.x, this.max.y, this.max.z); // 左上前
+    }
     Bounds.fromPoints = function (points) {
         if (points.length === 0)
             return new Bounds();
@@ -1408,9 +1424,7 @@ var Bounds = /** @class */ (function () {
             max.z = Math.max(max.z, p.z);
         }
         // 假设Bounds有min和max属性
-        var bounds = new Bounds();
-        bounds.min = min;
-        bounds.max = max;
+        var bounds = new Bounds(min, max);
         return bounds;
     };
     return Bounds;
@@ -3474,7 +3488,6 @@ var RasterizationPipeline = /** @class */ (function () {
     //#endregion
     //#region 绘制物体
     RasterizationPipeline.prototype.DrawObject = function (renderer) {
-        var _this = this;
         var mesh = renderer.mesh;
         if (!mesh) {
             return;
@@ -3536,52 +3549,6 @@ var RasterizationPipeline = /** @class */ (function () {
                 this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
             }
         }
-        var _loop_1 = function (i) {
-            var bound = mesh.bounds[i];
-            var min = bound.min;
-            var max = bound.max;
-            // 计算包围盒的8个顶点
-            var vertices = [
-                { x: min.x, y: min.y, z: min.z }, // 左下后
-                { x: max.x, y: min.y, z: min.z }, // 右下后
-                { x: max.x, y: max.y, z: min.z }, // 右上后
-                { x: min.x, y: max.y, z: min.z }, // 左上后
-                { x: min.x, y: min.y, z: max.z }, // 左下前
-                { x: max.x, y: min.y, z: max.z }, // 右下前
-                { x: max.x, y: max.y, z: max.z }, // 右上前
-                { x: min.x, y: max.y, z: max.z } // 左上前
-            ];
-            // 将所有顶点转换到屏幕空间
-            var screenVertices_1 = vertices.map(function (v) {
-                return _this.ObjectToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), renderer.transform);
-            });
-            // 定义12条边的顶点索引对 (每个面4条边，共6个面，但共享边只画一次)
-            var edges = [
-                [0, 1], [1, 2], [2, 3], [3, 0], // 后面
-                [4, 5], [5, 6], [6, 7], [7, 4], // 前面
-                [0, 4], [1, 5], [2, 6], [3, 7] // 连接前后的边
-            ];
-            // 绘制所有边
-            edges.forEach(function (_a) {
-                var i1 = _a[0], i2 = _a[1];
-                var v1 = screenVertices_1[i1];
-                var v2 = screenVertices_1[i2];
-                // 确保转换后的顶点有效
-                if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
-                    _this.DrawLine(v1.x, v1.y, v2.x, v2.y, Color_1.Color.WHITE);
-                }
-            });
-            // 绘制中心点
-            var center = bound.getCenter();
-            var screenCenter = this_1.ObjectToScreenPos(center, renderer.transform);
-            if (screenCenter) {
-                // 绘制一个小十字作为中心点标记
-                var size = 5;
-                this_1.DrawLine(screenCenter.x - size, screenCenter.y, screenCenter.x + size, screenCenter.y, Color_1.Color.RED);
-                this_1.DrawLine(screenCenter.x, screenCenter.y - size, screenCenter.x, screenCenter.y + size, Color_1.Color.RED);
-            }
-        };
-        var this_1 = this;
         // 调试：绘制面法线
         // for (let i = 0; i < mesh._debug_faceNormalLine.length; i++) {
         //     const normal = mesh._debug_faceNormalLine[i];
@@ -3591,11 +3558,38 @@ var RasterizationPipeline = /** @class */ (function () {
         // }
         // 绘制包围盒
         for (var i = 0; i < mesh.bounds.length; i++) {
-            _loop_1(i);
+            var bound = mesh.bounds[i];
+            this.DrawBounds(bound, renderer.transform, Color_1.Color.WHITE);
         }
     };
     //#endregion
     //#region 工具函数
+    RasterizationPipeline.prototype.DrawBounds = function (bounds, transform, color) {
+        var _this = this;
+        // 将所有顶点转换到屏幕空间
+        var screenVertices = bounds.vertices.map(function (v) {
+            return _this.ObjectToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform);
+        });
+        // 绘制所有边
+        bounds.edges.forEach(function (_a) {
+            var i1 = _a[0], i2 = _a[1];
+            var v1 = screenVertices[i1];
+            var v2 = screenVertices[i2];
+            // 确保转换后的顶点有效
+            if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
+                _this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
+            }
+        });
+        // 绘制中心点
+        var center = bounds.center;
+        var screenCenter = this.ObjectToScreenPos(center, transform);
+        if (screenCenter) {
+            // 绘制一个小十字作为中心点标记
+            var size = 5;
+            this.DrawLine(screenCenter.x - size, screenCenter.y, screenCenter.x + size, screenCenter.y, Color_1.Color.RED);
+            this.DrawLine(screenCenter.x, screenCenter.y - size, screenCenter.x, screenCenter.y + size, Color_1.Color.RED);
+        }
+    };
     /// <summary>
     /// 线性插值
     /// 传入2个点，返回它们组成线段的插值。

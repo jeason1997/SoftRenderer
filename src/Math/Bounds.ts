@@ -14,21 +14,24 @@ export class Bounds {
         [0, 4], [1, 5], [2, 6], [3, 7]  // 连接前后的边
     ];
 
-    constructor(min: Vector3, max: Vector3) {
+    constructor(min: Vector3 = Vector3.ZERO, max: Vector3 = Vector3.ZERO) {
         this.min = min;
         this.max = max;
 
         // 计算中心点
+        this.center = new Vector3();
         this.center.x = (this.min.x + this.max.x) / 2;
         this.center.y = (this.min.y + this.max.y) / 2;
         this.center.z = (this.min.z + this.max.z) / 2;
 
         // 计算半长（从中心到各边的距离）
+        this.halfExtents = new Vector3();
         this.halfExtents.x = (this.max.x - this.min.x) / 2;
         this.halfExtents.y = (this.max.y - this.min.y) / 2;
         this.halfExtents.z = (this.max.z - this.min.z) / 2;
 
         // 计算8个顶点
+        this.vertices = new Array<Vector3>(8);
         this.vertices[0] = new Vector3(this.min.x, this.min.y, this.min.z); // 左下后
         this.vertices[1] = new Vector3(this.max.x, this.min.y, this.min.z); // 右下后
         this.vertices[2] = new Vector3(this.max.x, this.max.y, this.min.z); // 右上后
@@ -40,7 +43,7 @@ export class Bounds {
     }
 
     static fromPoints(points: Vector3[]): Bounds {
-        if (points.length === 0) return new Bounds(Vector3.ZERO, Vector3.ZERO);
+        if (points.length === 0) return new Bounds();
 
         let min = new Vector3(points[0].x, points[0].y, points[0].z);
         let max = new Vector3(points[0].x, points[0].y, points[0].z);
