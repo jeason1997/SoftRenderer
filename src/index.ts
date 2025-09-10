@@ -1,5 +1,4 @@
 import { Engine } from "./Core/Engine";
-import { Logger } from "./Utils/Logger";
 
 // 当DOM内容加载完成后执行
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,12 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 主循环
     function mainLoop() {
-        // 处理逻辑
-        Engine.Update();
-        // 渲染
-        Engine.Render();
-        // 屏幕输出日志
-        Logger.printLogs();
+        Engine.Loop();
         // 请求下一帧动画
         requestAnimationFrame(mainLoop);
     }

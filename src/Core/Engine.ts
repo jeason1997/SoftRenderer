@@ -2,12 +2,13 @@ import { Input } from "./Input";
 import { RasterizationPipeline } from "../Renderer/RasterizationPipeline";
 import { MainScene } from "../Scene/MainScene";
 import { SceneManager } from "../Scene/SceneManager";
+import { Logger } from "../Utils/Logger";
+import { Time } from "./Time";
 
 export class Engine {
     public static sceneManager: SceneManager = new SceneManager();
     public static canvas: HTMLCanvasElement;
     public static context: CanvasRenderingContext2D;
-    public static deltaTime: number = 1 / 60;
     public static pipeline: RasterizationPipeline;
     public static imageData: ImageData;
 
@@ -35,14 +36,42 @@ export class Engine {
         Input.initialize();
     }
 
-    public static Update() {
-        // 使用场景的update方法更新所有游戏对象
-        this.sceneManager.getActiveScene()?.update();
-        // 更新输入状态(注：输入已经由WEB引擎在每帧开始之前获取了，这里是更新输入的上一帧状态)
+    public static Loop() {
+        Logger.log(Math.floor(1 / Time.deltaTime).toString());
+
+        // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）
+        const shouldExecuteFrame = Time.updateFrame();
+        // if (!shouldExecuteFrame) {
+        //     return;
+        // }
+
+        // 2. 固定更新（对应 Unity FixedUpdate，例如物理引擎、AI逻辑）
+        Time.updateFixedTime(() => {
+            Engine.FixedUpdate(); // 你的固定逻辑更新（如物理碰撞、技能CD）
+        });
+
+        // 3. 普通逻辑更新（对应 Unity Update，受 deltaTime 影响）
+        Engine.Update(); // 例如：角色移动（速度 * Time.deltaTime 确保帧率无关）
+
+        // 4. 更新输入状态(注：输入已经由WEB引擎在每帧开始之前获取了，这里是更新输入的上一帧状态)
         Input.update();
+
+        // 5. 渲染
+        Engine.Render();
+
+        // 6. 屏幕输出日志
+        Logger.printLogs();
     }
 
-    public static Render() {
+    private static Update() {
+        // 使用场景的update方法更新所有游戏对象
+        this.sceneManager.getActiveScene()?.update();
+    }
+
+    private static FixedUpdate() {
+    }
+
+    private static Render() {
         this.pipeline.Render();
         // 将图像数据绘制到canvas上
         this.context.putImageData(this.imageData, 0, 0);

@@ -9,6 +9,7 @@ import { Camera } from "../Component/Camera";
 import { Engine, EngineConfig } from "../Core/Engine";
 import { Logger } from "../Utils/Logger";
 import { Mesh } from "./Mesh";
+import { Time } from "../Core/Time";
 
 enum DrawMode {
     Wireframe = 1,
@@ -131,7 +132,11 @@ export class RasterizationPipeline {
         }
         // 斜率大于1，直线偏垂直情况，使用y作为循环变量
         else {
-            if (y2 < y1) [x1, y1, x2, y2] = [x2, y2, x1, y1];
+            if (y2 < y1) {
+                [x1, y1, x2, y2] = [x2, y2, x1, y1];
+                // 同时交换颜色
+                if (color2 !== undefined) [color1, color2] = [color2, color1];
+            }
 
             const a = dx / dy;
             let x = x1;
@@ -558,6 +563,9 @@ export class RasterizationPipeline {
         const cameraViewDirection = Vector3.BACK;
 
         for (let i = 0; i < faceNormals.length; i++) {
+            const n = 10;//Camera.mainCamera.counter % 12;
+            //if (i !== n) continue;
+
             // 原始法向量（模型空间）
             const normalModel = faceNormals[i];
 
@@ -663,12 +671,12 @@ export class RasterizationPipeline {
         }
 
         // 调试：绘制面法线
-        for (let i = 0; i < mesh._debug_faceNormalLine.length; i++) {
-            const normal = mesh._debug_faceNormalLine[i];
-            const start = this.ObjectToScreenPos(normal.start, renderer.transform);
-            const end = this.ObjectToScreenPos(normal.end, renderer.transform);
-            this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
-        }
+        // for (let i = 0; i < mesh._debug_faceNormalLine.length; i++) {
+        //     const normal = mesh._debug_faceNormalLine[i];
+        //     const start = this.ObjectToScreenPos(normal.start, renderer.transform);
+        //     const end = this.ObjectToScreenPos(normal.end, renderer.transform);
+        //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
+        // }
     }
 
     //#endregion

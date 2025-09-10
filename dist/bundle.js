@@ -22,6 +22,7 @@ var Engine_1 = require("../Core/Engine");
 var Vector4_1 = require("../Math/Vector4");
 var Component_1 = require("./Component");
 var Matrix4x4_1 = require("../Math/Matrix4x4");
+var Time_1 = require("../Core/Time");
 var CameraClearFlags;
 (function (CameraClearFlags) {
     CameraClearFlags[CameraClearFlags["NONE"] = 0] = "NONE";
@@ -41,6 +42,8 @@ var Camera = /** @class */ (function (_super) {
         _this.fov = 60;
         _this.depth = 0;
         _this.viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
+        _this.timer = 0;
+        _this.counter = 0;
         return _this;
     }
     Object.defineProperty(Camera.prototype, "aspect", {
@@ -59,6 +62,10 @@ var Camera = /** @class */ (function (_super) {
         this.transform.forward;
     };
     Camera.prototype.update = function () {
+        if (Time_1.Time.time - this.timer >= 1) {
+            this.timer = Time_1.Time.time;
+            this.counter++;
+        }
     };
     Camera.prototype.onDestroy = function () {
         var index = Camera.cameras.indexOf(this, 0);
@@ -87,7 +94,7 @@ var Camera = /** @class */ (function (_super) {
 }(Component_1.Component));
 exports.Camera = Camera;
 
-},{"../Core/Engine":6,"../Math/Matrix4x4":11,"../Math/Vector4":15,"../Utils/Color":22,"./Component":3}],2:[function(require,module,exports){
+},{"../Core/Engine":6,"../Core/Time":9,"../Math/Matrix4x4":12,"../Math/Vector4":16,"../Utils/Color":23,"./Component":3}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -108,6 +115,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CameraController = void 0;
 var Engine_1 = require("../Core/Engine");
 var Input_1 = require("../Core/Input");
+var Time_1 = require("../Core/Time");
 var Quaternion_1 = require("../Math/Quaternion");
 var Vector3_1 = require("../Math/Vector3");
 var Component_1 = require("./Component");
@@ -182,18 +190,18 @@ var CameraController = /** @class */ (function (_super) {
         // position
         var v = this.transform.rotation.transformQuat(this._velocity);
         this._position = this.scaleAndAdd(this._position, v, this.moveSpeed * this._speedScale);
-        v = Vector3_1.Vector3.lerp(this.transform.position, this._position, Engine_1.Engine.deltaTime / this.damp);
+        v = Vector3_1.Vector3.lerp(this.transform.position, this._position, Time_1.Time.deltaTime / this.damp);
         this.transform.position = v;
         // rotation
         var q = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this._euler.x, this._euler.y, this._euler.z));
-        q = Quaternion_1.Quaternion.slerp(this.transform.rotation, q, Engine_1.Engine.deltaTime / this.damp);
+        q = Quaternion_1.Quaternion.slerp(this.transform.rotation, q, Time_1.Time.deltaTime / this.damp);
         this.transform.rotation = q;
     };
     return CameraController;
 }(Component_1.Component));
 exports.CameraController = CameraController;
 
-},{"../Core/Engine":6,"../Core/Input":8,"../Math/Quaternion":12,"../Math/Vector3":14,"./Component":3}],3:[function(require,module,exports){
+},{"../Core/Engine":6,"../Core/Input":8,"../Core/Time":9,"../Math/Quaternion":13,"../Math/Vector3":15,"./Component":3}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Component = void 0;
@@ -401,7 +409,7 @@ var Renderer = /** @class */ (function (_super) {
 }(Component_1.Component));
 exports.Renderer = Renderer;
 
-},{"../Math/Bounds":10,"./Component":3}],6:[function(require,module,exports){
+},{"../Math/Bounds":11,"./Component":3}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EngineConfig = exports.Engine = void 0;
@@ -409,6 +417,8 @@ var Input_1 = require("./Input");
 var RasterizationPipeline_1 = require("../Renderer/RasterizationPipeline");
 var MainScene_1 = require("../Scene/MainScene");
 var SceneManager_1 = require("../Scene/SceneManager");
+var Logger_1 = require("../Utils/Logger");
+var Time_1 = require("./Time");
 var Engine = /** @class */ (function () {
     function Engine() {
     }
@@ -433,12 +443,32 @@ var Engine = /** @class */ (function () {
         // 初始化输入系统
         Input_1.Input.initialize();
     };
+    Engine.Loop = function () {
+        Logger_1.Logger.log(Math.floor(1 / Time_1.Time.deltaTime).toString());
+        // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）
+        var shouldExecuteFrame = Time_1.Time.updateFrame();
+        // if (!shouldExecuteFrame) {
+        //     return;
+        // }
+        // 2. 固定更新（对应 Unity FixedUpdate，例如物理引擎、AI逻辑）
+        Time_1.Time.updateFixedTime(function () {
+            Engine.FixedUpdate(); // 你的固定逻辑更新（如物理碰撞、技能CD）
+        });
+        // 3. 普通逻辑更新（对应 Unity Update，受 deltaTime 影响）
+        Engine.Update(); // 例如：角色移动（速度 * Time.deltaTime 确保帧率无关）
+        // 4. 更新输入状态(注：输入已经由WEB引擎在每帧开始之前获取了，这里是更新输入的上一帧状态)
+        Input_1.Input.update();
+        // 5. 渲染
+        Engine.Render();
+        // 6. 屏幕输出日志
+        Logger_1.Logger.printLogs();
+    };
     Engine.Update = function () {
         var _a;
         // 使用场景的update方法更新所有游戏对象
         (_a = this.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.update();
-        // 更新输入状态(注：输入已经由WEB引擎在每帧开始之前获取了，这里是更新输入的上一帧状态)
-        Input_1.Input.update();
+    };
+    Engine.FixedUpdate = function () {
     };
     Engine.Render = function () {
         this.pipeline.Render();
@@ -446,7 +476,6 @@ var Engine = /** @class */ (function () {
         this.context.putImageData(this.imageData, 0, 0);
     };
     Engine.sceneManager = new SceneManager_1.SceneManager();
-    Engine.deltaTime = 1 / 60;
     return Engine;
 }());
 exports.Engine = Engine;
@@ -462,7 +491,7 @@ var EngineConfig = /** @class */ (function () {
 }());
 exports.EngineConfig = EngineConfig;
 
-},{"../Renderer/RasterizationPipeline":17,"../Scene/MainScene":18,"../Scene/SceneManager":20,"./Input":8}],7:[function(require,module,exports){
+},{"../Renderer/RasterizationPipeline":18,"../Scene/MainScene":19,"../Scene/SceneManager":21,"../Utils/Logger":25,"./Input":8,"./Time":9}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -690,7 +719,7 @@ var GameObject = /** @class */ (function () {
 }());
 exports.GameObject = GameObject;
 
-},{"./Transform":9}],8:[function(require,module,exports){
+},{"./Transform":10}],8:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -913,7 +942,125 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":13}],9:[function(require,module,exports){
+},{"../Math/Vector2":14}],9:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Time = void 0;
+/**
+ * 模仿 Unity Time 类：提供时间管理、帧率控制、时间缩放等核心功能
+ * 核心特性：
+ * 1. deltaTime：上一帧到当前帧的时间间隔（受 timeScale 影响）
+ * 2. unscaledDeltaTime：不受 timeScale 影响的原始帧间隔
+ * 3. time：游戏启动到现在的总时间（受 timeScale 影响）
+ * 4. fixedTime：固定时间步长的累计时间（用于物理/固定逻辑更新）
+ * 5. timeScale：时间缩放系数（0=暂停，1=正常，>1=加速，<1=减速）
+ */
+var Time = /** @class */ (function () {
+    function Time() {
+    }
+    // ========================== 核心方法（需集成到渲染循环）==========================
+    /**
+     * 每帧更新时间数据（必须在主循环中调用，对应 Unity 帧生命周期）
+     * @returns 该帧是否需要执行（用于帧率限制）
+     */
+    Time.updateFrame = function () {
+        // 初始化：记录第一帧时间
+        if (!this.isInitialized) {
+            this.lastFrameTime = performance.now();
+            this.isInitialized = true;
+            return true;
+        }
+        // 1. 计算当前帧的原始时间间隔（毫秒转秒）
+        var currentTime = performance.now();
+        var rawDeltaMs = currentTime - this.lastFrameTime;
+        this.unscaledDeltaTime = rawDeltaMs / 1000; // 原始帧间隔（不受 timeScale 影响）
+        // 2. 帧率限制逻辑：若设置 maxFps，判断是否达到目标帧间隔
+        if (this.maxFps !== null) {
+            var targetFrameMs = 1000 / this.maxFps; // 目标帧间隔（毫秒）
+            if (rawDeltaMs < targetFrameMs) {
+                return false; // 未达到目标间隔，不执行当前帧
+            }
+        }
+        // 3. 更新受 timeScale 影响的时间属性
+        this.deltaTime = this.unscaledDeltaTime * this.timeScale; // 受缩放的帧间隔
+        this.time += this.deltaTime; // 总时间（受缩放）
+        this.unscaledTime += this.unscaledDeltaTime; // 原始总时间（不受缩放）
+        // 4. 更新固定时间步长累计（用于物理/固定更新）
+        this.updateFixedTime();
+        // 5. 记录当前时间，为下一帧做准备
+        this.lastFrameTime = currentTime;
+        return true; // 允许执行当前帧逻辑
+    };
+    /**
+     * 固定时间步长更新（用于物理引擎、固定频率逻辑，对应 Unity FixedUpdate）
+     * @param fixedUpdateCallback 固定更新回调（每累计一个 fixedDeltaTime 执行一次）
+     */
+    Time.updateFixedTime = function (fixedUpdateCallback) {
+        // 累计原始时间（不受 timeScale 影响，确保物理更新稳定）
+        var totalFixedDelta = this.unscaledDeltaTime + this.fixedTimeRemainder;
+        var fixedStep = this.fixedDeltaTime;
+        // 计算需要执行多少次固定更新（例如：累计 0.05 秒，固定步长 0.02 秒 → 执行 2 次，余数 0.01 秒）
+        var fixedUpdateCount = Math.floor(totalFixedDelta / fixedStep);
+        this.fixedTimeRemainder = totalFixedDelta % fixedStep;
+        // 执行固定更新回调
+        for (var i = 0; i < fixedUpdateCount; i++) {
+            this.fixedTime += fixedStep; // 更新固定时间累计
+            fixedUpdateCallback === null || fixedUpdateCallback === void 0 ? void 0 : fixedUpdateCallback();
+        }
+    };
+    /**
+     * 重置时间状态（用于游戏重启、场景切换）
+     */
+    Time.reset = function () {
+        this.deltaTime = 0;
+        this.unscaledDeltaTime = 0;
+        this.time = 0;
+        this.unscaledTime = 0;
+        this.fixedTime = 0;
+        this.fixedTimeRemainder = 0;
+        this.lastFrameTime = performance.now();
+    };
+    /**
+     * 暂停游戏（等价于设置 timeScale = 0）
+     */
+    Time.pause = function () {
+        this.timeScale = 0;
+    };
+    /**
+     * 恢复游戏正常速度（等价于设置 timeScale = 1）
+     */
+    Time.resume = function () {
+        this.timeScale = 1;
+    };
+    // ========================== 静态属性（对应 Unity Time 静态接口）==========================
+    /** 上一帧到当前帧的时间间隔（秒），受 timeScale 影响（暂停时为 0） */
+    Time.deltaTime = 0;
+    /** 上一帧到当前帧的原始时间间隔（秒），不受 timeScale 影响（暂停时仍为真实时间间隔） */
+    Time.unscaledDeltaTime = 0;
+    /** 游戏启动到现在的总时间（秒），受 timeScale 影响（暂停时不增加） */
+    Time.time = 0;
+    /** 游戏启动到现在的原始总时间（秒），不受 timeScale 影响（暂停时仍增加） */
+    Time.unscaledTime = 0;
+    /** 固定时间步长（秒），用于物理更新/固定逻辑更新（默认 0.02 秒 = 50 次/秒，对应 Unity fixedDeltaTime） */
+    Time.fixedDeltaTime = 0.02;
+    /** 固定时间步长的累计时间（秒），用于触发固定更新（对应 Unity fixedTime） */
+    Time.fixedTime = 0;
+    /** 时间缩放系数（0 = 暂停，1 = 正常速度，2 = 2倍速，0.5 = 0.5倍速） */
+    Time.timeScale = 1;
+    /** 帧率限制（默认无限制，设为 30/60 可固定帧率） */
+    Time.maxFps = null;
+    // ========================== 私有成员（内部计时逻辑）==========================
+    /** 上一帧的时间戳（毫秒，用于计算帧间隔） */
+    Time.lastFrameTime = performance.now();
+    /** 固定时间步长的累计余数（避免固定更新丢失精度） */
+    Time.fixedTimeRemainder = 0;
+    /** 是否已初始化（确保仅启动一次计时） */
+    Time.isInitialized = false;
+    return Time;
+}());
+exports.Time = Time;
+
+},{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transform = void 0;
@@ -1171,7 +1318,7 @@ var Transform = /** @class */ (function () {
 }());
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":11,"../Math/Quaternion":12,"../Math/Vector3":14,"../Math/Vector4":15}],10:[function(require,module,exports){
+},{"../Math/Matrix4x4":12,"../Math/Quaternion":13,"../Math/Vector3":15,"../Math/Vector4":16}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
@@ -1472,7 +1619,7 @@ function exampleUsage() {
     console.log("  Radius:", sphere.radius);
 }
 
-},{"./Vector3":14}],11:[function(require,module,exports){
+},{"./Vector3":15}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -2002,7 +2149,7 @@ var Matrix4x4 = /** @class */ (function () {
 }());
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":12,"./Vector3":14,"./Vector4":15}],12:[function(require,module,exports){
+},{"./Quaternion":13,"./Vector3":15,"./Vector4":16}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
@@ -2139,7 +2286,7 @@ var Quaternion = /** @class */ (function () {
 }());
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":11,"./Vector3":14}],13:[function(require,module,exports){
+},{"./Matrix4x4":12,"./Vector3":15}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -2317,7 +2464,7 @@ var Vector2 = /** @class */ (function () {
 }());
 exports.Vector2 = Vector2;
 
-},{"./Vector3":14,"./Vector4":15}],14:[function(require,module,exports){
+},{"./Vector3":15,"./Vector4":16}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
@@ -2536,7 +2683,7 @@ var Vector3 = /** @class */ (function () {
 }());
 exports.Vector3 = Vector3;
 
-},{"./Vector2":13,"./Vector4":15}],15:[function(require,module,exports){
+},{"./Vector2":14,"./Vector4":16}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
@@ -2714,7 +2861,7 @@ var Vector4 = /** @class */ (function () {
 }());
 exports.Vector4 = Vector4;
 
-},{"./Vector2":13,"./Vector3":14}],16:[function(require,module,exports){
+},{"./Vector2":14,"./Vector3":15}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Line = exports.SubMesh = exports.Mesh = void 0;
@@ -2770,7 +2917,7 @@ var Line = /** @class */ (function () {
 }());
 exports.Line = Line;
 
-},{"../Math/Bounds":10}],17:[function(require,module,exports){
+},{"../Math/Bounds":11}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -2837,7 +2984,7 @@ var RasterizationPipeline = /** @class */ (function () {
         this.uint32View[y * Engine_1.EngineConfig.canvasWidth + x] = color;
     };
     RasterizationPipeline.prototype.DrawLine = function (x1, y1, x2, y2, color1, color2) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
         var w = Engine_1.EngineConfig.canvasWidth;
@@ -2891,8 +3038,12 @@ var RasterizationPipeline = /** @class */ (function () {
         }
         // 斜率大于1，直线偏垂直情况，使用y作为循环变量
         else {
-            if (y2 < y1)
+            if (y2 < y1) {
                 _c = [x2, y2, x1, y1], x1 = _c[0], y1 = _c[1], x2 = _c[2], y2 = _c[3];
+                // 同时交换颜色
+                if (color2 !== undefined)
+                    _d = [color2, color1], color1 = _d[0], color2 = _d[1];
+            }
             var a = dx / dy;
             var x = x1;
             for (var y = y1; y <= y2; y++) {
@@ -3249,6 +3400,8 @@ var RasterizationPipeline = /** @class */ (function () {
         // 3. 视图空间中的相机观察方向（通常是 (0, 0, 1)，因为相机看向 Z 方向）
         var cameraViewDirection = Vector3_1.Vector3.BACK;
         for (var i = 0; i < faceNormals.length; i++) {
+            var n = 10; //Camera.mainCamera.counter % 12;
+            //if (i !== n) continue;
             // 原始法向量（模型空间）
             var normalModel = faceNormals[i];
             // 4. 将法向量从模型空间变换到视图空间
@@ -3332,12 +3485,12 @@ var RasterizationPipeline = /** @class */ (function () {
             }
         }
         // 调试：绘制面法线
-        for (var i = 0; i < mesh._debug_faceNormalLine.length; i++) {
-            var normal = mesh._debug_faceNormalLine[i];
-            var start = this.ObjectToScreenPos(normal.start, renderer.transform);
-            var end = this.ObjectToScreenPos(normal.end, renderer.transform);
-            this.DrawLine(start.x, start.y, end.x, end.y, Color_1.Color.RED, Color_1.Color.GREEN);
-        }
+        // for (let i = 0; i < mesh._debug_faceNormalLine.length; i++) {
+        //     const normal = mesh._debug_faceNormalLine[i];
+        //     const start = this.ObjectToScreenPos(normal.start, renderer.transform);
+        //     const end = this.ObjectToScreenPos(normal.end, renderer.transform);
+        //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
+        // }
     };
     //#endregion
     //#region 工具函数
@@ -3392,7 +3545,7 @@ var RasterizationPipeline = /** @class */ (function () {
 }());
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":1,"../Component/Renderer":5,"../Core/Engine":6,"../Math/Vector2":13,"../Math/Vector3":14,"../Math/Vector4":15,"../Utils/Color":22,"../Utils/Logger":24}],18:[function(require,module,exports){
+},{"../Component/Camera":1,"../Component/Renderer":5,"../Core/Engine":6,"../Math/Vector2":14,"../Math/Vector3":15,"../Math/Vector4":16,"../Utils/Color":23,"../Utils/Logger":25}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
@@ -3400,7 +3553,6 @@ var Camera_1 = require("../Component/Camera");
 var CameraController_1 = require("../Component/CameraController");
 var MeshRenderer_1 = require("../Component/MeshRenderer");
 var GameObject_1 = require("../Core/GameObject");
-var Quaternion_1 = require("../Math/Quaternion");
 var Vector3_1 = require("../Math/Vector3");
 var AssetLoader_1 = require("../Utils/AssetLoader");
 exports.MainScene = {
@@ -3408,32 +3560,43 @@ exports.MainScene = {
     initfun: function (scene) {
         // 相机
         var camera = new GameObject_1.GameObject("camera");
-        camera.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(45, 0, 0));
-        camera.transform.position = new Vector3_1.Vector3(0, 3, -3);
+        //camera.transform.rotation = new Quaternion(new Vector3(45, 0, 0));
+        camera.transform.position = new Vector3_1.Vector3(0, 0, -3);
         scene.addGameObject(camera);
         camera.addComponent(Camera_1.Camera);
         camera.addComponent(CameraController_1.CameraController);
-        var obj;
-        // 加载模型
         // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
-        //     obj = new GameObject("female02");
+        //     const obj = new GameObject("female02");
         //     const renderer = obj.addComponent(MeshRenderer);
         //     renderer.mesh = model;
-        //     //obj.addComponent(ObjRotate);
+        //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
-        AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
-            var cube = new GameObject_1.GameObject("cube");
-            //cube.transform.position = new Vector3(1, 0, 0);
-            var renderer = cube.addComponent(MeshRenderer_1.MeshRenderer);
+        // AssetLoader.loadModel('resources/cube.obj').then((model) => {
+        //     const obj = new GameObject("cube");
+        //     obj.transform.position = Vector3.RIGHT;
+        //     const renderer = obj.addComponent(MeshRenderer);
+        //     renderer.mesh = model;
+        //     //cube.transform.setParent(obj.transform, false);
+        //     scene.addGameObject(obj);
+        // });
+        AssetLoader_1.AssetLoader.loadModel('resources/models/bunny2.obj', 10).then(function (model) {
+            var obj = new GameObject_1.GameObject("bunny");
+            //obj.transform.position = Vector3.RIGHT;
+            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             renderer.mesh = model;
-            //cube.transform.setParent(obj.transform, false);
-            scene.addGameObject(cube);
+            scene.addGameObject(obj);
         });
+        // AssetLoader.loadModel('resources/assets/meshes/lee.obj').then((model) => {
+        //     const obj = new GameObject("lee");
+        //     const renderer = obj.addComponent(MeshRenderer);
+        //     renderer.mesh = model;
+        //     scene.addGameObject(obj);
+        // });
     }
 };
 
-},{"../Component/Camera":1,"../Component/CameraController":2,"../Component/MeshRenderer":4,"../Core/GameObject":7,"../Math/Quaternion":12,"../Math/Vector3":14,"../Utils/AssetLoader":21}],19:[function(require,module,exports){
+},{"../Component/Camera":1,"../Component/CameraController":2,"../Component/MeshRenderer":4,"../Core/GameObject":7,"../Math/Vector3":15,"../Utils/AssetLoader":22}],20:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -3475,7 +3638,7 @@ var Scene = /** @class */ (function () {
 }());
 exports.Scene = Scene;
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -3525,7 +3688,7 @@ var SceneManager = /** @class */ (function () {
 }());
 exports.SceneManager = SceneManager;
 
-},{"./Scene":19}],21:[function(require,module,exports){
+},{"./Scene":20}],22:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -3641,7 +3804,7 @@ var AssetLoader = /** @class */ (function () {
 }());
 exports.AssetLoader = AssetLoader;
 
-},{"./Dictionary":23,"./ObjParser":25}],22:[function(require,module,exports){
+},{"./Dictionary":24,"./ObjParser":26}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = void 0;
@@ -3674,7 +3837,7 @@ var Color = /** @class */ (function () {
 }());
 exports.Color = Color;
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dictionary = void 0;
@@ -3734,7 +3897,7 @@ var Dictionary = /** @class */ (function () {
 }());
 exports.Dictionary = Dictionary;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -3784,7 +3947,7 @@ var Logger = /** @class */ (function () {
 }());
 exports.Logger = Logger;
 
-},{"../Core/Engine":6}],25:[function(require,module,exports){
+},{"../Core/Engine":6}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -4057,23 +4220,17 @@ var OBJParser = /** @class */ (function () {
 }());
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":10,"../Math/Vector2":13,"../Math/Vector3":14,"../Math/Vector4":15,"../Renderer/Mesh":16}],26:[function(require,module,exports){
+},{"../Math/Bounds":11,"../Math/Vector2":14,"../Math/Vector3":15,"../Math/Vector4":16,"../Renderer/Mesh":17}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Engine_1 = require("./Core/Engine");
-var Logger_1 = require("./Utils/Logger");
 // 当DOM内容加载完成后执行
 document.addEventListener('DOMContentLoaded', function () {
     // 初始化引擎
     Engine_1.Engine.Init();
     // 主循环
     function mainLoop() {
-        // 处理逻辑
-        Engine_1.Engine.Update();
-        // 渲染
-        Engine_1.Engine.Render();
-        // 屏幕输出日志
-        Logger_1.Logger.printLogs();
+        Engine_1.Engine.Loop();
         // 请求下一帧动画
         requestAnimationFrame(mainLoop);
     }
@@ -4081,6 +4238,6 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":6,"./Utils/Logger":24}]},{},[26])
+},{"./Core/Engine":6}]},{},[27])
 
 //# sourceMappingURL=bundle.js.map

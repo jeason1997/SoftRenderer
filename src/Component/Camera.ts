@@ -3,8 +3,7 @@ import { EngineConfig } from "../Core/Engine";
 import { Vector4 } from "../Math/Vector4";
 import { Component } from "./Component";
 import { Matrix4x4 } from "../Math/Matrix4x4";
-import { Vector3 } from "../Math/Vector3";
-import { Logger } from "../Utils/Logger";
+import { Time } from "../Core/Time";
 
 export enum CameraClearFlags {
     NONE = 0,
@@ -39,7 +38,13 @@ export class Camera extends Component {
         this.transform.forward;
     }
     
+    private timer:number = 0;
+    public counter:number = 0;
     public update(): void {
+        if(Time.time - this.timer >= 1){
+            this.timer = Time.time;
+            this.counter++;
+        }
     }
 
     public onDestroy() {

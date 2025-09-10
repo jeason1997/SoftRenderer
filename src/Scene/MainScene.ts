@@ -13,29 +13,42 @@ export const MainScene = {
     initfun: (scene: Scene) => {
         // 相机
         const camera = new GameObject("camera");
-        camera.transform.rotation = new Quaternion(new Vector3(45, 0, 0));
-        camera.transform.position = new Vector3(0, 3, -3);
+        //camera.transform.rotation = new Quaternion(new Vector3(45, 0, 0));
+        camera.transform.position = new Vector3(0, 0, -3);
         scene.addGameObject(camera);
         camera.addComponent(Camera);
         camera.addComponent(CameraController);
 
-        let obj: GameObject;
-        // 加载模型
         // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
-        //     obj = new GameObject("female02");
+        //     const obj = new GameObject("female02");
         //     const renderer = obj.addComponent(MeshRenderer);
         //     renderer.mesh = model;
-        //     //obj.addComponent(ObjRotate);
+        //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
 
-        AssetLoader.loadModel('resources/cube.obj').then((model) => {
-            const cube = new GameObject("cube");
-            //cube.transform.position = new Vector3(1, 0, 0);
-            const renderer = cube.addComponent(MeshRenderer);
+        // AssetLoader.loadModel('resources/cube.obj').then((model) => {
+        //     const obj = new GameObject("cube");
+        //     obj.transform.position = Vector3.RIGHT;
+        //     const renderer = obj.addComponent(MeshRenderer);
+        //     renderer.mesh = model;
+        //     //cube.transform.setParent(obj.transform, false);
+        //     scene.addGameObject(obj);
+        // });
+
+        AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
+            const obj = new GameObject("bunny");
+            //obj.transform.position = Vector3.RIGHT;
+            const renderer = obj.addComponent(MeshRenderer);
             renderer.mesh = model;
-            //cube.transform.setParent(obj.transform, false);
-            scene.addGameObject(cube);
+            scene.addGameObject(obj);
         });
+
+        // AssetLoader.loadModel('resources/assets/meshes/lee.obj').then((model) => {
+        //     const obj = new GameObject("lee");
+        //     const renderer = obj.addComponent(MeshRenderer);
+        //     renderer.mesh = model;
+        //     scene.addGameObject(obj);
+        // });
     }
 }

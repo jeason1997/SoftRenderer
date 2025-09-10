@@ -1,5 +1,6 @@
 import { Engine } from "../Core/Engine";
 import { Input, InputAxis } from "../Core/Input";
+import { Time } from "../Core/Time";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Component } from "./Component";
@@ -79,12 +80,12 @@ export class CameraController extends Component {
         // position
         var v = this.transform.rotation.transformQuat(this._velocity);
         this._position = this.scaleAndAdd(this._position, v, this.moveSpeed * this._speedScale);
-        v = Vector3.lerp(this.transform.position, this._position, Engine.deltaTime / this.damp);
+        v = Vector3.lerp(this.transform.position, this._position, Time.deltaTime / this.damp);
         this.transform.position = v;
 
         // rotation
         var q = new Quaternion(new Vector3(this._euler.x, this._euler.y, this._euler.z));
-        q = Quaternion.slerp(this.transform.rotation, q, Engine.deltaTime / this.damp);
+        q = Quaternion.slerp(this.transform.rotation, q, Time.deltaTime / this.damp);
         this.transform.rotation = q;
     }
 }
