@@ -30,6 +30,7 @@ export const MainScene = {
         AssetLoader.loadModel('resources/cube.obj').then((model) => {
             const obj = new GameObject("cube");
             //obj.transform.position = Vector3.BACK;
+            obj.addComponent(ObjRotate);
             const renderer = obj.addComponent(MeshRenderer);
             renderer.mesh = model;
             //cube.transform.setParent(obj.transform, false);
@@ -38,7 +39,6 @@ export const MainScene = {
 
         AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
             const obj = new GameObject("bunny");
-            //obj.transform.position = Vector3.RIGHT;
             const renderer = obj.addComponent(MeshRenderer);
             renderer.mesh = model;
             scene.addGameObject(obj);

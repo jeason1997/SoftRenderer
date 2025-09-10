@@ -10,6 +10,7 @@ import { Engine, EngineConfig } from "../Core/Engine";
 import { Logger } from "../Utils/Logger";
 import { Mesh } from "./Mesh";
 import { Time } from "../Core/Time";
+import { Bounds } from "../Math/Bounds";
 
 enum DrawMode {
     Wireframe = 1,
@@ -20,11 +21,13 @@ enum DrawMode {
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.Wireframe;
-    private uint32View: Uint32Array;
+    public drawMode: DrawMode = DrawMode.Normal;
+    private frameBuffer: Uint32Array;
+    private depthBuffer: Uint32Array;
 
-    constructor(uint32View: Uint32Array) {
-        this.uint32View = uint32View;
+    constructor(frameBuffer: Uint32Array) {
+        this.frameBuffer = frameBuffer;
+        this.depthBuffer = new Uint32Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
     }
 
     public Render() {
@@ -48,7 +51,7 @@ export class RasterizationPipeline {
 
     public Clear(color: number) {
         // 使用 fill 方法替代循环，性能更好
-        this.uint32View.fill(color);
+        this.frameBuffer.fill(color);
         // 或者使用循环，但性能较差
         // for (let x = 0; x < this.canvasWidth; x++) {
         //     for (let y = 0; y < this.canvasHeight; y++) {
@@ -69,7 +72,7 @@ export class RasterizationPipeline {
             return;
         }
 
-        this.uint32View[y * EngineConfig.canvasWidth + x] = color;
+        this.frameBuffer[y * EngineConfig.canvasWidth + x] = color;
     }
 
     public DrawLine(x1: number, y1: number, x2: number, y2: number, color1: number, color2?: number) {
@@ -406,11 +409,11 @@ export class RasterizationPipeline {
         // const cameraUp = camera.transform.up;
         // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
         // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
-        return mvpMatrix.multiplyVector4(new Vector4(vertex.clone(), 1));
+        return mvpMatrix.multiplyVector4(new Vector4(vertex, 1));
     }
 
     // 将裁剪空间坐标最终转换为屏幕空间坐标（Screen Space）
-    public ClipToScreenPos(vertex: Vector4): Vector2 {
+    public ClipToScreenPos(vertex: Vector4): Vector3 {
         // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
         const w = vertex.w;
         const ndcX = vertex.x / w;
@@ -425,15 +428,15 @@ export class RasterizationPipeline {
         // 将NDC的x从[-1, 1]映射到[0, screenWidth]
         const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
         // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-        const screenY = EngineConfig.canvasHeight - (((ndcY + 1) / 2) * EngineConfig.canvasHeight);
+        const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
 
-        // z分量通常用于深度测试，这里我们只关心屏幕x,y
-        // 如果你的NDCz范围是[-1,1]且需要映射到[0,1]（例如WebGPU某些情况），可以类似处理：const screenZ = (ndc.z + 1) / 2;
+        // z分量通常用于深度测试
+        const screenZ = (ndcZ + 1) / 2;
 
-        return new Vector2(screenX, screenY);
+        return new Vector3(screenX, screenY, screenZ);
     }
 
-    public ObjectToScreenPos(vertex: Vector3, transform: Transform): Vector2 {
+    public ObjectToScreenPos(vertex: Vector3, transform: Transform): Vector3 {
         const clipPos = this.ObjectToClipPos(vertex, transform);
         return this.ClipToScreenPos(clipPos);
     }
@@ -461,16 +464,12 @@ export class RasterizationPipeline {
 
         // 1. MVP变换到裁剪空间
         // 模型空间 -> 世界空间 -> 观察空间 -> 裁剪空间
-        for (let i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = this.ObjectToClipPos(vertices[i], transform);
-        }
-
         // 2. 透视除法：将裁剪空间坐标转换为标准设备坐标（NDC）
         // 裁剪空间 -> 标准化设备坐标（NDC 空间）
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
-        for (let i = 0; i < outVertices.length; i++) {
-            outVertices[i] = this.ClipToScreenPos(outVertices[i]);
+        for (let i = 0; i < vertices.length; i += 1) {
+            outVertices[i] = this.ObjectToScreenPos(vertices[i], transform);
         }
 
         return outVertices;
@@ -677,11 +676,52 @@ export class RasterizationPipeline {
         //     const end = this.ObjectToScreenPos(normal.end, renderer.transform);
         //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
         // }
+
+        // 绘制包围盒
+        for(let i = 0; i < mesh.bounds.length; i++){
+            const bound = mesh.bounds[i];
+            this.DrawBounds(bound, renderer.transform, Color.WHITE);
+        }
     }
 
     //#endregion
 
     //#region 工具函数
+
+    private DrawBounds(bounds: Bounds, transform: Transform, color: number) {
+        // 将所有顶点转换到屏幕空间
+        const screenVertices = bounds.vertices.map(v =>
+            this.ObjectToScreenPos(new Vector3(v.x, v.y, v.z), transform)
+        );
+
+        // 绘制所有边
+        bounds.edges.forEach(([i1, i2]) => {
+            const v1 = screenVertices[i1];
+            const v2 = screenVertices[i2];
+            // 确保转换后的顶点有效
+            if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
+                this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
+            }
+        });
+
+        // 绘制中心点
+        const center = bounds.center;
+        const screenCenter = this.ObjectToScreenPos(center, transform);
+        if (screenCenter) {
+            // 绘制一个小十字作为中心点标记
+            const size = 5;
+            this.DrawLine(
+                screenCenter.x - size, screenCenter.y,
+                screenCenter.x + size, screenCenter.y,
+                Color.RED
+            );
+            this.DrawLine(
+                screenCenter.x, screenCenter.y - size,
+                screenCenter.x, screenCenter.y + size,
+                Color.RED
+            );
+        }
+    }
 
     /// <summary>
     /// 线性插值

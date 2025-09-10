@@ -1,42 +1,46 @@
 import { Vector3 } from "./Vector3";
 
 export class Bounds {
-    min: Vector3;
-    max: Vector3;
+    public readonly min: Vector3;
+    public readonly max: Vector3;
+    public readonly center: Vector3;
+    public readonly halfExtents: Vector3;
+    // 定义8个顶点
+    public readonly vertices: Vector3[];
+    // 定义12条边的顶点索引对 (每个面4条边，共6个面，但共享边只画一次)
+    public readonly edges = [
+        [0, 1], [1, 2], [2, 3], [3, 0], // 后面
+        [4, 5], [5, 6], [6, 7], [7, 4], // 前面
+        [0, 4], [1, 5], [2, 6], [3, 7]  // 连接前后的边
+    ];
 
-    public constructor();
-    public constructor(min: Vector3, max: Vector3);
-    public constructor(min?: Vector3, max?: Vector3) {
-        this.min = min || Vector3.ZERO;
-        this.max = max || Vector3.ZERO;
-    }
-
-    getCenter(): Vector3 {
-        return new Vector3(
-            (this.min.x + this.max.x) / 2,
-            (this.min.y + this.max.y) / 2,
-            (this.min.z + this.max.z) / 2
-        );
-    }
-
-    getHalfExtents(): Vector3 {
-        return new Vector3(
-            (this.max.x - this.min.x) / 2,
-            (this.max.y - this.min.y) / 2,
-            (this.max.z - this.min.z) / 2
-        );
-    }
-
-    setMin(min: Vector3) {
+    constructor(min: Vector3, max: Vector3) {
         this.min = min;
-    }
-
-    setMax(max: Vector3) {
         this.max = max;
+
+        // 计算中心点
+        this.center.x = (this.min.x + this.max.x) / 2;
+        this.center.y = (this.min.y + this.max.y) / 2;
+        this.center.z = (this.min.z + this.max.z) / 2;
+
+        // 计算半长（从中心到各边的距离）
+        this.halfExtents.x = (this.max.x - this.min.x) / 2;
+        this.halfExtents.y = (this.max.y - this.min.y) / 2;
+        this.halfExtents.z = (this.max.z - this.min.z) / 2;
+
+        // 计算8个顶点
+        this.vertices[0] = new Vector3(this.min.x, this.min.y, this.min.z); // 左下后
+        this.vertices[1] = new Vector3(this.max.x, this.min.y, this.min.z); // 右下后
+        this.vertices[2] = new Vector3(this.max.x, this.max.y, this.min.z); // 右上后
+        this.vertices[3] = new Vector3(this.min.x, this.max.y, this.min.z); // 左上后
+        this.vertices[4] = new Vector3(this.min.x, this.min.y, this.max.z); // 左下前
+        this.vertices[5] = new Vector3(this.max.x, this.min.y, this.max.z); // 右下前
+        this.vertices[6] = new Vector3(this.max.x, this.max.y, this.max.z); // 右上前
+        this.vertices[7] = new Vector3(this.min.x, this.max.y, this.max.z); // 左上前
     }
 
     static fromPoints(points: Vector3[]): Bounds {
-        if (points.length === 0) return new Bounds();
+        if (points.length === 0) return new Bounds(Vector3.ZERO, Vector3.ZERO);
 
         let min = new Vector3(points[0].x, points[0].y, points[0].z);
         let max = new Vector3(points[0].x, points[0].y, points[0].z);
@@ -52,9 +56,7 @@ export class Bounds {
         }
 
         // 假设Bounds有min和max属性
-        const bounds = new Bounds();
-        bounds.min = min;
-        bounds.max = max;
+        const bounds = new Bounds(min, max);
         return bounds;
     }
 }

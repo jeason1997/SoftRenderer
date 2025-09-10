@@ -24,6 +24,7 @@ export class ObjRotate extends Component {
         // }
 
         this.transform.rotation = new Quaternion(new Vector3(this.angleX, this.angleY, 0));
+        this.angleX += 1;
         this.angleY += 1;
     }
 }
