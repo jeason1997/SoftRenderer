@@ -15,5 +15,8 @@
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0",
     "watchify": "^4.0.0"
+  },
+  "dependencies": {
+    "@tweenjs/tween.js": "^25.0.0"
   }
 }

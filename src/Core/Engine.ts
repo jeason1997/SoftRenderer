@@ -4,6 +4,7 @@ import { MainScene } from "../Scene/MainScene";
 import { SceneManager } from "../Scene/SceneManager";
 import { Logger } from "../Utils/Logger";
 import { Time } from "./Time";
+import { TweenManager } from "./TweenManager";
 
 export class Engine {
     public static sceneManager: SceneManager = new SceneManager();
@@ -36,7 +37,7 @@ export class Engine {
         Input.initialize();
     }
 
-    public static Loop() {
+    public static Loop(time: number) {
         Logger.log(Math.floor(1 / Time.deltaTime).toString());
 
         // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）
@@ -66,6 +67,8 @@ export class Engine {
     private static Update() {
         // 使用场景的update方法更新所有游戏对象
         this.sceneManager.getActiveScene()?.update();
+        // 更新动画
+        TweenManager.update();
     }
 
     private static FixedUpdate() {

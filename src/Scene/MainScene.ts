@@ -2,6 +2,7 @@ import { Camera } from "../Component/Camera";
 import { CameraController } from "../Component/CameraController";
 import { MeshRenderer } from "../Component/MeshRenderer";
 import { ObjRotate } from "../Component/ObjRotate";
+import { TweenTest } from "../Component/TweenTest";
 import { GameObject } from "../Core/GameObject";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
@@ -30,7 +31,7 @@ export const MainScene = {
         AssetLoader.loadModel('resources/cube.obj').then((model) => {
             const obj = new GameObject("cube");
             //obj.transform.position = Vector3.BACK;
-            obj.addComponent(ObjRotate);
+            obj.addComponent(TweenTest);
             const renderer = obj.addComponent(MeshRenderer);
             renderer.mesh = model;
             //cube.transform.setParent(obj.transform, false);

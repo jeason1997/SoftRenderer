@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     Engine.Init();
 
     // 主循环
-    function mainLoop() {
-        Engine.Loop();
+    function mainLoop(time: number) {
+        Engine.Loop(time);
         // 请求下一帧动画
         requestAnimationFrame(mainLoop);
     }
