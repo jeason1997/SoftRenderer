@@ -18,12 +18,12 @@ export class CameraController extends Component {
     private _speedScale = 1;
     private _rotateCamera = false;
 
-    start() {
+    public start(): void {
         this._euler = this.transform.rotation.eulerAngles;
         this._position = this.transform.position;
     }
 
-    updateInput() {
+    private updateInput(): void {
         // WSADQE+SHIFT相机移动以及加速
         this._velocity.x = -Input.GetAxis(InputAxis.Horizontal);
         this._velocity.z = Input.GetAxis(InputAxis.Vertical);
@@ -66,7 +66,7 @@ export class CameraController extends Component {
         }
     }
 
-    scaleAndAdd(a: Vector3, b: Vector3, scale: number): Vector3 {
+    private scaleAndAdd(a: Vector3, b: Vector3, scale: number): Vector3 {
         var out = new Vector3();
         out.x = a.x + b.x * scale;
         out.y = a.y + b.y * scale;
@@ -74,7 +74,7 @@ export class CameraController extends Component {
         return out;
     }
 
-    update() {
+    public update(): void {
         this.updateInput();
 
         // position

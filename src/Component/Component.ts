@@ -1,7 +1,8 @@
 import { GameObject } from "../Core/GameObject";
 import { Transform } from "../Core/Transform";
+import { UObject } from "../Core/Object";
 
-export abstract class Component {
+export abstract class Component extends UObject {
     public readonly gameObject: GameObject;
     
     public get transform(): Transform {
@@ -22,6 +23,7 @@ export abstract class Component {
     }
 
     constructor(gameObject: GameObject) {
+        super();
         this.gameObject = gameObject;
         this.awake();
     }

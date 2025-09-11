@@ -5,15 +5,18 @@ import { SceneManager } from "../Scene/SceneManager";
 import { Logger } from "../Utils/Logger";
 import { Time } from "./Time";
 import { TweenManager } from "./TweenManager";
+import { PhysicsEngine } from "../Physics/PhysicsEngine";
 
 export class Engine {
     public static sceneManager: SceneManager = new SceneManager();
+    public static physicsEngine: PhysicsEngine = new PhysicsEngine();
     public static canvas: HTMLCanvasElement;
     public static context: CanvasRenderingContext2D;
     public static pipeline: RasterizationPipeline;
     public static imageData: ImageData;
+    private static isInit: boolean = false;
 
-    public static Init() {
+    private static Init() {
         // 获取canvas元素和2D渲染上下文
         this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
         this.context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -31,13 +34,21 @@ export class Engine {
         // 创建渲染器实例
         this.pipeline = new RasterizationPipeline(uint32View);
 
+        // 初始化物理引擎
+        this.physicsEngine.init();
         // 初始化场景
         this.sceneManager.loadScene(MainScene);
         // 初始化输入系统
         Input.initialize();
+
+        this.isInit = true;
     }
 
     public static Loop(time: number) {
+        if (!this.isInit) {
+            this.Init();
+        }
+        
         Logger.log(Math.floor(1 / Time.deltaTime).toString());
 
         // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）
@@ -72,6 +83,7 @@ export class Engine {
     }
 
     private static FixedUpdate() {
+        this.physicsEngine.update();
     }
 
     private static Render() {

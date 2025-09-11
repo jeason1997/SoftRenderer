@@ -1,8 +1,9 @@
+import { BoxCollider } from "../Component/BoxCollider";
 import { Camera } from "../Component/Camera";
 import { CameraController } from "../Component/CameraController";
 import { MeshRenderer } from "../Component/MeshRenderer";
-import { ObjRotate } from "../Component/ObjRotate";
-import { TweenTest } from "../Component/TweenTest";
+import { Rigidbody } from "../Component/RigidBody";
+import { SphereCollider } from "../Component/SphereCollider";
 import { GameObject } from "../Core/GameObject";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
@@ -14,8 +15,8 @@ export const MainScene = {
     initfun: (scene: Scene) => {
         // 相机
         const camera = new GameObject("camera");
-        camera.transform.rotation = new Quaternion(new Vector3(0, 180, 0));
-        camera.transform.position = new Vector3(0, 0, 3);
+        camera.transform.rotation = new Quaternion(new Vector3(-30, 180, 0));
+        camera.transform.position = new Vector3(0, 3, 5);
         scene.addGameObject(camera);
         camera.addComponent(Camera);
         camera.addComponent(CameraController);
@@ -30,20 +31,40 @@ export const MainScene = {
 
         AssetLoader.loadModel('resources/cube.obj').then((model) => {
             const obj = new GameObject("cube");
-            //obj.transform.position = Vector3.BACK;
-            obj.addComponent(TweenTest);
+            obj.transform.position = new Vector3(0, 2, 0);
+            obj.transform.scale = Vector3.ONE.multiply(0.5);
+            obj.addComponent(Rigidbody);
+            obj.addComponent(BoxCollider);
             const renderer = obj.addComponent(MeshRenderer);
             renderer.mesh = model;
-            //cube.transform.setParent(obj.transform, false);
             scene.addGameObject(obj);
         });
 
-        AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
-            const obj = new GameObject("bunny");
+        AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+            const obj = new GameObject("spheres");
+            obj.transform.position = new Vector3(0.1, 1.2, 0);
+            obj.addComponent(Rigidbody);
+            const collider = obj.addComponent(SphereCollider);
             const renderer = obj.addComponent(MeshRenderer);
             renderer.mesh = model;
             scene.addGameObject(obj);
         });
+
+        AssetLoader.loadModel('resources/panel.obj').then((model) => {
+            const obj = new GameObject("panel");
+            const collider = obj.addComponent(BoxCollider);
+            const renderer = obj.addComponent(MeshRenderer);
+            renderer.mesh = model;
+            scene.addGameObject(obj);
+        });
+
+        // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
+        //     const obj = new GameObject("bunny");
+        //     obj.transform.position = new Vector3(0, 0.5, 0);
+        //     const renderer = obj.addComponent(MeshRenderer);
+        //     renderer.mesh = model;
+        //     scene.addGameObject(obj);
+        // });
 
         // AssetLoader.loadModel('resources/assets/meshes/lee.obj').then((model) => {
         //     const obj = new GameObject("lee");

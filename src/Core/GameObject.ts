@@ -2,8 +2,9 @@ import { Transform } from "./Transform";
 import { Component } from "../Component/Component";
 import { Vector3 } from "../Math/Vector3";
 import { Quaternion } from "../Math/Quaternion";
+import { UObject } from "./Object";
 
-export class GameObject {
+export class GameObject extends UObject {
     public name: string;
     public transform: Transform;
     public tag: string = "Untagged"; // 添加标签属性
@@ -13,6 +14,7 @@ export class GameObject {
     private startedComponents: Set<Component> = new Set<Component>();
 
     constructor(name: string) {
+        super();
         this.name = name;
         this.transform = new Transform(this);
     }
@@ -57,6 +59,7 @@ export class GameObject {
         for (const component of this.components) {
             if (!this.startedComponents.has(component) && component.enabled) {
                 component.start();
+                component.onEnable();
                 this.startedComponents.add(component);
             }
         }
@@ -235,7 +238,7 @@ export class GameObject {
     }
 
     // 销毁游戏对象
-    public destroy(): void {
+    public onDestroy(): void {
         // 调用所有组件的onDestroy方法
         for (const component of this.components) {
             component.onDestroy();

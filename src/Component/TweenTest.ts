@@ -5,7 +5,7 @@ import { TweenManager } from "../Core/TweenManager";
 export class TweenTest extends Component {
     private tween: Tween;
 
-    start() {
+    public start(): void {
         let startPos = this.transform.position;
 
         this.tween = new Tween(startPos)
@@ -25,7 +25,7 @@ export class TweenTest extends Component {
         TweenManager.add(this.tween);
     }
 
-    onDestroy() {
+    public onDestroy(): void {
         TweenManager.remove(this.tween);
     }
 }

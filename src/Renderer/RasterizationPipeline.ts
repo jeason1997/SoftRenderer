@@ -20,7 +20,7 @@ enum DrawMode {
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.Normal;
+    public drawMode: DrawMode = DrawMode.Wireframe;
     private frameBuffer: Uint32Array;
     private depthBuffer: Uint32Array;
 
@@ -677,15 +677,26 @@ export class RasterizationPipeline {
         // }
 
         // 绘制包围盒
-        for(let i = 0; i < mesh.bounds.length; i++){
+        for (let i = 0; i < mesh.bounds.length; i++) {
             const bound = mesh.bounds[i];
             this.DrawBounds(bound, renderer.transform, Color.WHITE);
         }
+
+        // 绘制物理调试信息
+        this.DrawPhysicsDebug();
     }
 
     //#endregion
 
     //#region 工具函数
+
+    private DrawPhysicsDebug() {
+        const { vertices, colors } = Engine.physicsEngine.world.debugRender();
+        for (let i = 0; i < vertices.length / 4; i += 1) {
+            const color = (colors[i * 8] << 24) | (colors[i * 8 + 1] << 16) | (colors[i * 8 + 2] << 8) | colors[i * 8 + 3];
+            this.DrawLine(vertices[i * 4], -vertices[i * 4 + 1], vertices[i * 4 + 2], -vertices[i * 4 + 3], color);
+        }
+    }
 
     private DrawBounds(bounds: Bounds, transform: Transform, color: number) {
         // 将所有顶点转换到屏幕空间
