@@ -206,7 +206,7 @@ export class OBJParser {
         if (mesh.vertices.length === 0 || mesh.triangles.length === 0) return;
 
         mesh.faceNormals = [];
-        mesh._debug_faceNormalLine = [];
+        mesh.faceCenter = [];
 
         for (let i = 0; i < mesh.triangles.length; i += 3) {
             const i0 = mesh.triangles[i];
@@ -222,14 +222,12 @@ export class OBJParser {
             const faceNormal = Vector3.cross(e1, e2).normalize();
             mesh.faceNormals.push(faceNormal);
 
-            // 调试信息
             const center = new Vector3(
                 (v0.x + v1.x + v2.x) / 3,
                 (v0.y + v1.y + v2.y) / 3,
                 (v0.z + v1.z + v2.z) / 3
             );
-            const end = center.clone().add(faceNormal);
-            mesh._debug_faceNormalLine.push(new Line(center, end));
+            mesh.faceCenter.push(center);
         }
     }
 

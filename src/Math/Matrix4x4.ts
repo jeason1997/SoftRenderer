@@ -592,6 +592,20 @@ export class Matrix4x4 {
         return mat;
     }
 
+    public static orthographic(left: number, right: number, bottom: number, top: number, near: number, far: number): Matrix4x4 {
+        const rl = (right - left)
+        const tb = (top - bottom)
+        const fn = (far - near)
+
+        var mat = new Matrix4x4(
+            new Vector4(2 / rl, 0, 0, -(left + right) / rl),
+            new Vector4(0, 2 / tb, 0, -(top + bottom) / tb),
+            new Vector4(0, 0, -2 / fn, -(far + near) / fn),
+            new Vector4(0, 0, 0, 1)
+        );
+        return mat;
+    }
+
     public static get identity(): Matrix4x4 {
         let m = new Matrix4x4();
         m.matrix[0][0] = 1;

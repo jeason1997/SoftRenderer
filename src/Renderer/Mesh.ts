@@ -8,14 +8,12 @@ export class Mesh {
     public material: string[];                     // 材质
     public triangles: number[];                    // 三角形
     public faceNormals: Vector3[];                 // 面法线
+    public faceCenter: Vector3[];                  // 面中心
     public vertices: Vector3[];                    // 顶点
     public uv: Vector2[];                          // UV
     public normals: Vector3[];                     // 法线
     public tangents: Vector4[];                    // 切线，可从模型中获取或通过法线计算得到
     public subMeshes: SubMesh[];                   // 子网格
-
-    // 调试信息
-    public _debug_faceNormalLine: Line[] = [];
 
     public constructor() {
         this.bounds = [];

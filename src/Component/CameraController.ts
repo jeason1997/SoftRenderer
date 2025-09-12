@@ -3,6 +3,7 @@ import { Input, InputAxis } from "../Core/Input";
 import { Time } from "../Core/Time";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
+import { Camera } from "./Camera";
 import { Component } from "./Component";
 
 export class CameraController extends Component {
@@ -12,13 +13,16 @@ export class CameraController extends Component {
     public damp = 0.2;
     public rotateSpeed = 1;
 
+    private _camera: Camera | null;
     private _euler = new Vector3();
     private _velocity = new Vector3();
     private _position = new Vector3();
     private _speedScale = 1;
     private _rotateCamera = false;
+    private _rotateCenter = new Vector3();
 
     public start(): void {
+        this._camera = this.gameObject.getComponent(Camera);
         this._euler = this.transform.rotation.eulerAngles;
         this._position = this.transform.position;
     }
@@ -39,9 +43,14 @@ export class CameraController extends Component {
         }
 
         // 鼠标滚轮相机缩放
-        const scrollDelta = Input.mouseScrollDelta.y * this.moveSpeed * 0.1;
-        var pos = this.transform.rotation.transformQuat(Vector3.BACK);
-        this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta);
+        const scrollDelta = Input.mouseScrollDelta.y * this.moveSpeed;
+        if (this._camera?.orthographic) {
+            this._camera.orthographicSize += scrollDelta * 0.01;
+        }
+        else {
+            var pos = this.transform.rotation.transformQuat(Vector3.BACK);
+            this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta * 0.1);
+        }
 
         // 鼠标右键相机旋转
         if (Input.GetMouseButtonDown(2)) {

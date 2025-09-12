@@ -27,6 +27,19 @@ export class Input {
         Alpha0: 'Digit0', Alpha1: 'Digit1', Alpha2: 'Digit2', Alpha3: 'Digit3', Alpha4: 'Digit4',
         Alpha5: 'Digit5', Alpha6: 'Digit6', Alpha7: 'Digit7', Alpha8: 'Digit8', Alpha9: 'Digit9',
 
+        // 小键盘数字键
+        Numpad0: 'Numpad0', Numpad1: 'Numpad1', Numpad2: 'Numpad2', Numpad3: 'Numpad3',
+        Numpad4: 'Numpad4', Numpad5: 'Numpad5', Numpad6: 'Numpad6', Numpad7: 'Numpad7',
+        Numpad8: 'Numpad8', Numpad9: 'Numpad9',
+
+        // 小键盘功能键（可选添加）
+        NumpadMultiply: 'NumpadMultiply',    // 乘号 *
+        NumpadAdd: 'NumpadAdd',              // 加号 +
+        NumpadSubtract: 'NumpadSubtract',    // 减号 -
+        NumpadDecimal: 'NumpadDecimal',      // 小数点 .
+        NumpadDivide: 'NumpadDivide',        // 除号 /
+        NumpadEnter: 'NumpadEnter',          // 回车键
+
         // 功能键
         F1: 'F1', F2: 'F2', F3: 'F3', F4: 'F4', F5: 'F5', F6: 'F6',
         F7: 'F7', F8: 'F8', F9: 'F9', F10: 'F10', F11: 'F11', F12: 'F12',
@@ -153,7 +166,7 @@ export class Input {
                     return -1;
                 }
                 return 0;
-            
+
             case InputAxis.Vertical:
                 // 垂直轴 W/S 或 上下方向键
                 if (Input.GetKey(Input.KeyCode.W) || Input.GetKey(Input.KeyCode.UpArrow)) {
@@ -163,7 +176,7 @@ export class Input {
                     return -1;
                 }
                 return 0;
-                
+
             default:
                 return 0;
         }

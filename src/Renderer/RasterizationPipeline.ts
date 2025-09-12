@@ -11,6 +11,7 @@ import { Logger } from "../Utils/Logger";
 import { Mesh } from "./Mesh";
 import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
+import { Matrix4 } from "three/src/Three.Core.js";
 
 enum DrawMode {
     Wireframe = 1,
@@ -78,12 +79,12 @@ export class RasterizationPipeline {
     public DrawLine(x1: number, y1: number, x2: number, y2: number, color1: number, color2?: number) {
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
-        const w = EngineConfig.canvasWidth;
-        const h = EngineConfig.canvasHeight;
-        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h)) {
-            //TODO:裁剪掉超出屏幕的部分
-            return;
-        }
+        // const w = EngineConfig.canvasWidth;
+        // const h = EngineConfig.canvasHeight;
+        // if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h)) {
+        //     //TODO:裁剪掉超出屏幕的部分
+        //     return;
+        // }
 
         // 取整
         x1 = x1 | 0;
@@ -548,43 +549,156 @@ export class RasterizationPipeline {
     public BackfaceCulling(triangles: number[], mesh: Mesh, renderer: Renderer) {
         const visibleTriangles: number[] = [];
         const faceNormals = mesh.faceNormals;
-        const modelMatrix = renderer.transform.localToWorldMatrix;
-        const camera = Camera.mainCamera;
 
-        // 1. 计算模型视图矩阵（模型空间 → 视图空间）
-        const viewMatrix = camera.getViewMatrix(); // 获取相机的视图矩阵（世界空间 → 视图空间）
-        const modelViewMatrix = viewMatrix.multiply(modelMatrix); // 模型空间 → 世界空间 → 视图空间
 
-        // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
-        const normalMatrix = modelViewMatrix.clone().invert().transpose();
+        function WorldPosToScreenPos(pos: Vector3): { x: number, y: number } {
+            const camera = Camera.mainCamera;
+            const viewMatrix = camera.getViewMatrix();
+            const projectionMatrix = camera.getProjectionMatrix();
+            const vpMatrix = projectionMatrix.multiply(viewMatrix);
+            const clipPos = vpMatrix.multiplyVector4(new Vector4(pos.x, pos.y, pos.z, 1));
 
-        // 3. 视图空间中的相机观察方向（右手坐标系的话，Z轴指向观察者，即相机应该是看向Z轴负轴）
-        const cameraViewDirection = Vector3.BACK;
+            const w = clipPos.w;
+            const ndcX = clipPos.x / w;
+            const ndcY = clipPos.y / w;
 
-        for (let i = 0; i < faceNormals.length; i++) {
-            const n = 10;//Camera.mainCamera.counter % 12;
-            //if (i !== n) continue;
+            const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
+            const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
 
-            // 原始法向量（模型空间）
-            const normalModel = faceNormals[i];
+            return { x: screenX, y: screenY };
+        }
 
-            // 4. 将法向量从模型空间变换到视图空间
-            const normalView = normalMatrix.multiplyVector3(normalModel);
+        function ModelPosToScreenPos(pos: Vector3): { x: number, y: number } {
+            const modelMatrix = renderer.transform.localToWorldMatrix;
+            const camera = Camera.mainCamera;
+            const viewMatrix = camera.getViewMatrix();
+            const projectionMatrix = camera.getProjectionMatrix();
+            const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+            const clipPos = mvpMatrix.multiplyVector4(new Vector4(pos.x, pos.y, pos.z, 1));
 
-            // 5. 计算法向量与观察方向的点积
-            const dot = normalView.dot(cameraViewDirection);
+            const w = clipPos.w;
+            const ndcX = clipPos.x / w;
+            const ndcY = clipPos.y / w;
 
-            // 6. 点积 > 0 表示面向相机（可见）
-            if (dot > 0) {
+            const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
+            const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
+
+            return { x: screenX, y: screenY };
+        }
+
+        // 将法向量转换到世界空间（使用模型矩阵的逆矩阵的转置）
+        //const normalMatrix = modelMatrix.invert().transpose();
+
+        for (let i = 0; i < triangles.length; i += 3) {
+            const a = mesh.vertices[triangles[i + 0]];
+            const b = mesh.vertices[triangles[i + 1]];
+            const c = mesh.vertices[triangles[i + 2]];
+            const center = Vector3.add(a, b).add(c).divide(3);
+
+            // 先转到世界坐标
+            const modelMatrix = renderer.transform.localToWorldMatrix;
+            const world_a = new Vector3(modelMatrix.multiplyVector4(new Vector4(a, 1)));
+            const world_b = new Vector3(modelMatrix.multiplyVector4(new Vector4(b, 1)));
+            const world_c = new Vector3(modelMatrix.multiplyVector4(new Vector4(c, 1)));
+            const world_center = new Vector3(modelMatrix.multiplyVector4(new Vector4(center, 1)));
+
+            // 1.获取面的法向量
+            const world_normal = Vector3.cross(
+                Vector3.subtract(world_b, world_a),
+                Vector3.subtract(world_c, world_a)
+            ).normalize();
+            //const world_normal = new Vector3(modelMatrix.multiplyVector4(new Vector4(faceNormals[i / 3], 1))).normalize();
+
+            // 2.获取摄像机到面的中心的向量
+            const cameraPosition = Camera.mainCamera.transform.position;
+            const cameraToCenter = Vector3.subtract(world_center, cameraPosition).normalize();
+
+
+
+
+            // 3.计算这2个向量的夹角
+            const dot = world_normal.dot(cameraToCenter);
+
+
+            // const p1 = WorldPosToScreenPos(cameraPosition);
+            // const p2 = WorldPosToScreenPos(world_center);
+            // //const p2 = ModelPosToScreenPos(center);
+            // this.DrawLine(p1.x, p1.y, p2.x, p2.y, dot <= 0 ? Color.GREEN : Color.RED);
+
+            // const p3 = WorldPosToScreenPos(world_center.add(world_normal));
+            // this.DrawLine(p3.x, p3.y, p2.x, p2.y, Color.YELLOW);
+
+            // 4.判断夹角是否大于0
+            if (dot <= 0) {
                 visibleTriangles.push(
-                    triangles[i * 3],
-                    triangles[i * 3 + 1],
-                    triangles[i * 3 + 2]
+                    triangles[i],
+                    triangles[i + 1],
+                    triangles[i + 2]
                 );
             }
         }
 
         return visibleTriangles;
+
+        // // 1. 计算模型视图矩阵（模型空间 → 视图空间）
+        // // const viewMatrix = camera.getViewMatrix(); // 获取相机的视图矩阵（世界空间 → 视图空间）
+        // // const modelViewMatrix = viewMatrix.multiply(modelMatrix); // 模型空间 → 世界空间 → 视图空间
+        // const viewMatrix = camera.getViewMatrix();
+        // const projectionMatrix = camera.getProjectionMatrix();
+        // const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+
+        // // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
+        // //const normalMatrix = mvpMatrix.clone().invert().transpose();
+
+        // // 3. 视图空间中的相机观察方向（右手坐标系的话，Z轴指向观察者，即相机应该是看向Z轴负轴）
+        // const cameraViewDirection = Vector3.BACK;
+
+        // for (let i = 0; i < faceNormals.length; i++) {
+        //     // 原始法向量（模型空间）
+        //     const normalModel = faceNormals[i];
+
+        //     // 4. 将法向量从模型空间变换到视图空间
+        //     const normalView = normalMatrix.multiplyVector3(normalModel);
+
+        //     // 5. 计算法向量与观察方向的点积
+        //     const dot = normalView.dot(cameraViewDirection);
+
+        //     // 6. 点积 > 0 表示面向相机（可见）
+        //     if (dot > 0) {
+        //         visibleTriangles.push(
+        //             triangles[i * 3],
+        //             triangles[i * 3 + 1],
+        //             triangles[i * 3 + 2]
+        //         );
+        //     }
+
+
+        //     // console.log(
+        //     //     'Camera Transform:',
+        //     //     '\nPosition:', camera.transform.position,
+        //     //     '\nRotation:', camera.transform.rotation,
+        //     //     '\nAngle:', camera.transform.rotation.eulerAngles,
+        //     //     '\nScale:', camera.transform.scale,
+        //     //     '\nCamera Properties:',
+        //     //     '\nAspect:', camera.aspect,
+        //     //     '\nFOV:', camera.fov,
+        //     //     '\nNear Clip:', camera.nearClip,
+        //     //     '\nFar Clip:', camera.farClip,
+
+        //     //     '\nRenderer Transform:',
+        //     //     '\nPosition:', renderer.transform.position,
+        //     //     '\nRotation:', renderer.transform.rotation,
+        //     //     '\nScale:', renderer.transform.scale,
+        //     //     '\nVertices:',
+        //     //     mesh.vertices[triangles[i * 3]],
+        //     //     mesh.vertices[triangles[i * 3 + 1]],
+        //     //     mesh.vertices[triangles[i * 3 + 2]],
+        //     //     '\nFace Normal:', normalModel,
+        //     //     '\nDot Product:', dot,
+        //     // );
+        // }
+
+        // return visibleTriangles;
     }
 
     // 遮挡剔除
@@ -680,7 +794,7 @@ export class RasterizationPipeline {
         // 绘制包围盒
         // for (let i = 0; i < mesh.bounds.length; i++) {
         //     const bound = mesh.bounds[i];
-        //     this.DrawBounds(bound, renderer.transform, Color.WHITE);
+        //     this.DrawBounds(bound, renderer.transform, Color.GRAY);
         // }
 
         // 绘制物理调试信息

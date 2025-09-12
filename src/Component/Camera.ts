@@ -4,6 +4,7 @@ import { Vector4 } from "../Math/Vector4";
 import { Component } from "./Component";
 import { Matrix4x4 } from "../Math/Matrix4x4";
 import { Time } from "../Core/Time";
+import { Vector2 } from "../Math/Vector2";
 
 export enum CameraClearFlags {
     NONE = 0,
@@ -24,6 +25,8 @@ export class Camera extends Component {
     public fov: number = 60;
     public depth: number = 0;
     public viewPort: Vector4 = new Vector4(0, 0, 1, 1);
+    public orthographic: boolean = false;
+    public orthographicSize: number = 1;
 
     public get aspect(): number {
         var v = this.viewPort;
@@ -37,11 +40,11 @@ export class Camera extends Component {
         Camera.cameras.push(this);
         this.transform.forward;
     }
-    
-    private timer:number = 0;
-    public counter:number = 0;
+
+    private timer: number = 0;
+    public counter: number = 0;
     public update(): void {
-        if(Time.time - this.timer >= 1){
+        if (Time.time - this.timer >= 1) {
             this.timer = Time.time;
             this.counter++;
         }
@@ -70,6 +73,11 @@ export class Camera extends Component {
     }
 
     public getProjectionMatrix(): Matrix4x4 {
-        return Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
+        if (this.orthographic) {
+            return Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
+        }
+        else {
+            return Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
+        }
     }
 }
