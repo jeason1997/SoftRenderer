@@ -2,6 +2,8 @@ import { Engine } from "./Core/Engine";
 
 // 当DOM内容加载完成后执行
 document.addEventListener('DOMContentLoaded', () => {
+    // 初始化引擎
+    Engine.Init();
     // 主循环
     function mainLoop(time: number) {
         Engine.Loop(time);

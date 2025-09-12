@@ -1,35 +1,34 @@
-import { ColliderDesc } from "@dimforge/rapier3d";
-import { Engine } from "../Core/Engine";
 import { Vector3 } from "../Math/Vector3";
 import { Collider } from "./Collider";
 import { Rigidbody } from "./RigidBody";
 import { MeshRenderer } from "./MeshRenderer";
+import * as CANNON from 'cannon';
 
 export class BoxCollider extends Collider {
 
     public center: Vector3;
     public size: Vector3;
 
-    public createCollider(rigidbody?: Rigidbody) {
+    public createCollider(rigidbody: Rigidbody) {
+        this.attachedRigidbody = rigidbody;
+
         if (this.center == null || this.size == null) {
             this.updateSizeFromMeshBounds();
         }
 
-        if (rigidbody) {
-            this.attachedRigidbody = rigidbody;
-        }
+        // 不允许为0的尺寸，否则无法正常碰撞，例如高度为0的平面，高度设置成一个极低的数值
+        if (this.size.x <= 0) this.size.x = 0.01;
+        if (this.size.y <= 0) this.size.y = 0.01;
+        if (this.size.z <= 0) this.size.z = 0.01;
 
         // 先移除旧的
         this.destroyCollider();
+        this.collider = new CANNON.Box(new CANNON.Vec3(this.size.x / 2, this.size.y / 2, this.size.z / 2));
 
-        // 1. 创建碰撞体描述符，并指定其半尺寸 (half-extents)
-        const desc = ColliderDesc.cuboid(this.size.x / 2, this.size.y / 2, this.size.z / 2);
-
-        // 2. 应用中心偏移（平移变换）
-        desc.setTranslation(this.center.x, this.center.y, this.center.z);
-
-        // 3. 创建碰撞体
-        this.collider = Engine.physicsEngine.world.createCollider(desc, rigidbody?.rapierRigidBody);
+        const body = this.attachedRigidbody.connonBody;
+        if (body) {
+            body.addShape(this.collider);
+        }
     }
 
     private updateSizeFromMeshBounds() {

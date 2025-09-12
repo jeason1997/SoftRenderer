@@ -1,6 +1,6 @@
 import { GameObject } from "../Core/GameObject";
 import { Transform } from "../Core/Transform";
-import { UObject } from "../Core/Object";
+import { UObject } from "../Core/UObject";
 
 export abstract class Component extends UObject {
     public readonly gameObject: GameObject;

@@ -1,29 +1,24 @@
-import { ColliderDesc } from "@dimforge/rapier3d";
 import { Engine } from "../Core/Engine";
 import { Vector3 } from "../Math/Vector3";
 import { Collider } from "./Collider";
 import { Rigidbody } from "./RigidBody";
+import * as CANNON from 'cannon';
 
 export class SphereCollider extends Collider {
     public center: Vector3 = Vector3.ZERO;
     public radius: number = 0.5;
 
-    public createCollider(rigidbody?: Rigidbody) {
-        if (rigidbody) {
-            this.attachedRigidbody = rigidbody;
-        }
+    public createCollider(rigidbody: Rigidbody) {
+        this.attachedRigidbody = rigidbody;
 
         // 先移除旧的
         this.destroyCollider();
+        this.collider = new CANNON.Sphere(this.radius);
 
-        // 1. 创建球体碰撞体描述符，指定半径
-        const desc = ColliderDesc.ball(this.radius);
-
-        // 2. 应用中心偏移（平移变换）
-        desc.setTranslation(this.center.x, this.center.y, this.center.z);
-
-        // 3. 创建碰撞体
-        this.collider = Engine.physicsEngine.world.createCollider(desc, rigidbody?.rapierRigidBody);
+        const body = this.attachedRigidbody.connonBody;
+        if (body) {
+            body.addShape(this.collider);
+        }
     }
 
     /**

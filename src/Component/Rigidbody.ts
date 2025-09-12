@@ -1,12 +1,13 @@
 import { Engine } from "../Core/Engine";
 import { LayerMask } from "../Core/LayerMask";
+import { UObject } from "../Core/UObject";
 import { Time } from "../Core/Time";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { RaycastHit } from "../Physics/RaycastHit";
 import { Collider } from "./Collider";
 import { Component } from "./Component";
-import { RigidBody as Rapier_RigidBody, RigidBodyDesc } from "@dimforge/rapier3d";
+import * as CANNON from 'cannon';
 
 export enum ForceMode {
     Force,
@@ -52,10 +53,10 @@ export class Rigidbody extends Component {
     public angularVelocity: Vector3;
     public drag: number;
     public angularDrag: number;
-    public mass: number;
+    public mass: number = 1;
     public useGravity: boolean;
     public maxDepenetrationVelocity: number;
-    public isKinematic: boolean;
+    public isKinematic: boolean = false;
     public freezeRotation: boolean;
     public constraints: RigidbodyConstraints;
     public collisionDetectionMode: CollisionDetectionMode;
@@ -76,38 +77,57 @@ export class Rigidbody extends Component {
     public excludeLayers: LayerMask;
     public includeLayers: LayerMask;
 
-    private _rapierRigidBody: Rapier_RigidBody;
-    public get rapierRigidBody(): Rapier_RigidBody {
-        return this._rapierRigidBody;
+    private _connonBody: CANNON.Body | null;
+    public get connonBody(): CANNON.Body | null {
+        return this._connonBody;
     }
 
     public start(): void {
-        const desc = this.isKinematic ? RigidBodyDesc.fixed() : RigidBodyDesc.dynamic();
-        this._rapierRigidBody = Engine.physicsEngine.world.createRigidBody(desc);
-        this._rapierRigidBody.setTranslation(this.transform.position, true);
-        this._rapierRigidBody.setRotation(this.transform.rotation, true);
+        const parentRigidbody = this.gameObject.getComponetInParent(Rigidbody);
+        if (parentRigidbody && parentRigidbody != this) {
+            console.warn("一个节点层级只能拥有一个Rigidbody组件");
+            UObject.Destroy(this);
+            return;
+        }
 
-        // const childRigidbodies = this.gameObject.getComponentsInChildren(Rigidbody);
-        // for (const childRigidbody of childRigidbodies) {
-        //     console.warn("一个节点层级只能拥有一个Rigidbody组件");
-        //     UObject.Destroy(childRigidbody);
-        // }
+        const childRigidbodies = this.gameObject.getComponentsInChildren(Rigidbody);
+        for (const childRigidbody of childRigidbodies) {
+            if (childRigidbody == this) continue;
+            console.warn("一个节点层级只能拥有一个Rigidbody组件");
+            UObject.Destroy(childRigidbody);
+        }
 
+        if (this._connonBody != null) {
+            Engine.physicsEngine.world.remove(this._connonBody);
+        }
+
+        this._connonBody = new CANNON.Body({
+            mass: this.isKinematic ? 0 : this.mass,
+            position: new CANNON.Vec3(this.transform.position.x, this.transform.position.y, this.transform.position.z),
+            quaternion: new CANNON.Quaternion(this.transform.rotation.x, this.transform.rotation.y, this.transform.rotation.z, this.transform.rotation.w),
+        })
+     
         const colliders = this.gameObject.getComponentsInChildren(Collider);
         for (const collider of colliders) {
             collider.createCollider(this);
         }
+
+        Engine.physicsEngine.world.addBody(this._connonBody);
     }
 
     public update(): void {
-        const pos = this.rapierRigidBody.translation();
-        const rot = this.rapierRigidBody.rotation();
+        if (this._connonBody == null) return;
+        const pos = this._connonBody.position;
+        const rot = this._connonBody.quaternion;
         this.transform.position = new Vector3(pos.x, pos.y, pos.z);
         this.transform.rotation = new Quaternion(rot.x, rot.y, rot.z, rot.w);
     }
 
     public onDestroy(): void {
-        Engine.physicsEngine.world.removeRigidBody(this._rapierRigidBody);
+        if (this._connonBody != null) {
+            Engine.physicsEngine.world.remove(this._connonBody);
+            this._connonBody = null;
+        }
     }
 
     // 只读属性

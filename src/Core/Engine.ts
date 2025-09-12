@@ -14,9 +14,8 @@ export class Engine {
     public static context: CanvasRenderingContext2D;
     public static pipeline: RasterizationPipeline;
     public static imageData: ImageData;
-    private static isInit: boolean = false;
 
-    private static Init() {
+    public static Init() {
         // 获取canvas元素和2D渲染上下文
         this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
         this.context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -40,15 +39,9 @@ export class Engine {
         this.sceneManager.loadScene(MainScene);
         // 初始化输入系统
         Input.initialize();
-
-        this.isInit = true;
     }
 
     public static Loop(time: number) {
-        if (!this.isInit) {
-            this.Init();
-        }
-        
         Logger.log(Math.floor(1 / Time.deltaTime).toString());
 
         // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）

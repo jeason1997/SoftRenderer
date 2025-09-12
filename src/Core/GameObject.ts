@@ -2,7 +2,7 @@ import { Transform } from "./Transform";
 import { Component } from "../Component/Component";
 import { Vector3 } from "../Math/Vector3";
 import { Quaternion } from "../Math/Quaternion";
-import { UObject } from "./Object";
+import { UObject } from "./UObject";
 
 export class GameObject extends UObject {
     public name: string;
@@ -119,6 +119,27 @@ export class GameObject extends UObject {
             }
         }
         return result;
+    }
+
+    public getComponetInParent<T extends Component>(componentType: Function & { prototype: T }): T | null {
+        // 先检查自身
+        const comp = this.getComponent(componentType);
+        if (comp != null) {
+            return comp;
+        }
+
+        let parent = this.transform.parent;
+        while (parent) {
+            const parentGameObject = parent.gameObject;
+            if (parentGameObject) {
+                const component = parentGameObject.getComponent(componentType);
+                if (component) {
+                    return component;
+                }
+            }
+            parent = parent.parent;
+        }
+        return null;
     }
 
     // 获取子节点上的组件

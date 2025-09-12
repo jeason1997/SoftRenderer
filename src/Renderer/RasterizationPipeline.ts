@@ -10,6 +10,7 @@ import { Engine, EngineConfig } from "../Core/Engine";
 import { Logger } from "../Utils/Logger";
 import { Mesh } from "./Mesh";
 import { Bounds } from "../Math/Bounds";
+import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
 
 enum DrawMode {
     Wireframe = 1,
@@ -677,26 +678,18 @@ export class RasterizationPipeline {
         // }
 
         // 绘制包围盒
-        for (let i = 0; i < mesh.bounds.length; i++) {
-            const bound = mesh.bounds[i];
-            this.DrawBounds(bound, renderer.transform, Color.WHITE);
-        }
+        // for (let i = 0; i < mesh.bounds.length; i++) {
+        //     const bound = mesh.bounds[i];
+        //     this.DrawBounds(bound, renderer.transform, Color.WHITE);
+        // }
 
         // 绘制物理调试信息
-        this.DrawPhysicsDebug();
+        // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
     }
 
     //#endregion
 
     //#region 工具函数
-
-    private DrawPhysicsDebug() {
-        const { vertices, colors } = Engine.physicsEngine.world.debugRender();
-        for (let i = 0; i < vertices.length / 4; i += 1) {
-            const color = (colors[i * 8] << 24) | (colors[i * 8 + 1] << 16) | (colors[i * 8 + 2] << 8) | colors[i * 8 + 3];
-            this.DrawLine(vertices[i * 4], -vertices[i * 4 + 1], vertices[i * 4 + 2], -vertices[i * 4 + 3], color);
-        }
-    }
 
     private DrawBounds(bounds: Bounds, transform: Transform, color: number) {
         // 将所有顶点转换到屏幕空间
