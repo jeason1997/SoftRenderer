@@ -3,8 +3,9 @@ import { Color } from '../Math/Color';
 import { Camera } from '../Component/Camera';
 import { Vector4 } from '../Math/Vector4';
 import { EngineConfig } from '../Core/Engine';
-import { TransfromTools } from '../Math/TransfromTools';
+import { TransformTools } from '../Math/TransformTools';
 import { Vector3 } from '../Math/Vector3';
+import { Quaternion } from '../Math/Quaternion';
 
 export class PhysicsDebugDraw {
     // 存储绘图函数的引用
@@ -288,27 +289,15 @@ export class PhysicsDebugDraw {
 
     // 将3D世界坐标转换为2D屏幕坐标
     private static WorldToScreenPos(pos: CANNON.Vec3): { x: number, y: number } | null {
-        return TransfromTools.WorldToScreenPos(new Vector3(pos.x, pos.y, pos.z));
+        return TransformTools.WorldToScreenPos(new Vector3(pos.x, pos.y, pos.z));
     }
 
     // 用四元数旋转向量（不依赖内置方法）
     private static rotateVector(v: CANNON.Vec3, q: CANNON.Quaternion): CANNON.Vec3 {
-        // 四元数旋转公式: v' = q * v * q⁻¹
-        const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
-        const x = v.x, y = v.y, z = v.z;
-
-        // 计算 q * v
-        const ix = qw * x + qy * z - qz * y;
-        const iy = qw * y + qz * x - qx * z;
-        const iz = qw * z + qx * y - qy * x;
-        const iw = -qx * x - qy * y - qz * z;
-
-        // 计算 (q * v) * q⁻¹ (q⁻¹ 是 q的共轭)
-        const rx = ix * qw + iw * (-qx) + iy * (-qz) - iz * (-qy);
-        const ry = iy * qw + iw * (-qy) + iz * (-qx) - ix * (-qz);
-        const rz = iz * qw + iw * (-qz) + ix * (-qy) - iy * (-qx);
-
-        return new CANNON.Vec3(rx, ry, rz);
+        const v2 = new Vector3(v.x, v.y, v.z);
+        const q2 = new Quaternion(q.x, q.y, q.z, q.w);
+        TransformTools.ApplyRotationToVertex(v2, q2);
+        return new CANNON.Vec3(v2.x, v2.y, v2.z);
     }
 
     // 完善的物理调试绘制入口

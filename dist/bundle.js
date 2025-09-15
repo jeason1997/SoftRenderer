@@ -19731,16 +19731,17 @@ exports.Quaternion = Quaternion;
 },{"./Matrix4x4":23,"./Vector3":27}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TransfromTools = void 0;
+exports.TransformTools = void 0;
 var Camera_1 = require("../Component/Camera");
 var Engine_1 = require("../Core/Engine");
 var Vector2_1 = require("./Vector2");
 var Vector3_1 = require("./Vector3");
 var Vector4_1 = require("./Vector4");
-var TransfromTools = /** @class */ (function () {
-    function TransfromTools() {
+var TransformTools = /** @class */ (function () {
+    function TransformTools() {
     }
-    TransfromTools.WorldToScreenPos = function (pos) {
+    // 世界坐标转为屏幕坐标
+    TransformTools.WorldToScreenPos = function (pos) {
         var camera = Camera_1.Camera.mainCamera;
         var viewMatrix = camera.getViewMatrix();
         var projectionMatrix = camera.getProjectionMatrix();
@@ -19751,55 +19752,10 @@ var TransfromTools = /** @class */ (function () {
         var ndcY = clipPos.y / w;
         var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
         var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-        return { x: screenX, y: screenY };
+        return new Vector2_1.Vector2(screenX, screenY);
     };
-    TransfromTools.LocalToScreenPos = function (pos, transform) {
-        var modelMatrix = transform.localToWorldMatrix;
-        var camera = Camera_1.Camera.mainCamera;
-        var viewMatrix = camera.getViewMatrix();
-        var projectionMatrix = camera.getProjectionMatrix();
-        var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
-        var clipPos = mvpMatrix.multiplyVector4(new Vector4_1.Vector4(pos.x, pos.y, pos.z, 1));
-        var w = clipPos.w;
-        var ndcX = clipPos.x / w;
-        var ndcY = clipPos.y / w;
-        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
-        var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-        return { x: screenX, y: screenY };
-    };
-    // 将视口上的内容映射到实际屏幕上
-    TransfromTools.ViewportToCanvas = function (point) {
-        // 假设视口宽度为1个单位
-        // 因为aspectRatio = canvasWidth / canvasHeight，
-        // 所以视口高度 = 1 / aspectRatio = canvasHeight / canvasWidth
-        var viewportWidth = 1;
-        var viewportHeight = 1 / Engine_1.EngineConfig.aspectRatio;
-        // 将投影坐标映射到Canvas像素坐标
-        // X坐标：从 [-viewportWidth/2, viewportWidth/2] 映射到 [0, canvasWidth]
-        // Y坐标：从 [-viewportHeight/2, viewportHeight/2] 映射到 [0, canvasHeight] (注意Y轴方向)
-        var canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * Engine_1.EngineConfig.canvasWidth;
-        var canvasY = Engine_1.EngineConfig.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * Engine_1.EngineConfig.canvasHeight); // Canvas的Y轴通常是向下的
-        point.x = canvasX;
-        point.y = canvasY;
-    };
-    // 透视投影，将3D场景的坐标转换为2D屏幕坐标，投射到视口上
-    TransfromTools.ProjectVertex = function (vertex) {
-        // 假设视点到近裁面（视口）的距离是d，视口的宽是1
-        // 根据三角函数有：tan(fov/2) = (0.5 / d)
-        // 所以：d = 0.5 / tan(fov/2)
-        var fovDegrees = 60;
-        var fovRadians = fovDegrees * (Math.PI / 180); // 将角度转换为弧度
-        var d = 0.5 / Math.tan(fovRadians / 2);
-        // 透视公式，假设视点位置(0,0)，视点到视口距离为d，场景里的点为P(x,y,z)，投射到视口上的点为P'(x,y)
-        // 则根据相似三角形有：z / d = x / x' = y / y'，可得到：
-        // x' = (d * x) / z
-        // y' = (d * y) / z
-        var projectionX = (d * vertex.x) / vertex.z;
-        var projectionY = (d * vertex.y) / vertex.z;
-        return new Vector2_1.Vector2(projectionX, projectionY);
-    };
-    // 将模型空间坐标转换为裁剪空间坐标（Clip Space）
-    TransfromTools.ObjectToClipPos = function (vertex, transform) {
+    // 模型坐标转为裁剪坐标
+    TransformTools.ModelToClipPos = function (vertex, transform) {
         // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
         // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
         var modelMatrix = transform.localToWorldMatrix;
@@ -19814,8 +19770,8 @@ var TransfromTools = /** @class */ (function () {
         // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
         return mvpMatrix.multiplyVector4(new Vector4_1.Vector4(vertex, 1));
     };
-    // 将裁剪空间坐标最终转换为屏幕空间坐标（Screen Space）
-    TransfromTools.ClipToScreenPos = function (vertex) {
+    // 裁剪坐标转为屏幕坐标
+    TransformTools.ClipToScreenPos = function (vertex) {
         // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
         var w = vertex.w;
         var ndcX = vertex.x / w;
@@ -19833,11 +19789,13 @@ var TransfromTools = /** @class */ (function () {
         var screenZ = (ndcZ + 1) / 2;
         return new Vector3_1.Vector3(screenX, screenY, screenZ);
     };
-    TransfromTools.ObjectToScreenPos = function (vertex, transform) {
-        var clipPos = this.ObjectToClipPos(vertex, transform);
+    // 模型坐标转为屏幕坐标
+    TransformTools.ModelToScreenPos = function (vertex, transform) {
+        var clipPos = this.ModelToClipPos(vertex, transform);
         return this.ClipToScreenPos(clipPos);
     };
-    TransfromTools.ObjectToWorldNormal = function (normal, transform) {
+    // 模型法线转为世界法线
+    TransformTools.ModelToWorldNormal = function (normal, transform) {
         // 获取模型矩阵（局部到世界空间的变换矩阵）
         var modelMatrix = transform.localToWorldMatrix;
         // 计算模型矩阵的逆转置矩阵
@@ -19848,9 +19806,36 @@ var TransfromTools = /** @class */ (function () {
         // 归一化结果，确保法线保持单位长度
         return worldNormal.normalize();
     };
-    return TransfromTools;
+    TransformTools.ApplyScaleToVertex = function (vertex, transform) {
+        vertex.x *= transform.scale.x;
+        vertex.y *= transform.scale.y;
+        vertex.z *= transform.scale.z;
+    };
+    TransformTools.ApplyRotationToVertex = function (vertex, quaternion) {
+        // 四元数旋转公式: v' = q * v * q⁻¹
+        var qx = quaternion.x, qy = quaternion.y, qz = quaternion.z, qw = quaternion.w;
+        var x = vertex.x, y = vertex.y, z = vertex.z;
+        // 计算 q * v
+        var ix = qw * x + qy * z - qz * y;
+        var iy = qw * y + qz * x - qx * z;
+        var iz = qw * z + qx * y - qy * x;
+        var iw = -qx * x - qy * y - qz * z;
+        // 计算 (q * v) * q⁻¹ (q⁻¹ 是 q的共轭)
+        var rx = ix * qw + iw * (-qx) + iy * (-qz) - iz * (-qy);
+        var ry = iy * qw + iw * (-qy) + iz * (-qx) - ix * (-qz);
+        var rz = iz * qw + iw * (-qz) + ix * (-qy) - iy * (-qx);
+        vertex.x = rx;
+        vertex.y = ry;
+        vertex.z = rz;
+    };
+    TransformTools.ApplyTranslationToVertex = function (vertex, transform) {
+        vertex.x += transform.position.x;
+        vertex.y += transform.position.y;
+        vertex.z += transform.position.z;
+    };
+    return TransformTools;
 }());
-exports.TransfromTools = TransfromTools;
+exports.TransformTools = TransformTools;
 
 },{"../Component/Camera":5,"../Core/Engine":14,"./Vector2":26,"./Vector3":27,"./Vector4":28}],26:[function(require,module,exports){
 "use strict";
@@ -20466,8 +20451,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PhysicsDebugDraw = void 0;
 var CANNON = __importStar(require("cannon"));
 var Color_1 = require("../Math/Color");
-var TransfromTools_1 = require("../Math/TransfromTools");
+var TransformTools_1 = require("../Math/TransformTools");
 var Vector3_1 = require("../Math/Vector3");
+var Quaternion_1 = require("../Math/Quaternion");
 var PhysicsDebugDraw = /** @class */ (function () {
     function PhysicsDebugDraw() {
     }
@@ -20659,23 +20645,14 @@ var PhysicsDebugDraw = /** @class */ (function () {
     };
     // 将3D世界坐标转换为2D屏幕坐标
     PhysicsDebugDraw.WorldToScreenPos = function (pos) {
-        return TransfromTools_1.TransfromTools.WorldToScreenPos(new Vector3_1.Vector3(pos.x, pos.y, pos.z));
+        return TransformTools_1.TransformTools.WorldToScreenPos(new Vector3_1.Vector3(pos.x, pos.y, pos.z));
     };
     // 用四元数旋转向量（不依赖内置方法）
     PhysicsDebugDraw.rotateVector = function (v, q) {
-        // 四元数旋转公式: v' = q * v * q⁻¹
-        var qx = q.x, qy = q.y, qz = q.z, qw = q.w;
-        var x = v.x, y = v.y, z = v.z;
-        // 计算 q * v
-        var ix = qw * x + qy * z - qz * y;
-        var iy = qw * y + qz * x - qx * z;
-        var iz = qw * z + qx * y - qy * x;
-        var iw = -qx * x - qy * y - qz * z;
-        // 计算 (q * v) * q⁻¹ (q⁻¹ 是 q的共轭)
-        var rx = ix * qw + iw * (-qx) + iy * (-qz) - iz * (-qy);
-        var ry = iy * qw + iw * (-qy) + iz * (-qx) - ix * (-qz);
-        var rz = iz * qw + iw * (-qz) + ix * (-qy) - iy * (-qx);
-        return new CANNON.Vec3(rx, ry, rz);
+        var v2 = new Vector3_1.Vector3(v.x, v.y, v.z);
+        var q2 = new Quaternion_1.Quaternion(q.x, q.y, q.z, q.w);
+        TransformTools_1.TransformTools.ApplyRotationToVertex(v2, q2);
+        return new CANNON.Vec3(v2.x, v2.y, v2.z);
     };
     // 完善的物理调试绘制入口
     PhysicsDebugDraw.DrawPhysicsDebug = function (world, DrawLine) {
@@ -20690,7 +20667,7 @@ var PhysicsDebugDraw = /** @class */ (function () {
 }());
 exports.PhysicsDebugDraw = PhysicsDebugDraw;
 
-},{"../Math/Color":22,"../Math/TransfromTools":25,"../Math/Vector3":27,"cannon":2}],30:[function(require,module,exports){
+},{"../Math/Color":22,"../Math/Quaternion":24,"../Math/TransformTools":25,"../Math/Vector3":27,"cannon":2}],30:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -20783,7 +20760,9 @@ var Mesh = /** @class */ (function () {
             && this.vertices.length === this.uv.length
             && this.vertices.length === this.normals.length
             && this.triangles.length !== 0
-            && this.triangles.length % 3 === 0;
+            && this.triangles.length % 3 === 0
+            && this.faceNormals.length === this.faceCenters.length
+            && this.faceNormals.length * 3 === this.triangles.length;
     };
     // 重新计算包围盒
     Mesh.prototype.recalculateBounds = function () {
@@ -20825,7 +20804,7 @@ var Camera_1 = require("../Component/Camera");
 var Engine_1 = require("../Core/Engine");
 var Logger_1 = require("../Utils/Logger");
 var PhysicsDebugDraw_1 = require("../Physics/PhysicsDebugDraw");
-var TransfromTools_1 = require("../Math/TransfromTools");
+var TransformTools_1 = require("../Math/TransformTools");
 var DrawMode;
 (function (DrawMode) {
     DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
@@ -21124,11 +21103,9 @@ var RasterizationPipeline = /** @class */ (function () {
         }
     };
     //#endregion
-    //#region 投影相关
-    //#endregion
     //#region 变换
     /*
-     * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
+     * 顶点处理阶段：模型空间 →（模型矩阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
     RasterizationPipeline.prototype.VertexProcessingStage = function (vertices, transform) {
         var outVertices = new Array(vertices.length);
@@ -21139,62 +21116,9 @@ var RasterizationPipeline = /** @class */ (function () {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (var i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = TransfromTools_1.TransfromTools.ObjectToScreenPos(vertices[i], transform);
+            outVertices[i] = TransformTools_1.TransformTools.ModelToScreenPos(vertices[i], transform);
         }
         return outVertices;
-    };
-    /*
-     * 简单变换阶段：没有通过矩阵计算，而是简单的相似三角形原理，三角函数算出MVP变换跟屏幕映射，理解起来比较简单，但每个顶点都经过从头到尾的计算，比较耗性能
-     */
-    RasterizationPipeline.prototype.EasyVertexProcessingStage = function (vertices, transform) {
-        var clipSpaceVertices = new Array(vertices.length);
-        // 简单变换
-        for (var i = 0; i < vertices.length; i += 1) {
-            var vertice = vertices[i].clone();
-            // 先变换，必须严格按照先缩放，再旋转，再平移
-            this.ScaleVertex(vertice, transform);
-            this.RotateVertex(vertice, transform);
-            this.TranslateVertex(vertice, transform);
-            // 再投影
-            clipSpaceVertices[i] = TransfromTools_1.TransfromTools.ProjectVertex(vertice);
-            // 再视口映射
-            TransfromTools_1.TransfromTools.ViewportToCanvas(clipSpaceVertices[i]);
-        }
-        return clipSpaceVertices;
-    };
-    RasterizationPipeline.prototype.ScaleVertex = function (vertex, transform) {
-        vertex.x *= transform.scale.x;
-        vertex.y *= transform.scale.y;
-        vertex.z *= transform.scale.z;
-    };
-    RasterizationPipeline.prototype.RotateVertex = function (vertex, transform) {
-        var eulerAngles = transform.rotation.eulerAngles;
-        var cosX = Math.cos(eulerAngles.x);
-        var sinX = Math.sin(eulerAngles.x);
-        var cosY = Math.cos(eulerAngles.y);
-        var sinY = Math.sin(eulerAngles.y);
-        var cosZ = Math.cos(eulerAngles.z);
-        var sinZ = Math.sin(eulerAngles.z);
-        // 先绕Z轴旋转
-        var x = vertex.x * cosZ - vertex.y * sinZ;
-        var y = vertex.x * sinZ + vertex.y * cosZ;
-        vertex.x = x;
-        vertex.y = y;
-        // 再绕Y轴旋转
-        var z = vertex.z * cosY - vertex.x * sinY;
-        var x2 = vertex.z * sinY + vertex.x * cosY;
-        vertex.z = z;
-        vertex.x = x2;
-        // 最后绕X轴旋转
-        var y2 = vertex.y * cosX - vertex.z * sinX;
-        var z2 = vertex.y * sinX + vertex.z * cosX;
-        vertex.y = y2;
-        vertex.z = z2;
-    };
-    RasterizationPipeline.prototype.TranslateVertex = function (vertex, transform) {
-        vertex.x += transform.position.x;
-        vertex.y += transform.position.y;
-        vertex.z += transform.position.z;
     };
     //#endregion
     //#region 剔除裁剪
@@ -21205,88 +21129,26 @@ var RasterizationPipeline = /** @class */ (function () {
     RasterizationPipeline.prototype.BackfaceCulling = function (triangles, mesh, renderer) {
         var visibleTriangles = [];
         var faceNormals = mesh.faceNormals;
-        // 将法向量转换到世界空间（使用模型矩阵的逆矩阵的转置）
-        //const normalMatrix = modelMatrix.invert().transpose();
-        for (var i = 0; i < triangles.length; i += 3) {
-            var a = mesh.vertices[triangles[i + 0]];
-            var b = mesh.vertices[triangles[i + 1]];
-            var c = mesh.vertices[triangles[i + 2]];
-            var center = Vector3_1.Vector3.add(a, b).add(c).divide(3);
-            // 先转到世界坐标
-            var modelMatrix = renderer.transform.localToWorldMatrix;
-            var world_a = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(a, 1)));
-            var world_b = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(b, 1)));
-            var world_c = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(c, 1)));
-            var world_center = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(center, 1)));
-            // 1.获取面的法向量
-            var world_normal = Vector3_1.Vector3.cross(Vector3_1.Vector3.subtract(world_b, world_a), Vector3_1.Vector3.subtract(world_c, world_a)).normalize();
-            //const world_normal = new Vector3(modelMatrix.multiplyVector4(new Vector4(faceNormals[i / 3], 1))).normalize();
-            // 2.获取摄像机到面的中心的向量
-            var cameraPosition = Camera_1.Camera.mainCamera.transform.position;
-            var cameraToCenter = Vector3_1.Vector3.subtract(world_center, cameraPosition).normalize();
+        var faceCenters = mesh.faceCenters;
+        var cameraPosition = Camera_1.Camera.mainCamera.transform.position;
+        // 获取模型矩阵（模型本地空间到世界空间的变换矩阵）
+        var modelMatrix = renderer.transform.localToWorldMatrix;
+        // 计算法线矩阵：模型矩阵的逆矩阵的转置
+        var normalMatrix = modelMatrix.clone().invert().transpose();
+        for (var i = 0; i < faceNormals.length; i++) {
+            //TODO：看能不能把计算提到循环外
+            var world_center = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(faceCenters[i], 1)));
+            var world_normal = new Vector3_1.Vector3(normalMatrix.multiplyVector4(new Vector4_1.Vector4(faceNormals[i], 0)));
+            // 2.获取面的中心到摄像机的向量
+            var centerToCamera = Vector3_1.Vector3.subtract(cameraPosition, world_center);
             // 3.计算这2个向量的夹角
-            var dot = world_normal.dot(cameraToCenter);
-            // const p1 = WorldPosToScreenPos(cameraPosition);
-            // const p2 = WorldPosToScreenPos(world_center);
-            // //const p2 = LocalToScreenPos(center, renderer.transform);
-            // this.DrawLine(p1.x, p1.y, p2.x, p2.y, dot <= 0 ? Color.GREEN : Color.RED);
-            // const p3 = WorldPosToScreenPos(world_center.add(world_normal));
-            // this.DrawLine(p3.x, p3.y, p2.x, p2.y, Color.YELLOW);
-            // 4.判断夹角是否大于0
-            if (dot <= 0) {
-                visibleTriangles.push(triangles[i], triangles[i + 1], triangles[i + 2]);
+            var dot = world_normal.dot(centerToCamera);
+            // 4.判断夹角是否大于等于0°小于90°
+            if (dot > 0) {
+                visibleTriangles.push(triangles[i * 3 + 0], triangles[i * 3 + 1], triangles[i * 3 + 2]);
             }
         }
         return visibleTriangles;
-        // // 1. 计算模型视图矩阵（模型空间 → 视图空间）
-        // // const viewMatrix = camera.getViewMatrix(); // 获取相机的视图矩阵（世界空间 → 视图空间）
-        // // const modelViewMatrix = viewMatrix.multiply(modelMatrix); // 模型空间 → 世界空间 → 视图空间
-        // const viewMatrix = camera.getViewMatrix();
-        // const projectionMatrix = camera.getProjectionMatrix();
-        // const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
-        // // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
-        // //const normalMatrix = mvpMatrix.clone().invert().transpose();
-        // // 3. 视图空间中的相机观察方向（右手坐标系的话，Z轴指向观察者，即相机应该是看向Z轴负轴）
-        // const cameraViewDirection = Vector3.BACK;
-        // for (let i = 0; i < faceNormals.length; i++) {
-        //     // 原始法向量（模型空间）
-        //     const normalModel = faceNormals[i];
-        //     // 4. 将法向量从模型空间变换到视图空间
-        //     const normalView = normalMatrix.multiplyVector3(normalModel);
-        //     // 5. 计算法向量与观察方向的点积
-        //     const dot = normalView.dot(cameraViewDirection);
-        //     // 6. 点积 > 0 表示面向相机（可见）
-        //     if (dot > 0) {
-        //         visibleTriangles.push(
-        //             triangles[i * 3],
-        //             triangles[i * 3 + 1],
-        //             triangles[i * 3 + 2]
-        //         );
-        //     }
-        //     // console.log(
-        //     //     'Camera Transform:',
-        //     //     '\nPosition:', camera.transform.position,
-        //     //     '\nRotation:', camera.transform.rotation,
-        //     //     '\nAngle:', camera.transform.rotation.eulerAngles,
-        //     //     '\nScale:', camera.transform.scale,
-        //     //     '\nCamera Properties:',
-        //     //     '\nAspect:', camera.aspect,
-        //     //     '\nFOV:', camera.fov,
-        //     //     '\nNear Clip:', camera.nearClip,
-        //     //     '\nFar Clip:', camera.farClip,
-        //     //     '\nRenderer Transform:',
-        //     //     '\nPosition:', renderer.transform.position,
-        //     //     '\nRotation:', renderer.transform.rotation,
-        //     //     '\nScale:', renderer.transform.scale,
-        //     //     '\nVertices:',
-        //     //     mesh.vertices[triangles[i * 3]],
-        //     //     mesh.vertices[triangles[i * 3 + 1]],
-        //     //     mesh.vertices[triangles[i * 3 + 2]],
-        //     //     '\nFace Normal:', normalModel,
-        //     //     '\nDot Product:', dot,
-        //     // );
-        // }
-        // return visibleTriangles;
     };
     // 遮挡剔除
     RasterizationPipeline.prototype.OcclusionCulling = function () {
@@ -21305,11 +21167,8 @@ var RasterizationPipeline = /** @class */ (function () {
         this.FrustumCulling();
         triangles = this.BackfaceCulling(triangles, mesh, renderer);
         this.OcclusionCulling();
-        // 2.变换
-        // MVP变换
+        // 2.MVP变换
         var screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
-        // 简单MVP变换
-        // const screenVertices = this.EasyVertexProcessingStage(obj);
         // 3.裁剪
         // 4.光栅化与像素绘画
         // 最后绘制三角形到屏幕上
@@ -21335,9 +21194,9 @@ var RasterizationPipeline = /** @class */ (function () {
                 this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             }
             if (this.drawMode & DrawMode.Normal) {
-                var p1_normal = TransfromTools_1.TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-                var p2_normal = TransfromTools_1.TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-                var p3_normal = TransfromTools_1.TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
+                var p1_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+                var p2_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+                var p3_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
                 // 将法线分量从 [-1, 1] 映射到 [0, 255]
                 var r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
                 var g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
@@ -21358,10 +21217,11 @@ var RasterizationPipeline = /** @class */ (function () {
             }
         }
         // 调试：绘制面法线
-        // for (let i = 0; i < mesh._debug_faceNormalLine.length; i++) {
-        //     const normal = mesh._debug_faceNormalLine[i];
-        //     const start = this.ObjectToScreenPos(normal.start, renderer.transform);
-        //     const end = this.ObjectToScreenPos(normal.end, renderer.transform);
+        // for (let i = 0; i < mesh.faceNormals.length; i++) {
+        //     const normal = mesh.faceNormals[i];
+        //     const center = mesh.faceCenters[i];
+        //     const start = TransfromTools.ObjectToScreenPos(center, renderer.transform);
+        //     const end = TransfromTools.ObjectToScreenPos(Vector3.add(center, normal), renderer.transform);
         //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
         // }
         // 绘制包围盒
@@ -21378,7 +21238,7 @@ var RasterizationPipeline = /** @class */ (function () {
         var _this = this;
         // 将所有顶点转换到屏幕空间
         var screenVertices = bounds.vertices.map(function (v) {
-            return TransfromTools_1.TransfromTools.ObjectToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform);
+            return TransformTools_1.TransformTools.ModelToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform);
         });
         // 绘制所有边
         bounds.edges.forEach(function (_a) {
@@ -21392,7 +21252,7 @@ var RasterizationPipeline = /** @class */ (function () {
         });
         // 绘制中心点
         var center = bounds.center;
-        var screenCenter = TransfromTools_1.TransfromTools.ObjectToScreenPos(center, transform);
+        var screenCenter = TransformTools_1.TransformTools.ModelToScreenPos(center, transform);
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
             var size = 5;
@@ -21451,7 +21311,7 @@ var RasterizationPipeline = /** @class */ (function () {
 }());
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Math/Color":22,"../Math/TransfromTools":25,"../Math/Vector3":27,"../Math/Vector4":28,"../Physics/PhysicsDebugDraw":29,"../Utils/Logger":38}],33:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Math/Color":22,"../Math/TransformTools":25,"../Math/Vector3":27,"../Math/Vector4":28,"../Physics/PhysicsDebugDraw":29,"../Utils/Logger":38}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
@@ -22020,13 +21880,16 @@ var OBJParser = /** @class */ (function () {
         mesh.bounds = mesh.subMeshes.map(function (sm) { return sm.bounds; });
         // 计算三角面的法向量
         this.calculateFaceNormals(mesh);
+        if (!mesh.checkValid()) {
+            console.error("Mesh check valid faild.");
+        }
         return mesh;
     };
     OBJParser.calculateFaceNormals = function (mesh) {
         if (mesh.vertices.length === 0 || mesh.triangles.length === 0)
             return;
         mesh.faceNormals = [];
-        mesh.faceCenter = [];
+        mesh.faceCenters = [];
         for (var i = 0; i < mesh.triangles.length; i += 3) {
             var i0 = mesh.triangles[i];
             var i1 = mesh.triangles[i + 1];
@@ -22038,8 +21901,8 @@ var OBJParser = /** @class */ (function () {
             var e2 = Vector3_1.Vector3.subtract(v2, v0);
             var faceNormal = Vector3_1.Vector3.cross(e1, e2).normalize();
             mesh.faceNormals.push(faceNormal);
-            var center = new Vector3_1.Vector3((v0.x + v1.x + v2.x) / 3, (v0.y + v1.y + v2.y) / 3, (v0.z + v1.z + v2.z) / 3);
-            mesh.faceCenter.push(center);
+            var center = Vector3_1.Vector3.add(v0, v1).add(v2).divide(3);
+            mesh.faceCenters.push(center);
         }
     };
     /**

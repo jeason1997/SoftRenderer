@@ -12,7 +12,7 @@ import { Mesh } from "./Mesh";
 import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
 import { test } from "../Math/Lerp"
-import { TransfromTools } from "../Math/TransfromTools";
+import { TransformTools } from "../Math/TransformTools";
 
 enum DrawMode {
     Wireframe = 1,
@@ -357,18 +357,10 @@ export class RasterizationPipeline {
 
     //#endregion
 
-    //#region 投影相关
-
-    
-
-    //#endregion
-
     //#region 变换
 
-    
-
     /*
-     * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
+     * 顶点处理阶段：模型空间 →（模型矩阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
     public VertexProcessingStage(vertices: Vector3[], transform: Transform) {
         const outVertices = new Array(vertices.length);
@@ -380,70 +372,10 @@ export class RasterizationPipeline {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (let i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = TransfromTools.ObjectToScreenPos(vertices[i], transform);
+            outVertices[i] = TransformTools.ModelToScreenPos(vertices[i], transform);
         }
 
         return outVertices;
-    }
-
-    /*
-     * 简单变换阶段：没有通过矩阵计算，而是简单的相似三角形原理，三角函数算出MVP变换跟屏幕映射，理解起来比较简单，但每个顶点都经过从头到尾的计算，比较耗性能
-     */
-    public EasyVertexProcessingStage(vertices: Vector3[], transform: Transform) {
-        const clipSpaceVertices = new Array(vertices.length);
-
-        // 简单变换
-        for (let i = 0; i < vertices.length; i += 1) {
-            let vertice = vertices[i].clone();
-            // 先变换，必须严格按照先缩放，再旋转，再平移
-            this.ScaleVertex(vertice, transform);
-            this.RotateVertex(vertice, transform);
-            this.TranslateVertex(vertice, transform);
-            // 再投影
-            clipSpaceVertices[i] = TransfromTools.ProjectVertex(vertice);
-            // 再视口映射
-            TransfromTools.ViewportToCanvas(clipSpaceVertices[i]);
-        }
-
-        return clipSpaceVertices;
-    }
-
-    public ScaleVertex(vertex: Vector3, transform: Transform) {
-        vertex.x *= transform.scale.x;
-        vertex.y *= transform.scale.y;
-        vertex.z *= transform.scale.z;
-    }
-
-    public RotateVertex(vertex: Vector3, transform: Transform) {
-        const eulerAngles = transform.rotation.eulerAngles;
-
-        const cosX = Math.cos(eulerAngles.x);
-        const sinX = Math.sin(eulerAngles.x);
-        const cosY = Math.cos(eulerAngles.y);
-        const sinY = Math.sin(eulerAngles.y);
-        const cosZ = Math.cos(eulerAngles.z);
-        const sinZ = Math.sin(eulerAngles.z);
-        // 先绕Z轴旋转
-        const x = vertex.x * cosZ - vertex.y * sinZ;
-        const y = vertex.x * sinZ + vertex.y * cosZ;
-        vertex.x = x;
-        vertex.y = y;
-        // 再绕Y轴旋转
-        const z = vertex.z * cosY - vertex.x * sinY;
-        const x2 = vertex.z * sinY + vertex.x * cosY;
-        vertex.z = z;
-        vertex.x = x2;
-        // 最后绕X轴旋转
-        const y2 = vertex.y * cosX - vertex.z * sinX;
-        const z2 = vertex.y * sinX + vertex.z * cosX;
-        vertex.y = y2;
-        vertex.z = z2;
-    }
-
-    public TranslateVertex(vertex: Vector3, transform: Transform) {
-        vertex.x += transform.position.x;
-        vertex.y += transform.position.y;
-        vertex.z += transform.position.z;
     }
 
     //#endregion
@@ -459,120 +391,36 @@ export class RasterizationPipeline {
     public BackfaceCulling(triangles: number[], mesh: Mesh, renderer: Renderer) {
         const visibleTriangles: number[] = [];
         const faceNormals = mesh.faceNormals;
+        const faceCenters = mesh.faceCenters;
+        const cameraPosition = Camera.mainCamera.transform.position;
 
-        // 将法向量转换到世界空间（使用模型矩阵的逆矩阵的转置）
-        //const normalMatrix = modelMatrix.invert().transpose();
+        // 获取模型矩阵（模型本地空间到世界空间的变换矩阵）
+        const modelMatrix = renderer.transform.localToWorldMatrix;
+        // 计算法线矩阵：模型矩阵的逆矩阵的转置
+        const normalMatrix = modelMatrix.clone().invert().transpose();
 
-        for (let i = 0; i < triangles.length; i += 3) {
-            const a = mesh.vertices[triangles[i + 0]];
-            const b = mesh.vertices[triangles[i + 1]];
-            const c = mesh.vertices[triangles[i + 2]];
-            const center = Vector3.add(a, b).add(c).divide(3);
+        for (let i = 0; i < faceNormals.length; i++) {
+            //TODO：看能不能把计算提到循环外
+            const world_center = new Vector3(modelMatrix.multiplyVector4(new Vector4(faceCenters[i], 1)));
+            const world_normal = new Vector3(normalMatrix.multiplyVector4(new Vector4(faceNormals[i], 0)));
 
-            // 先转到世界坐标
-            const modelMatrix = renderer.transform.localToWorldMatrix;
-            const world_a = new Vector3(modelMatrix.multiplyVector4(new Vector4(a, 1)));
-            const world_b = new Vector3(modelMatrix.multiplyVector4(new Vector4(b, 1)));
-            const world_c = new Vector3(modelMatrix.multiplyVector4(new Vector4(c, 1)));
-            const world_center = new Vector3(modelMatrix.multiplyVector4(new Vector4(center, 1)));
-
-            // 1.获取面的法向量
-            const world_normal = Vector3.cross(
-                Vector3.subtract(world_b, world_a),
-                Vector3.subtract(world_c, world_a)
-            ).normalize();
-            //const world_normal = new Vector3(modelMatrix.multiplyVector4(new Vector4(faceNormals[i / 3], 1))).normalize();
-
-            // 2.获取摄像机到面的中心的向量
-            const cameraPosition = Camera.mainCamera.transform.position;
-            const cameraToCenter = Vector3.subtract(world_center, cameraPosition).normalize();
-
-
-
+            // 2.获取面的中心到摄像机的向量
+            const centerToCamera = Vector3.subtract(cameraPosition, world_center);
 
             // 3.计算这2个向量的夹角
-            const dot = world_normal.dot(cameraToCenter);
+            const dot = world_normal.dot(centerToCamera);
 
-
-            // const p1 = WorldPosToScreenPos(cameraPosition);
-            // const p2 = WorldPosToScreenPos(world_center);
-            // //const p2 = LocalToScreenPos(center, renderer.transform);
-            // this.DrawLine(p1.x, p1.y, p2.x, p2.y, dot <= 0 ? Color.GREEN : Color.RED);
-
-            // const p3 = WorldPosToScreenPos(world_center.add(world_normal));
-            // this.DrawLine(p3.x, p3.y, p2.x, p2.y, Color.YELLOW);
-
-            // 4.判断夹角是否大于0
-            if (dot <= 0) {
+            // 4.判断夹角是否大于等于0°小于90°
+            if (dot > 0) {
                 visibleTriangles.push(
-                    triangles[i],
-                    triangles[i + 1],
-                    triangles[i + 2]
+                    triangles[i * 3 + 0],
+                    triangles[i * 3 + 1],
+                    triangles[i * 3 + 2]
                 );
             }
         }
 
         return visibleTriangles;
-
-        // // 1. 计算模型视图矩阵（模型空间 → 视图空间）
-        // // const viewMatrix = camera.getViewMatrix(); // 获取相机的视图矩阵（世界空间 → 视图空间）
-        // // const modelViewMatrix = viewMatrix.multiply(modelMatrix); // 模型空间 → 世界空间 → 视图空间
-        // const viewMatrix = camera.getViewMatrix();
-        // const projectionMatrix = camera.getProjectionMatrix();
-        // const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
-
-        // // 2. 计算法向量变换矩阵（模型视图矩阵的逆转置）
-        // //const normalMatrix = mvpMatrix.clone().invert().transpose();
-
-        // // 3. 视图空间中的相机观察方向（右手坐标系的话，Z轴指向观察者，即相机应该是看向Z轴负轴）
-        // const cameraViewDirection = Vector3.BACK;
-
-        // for (let i = 0; i < faceNormals.length; i++) {
-        //     // 原始法向量（模型空间）
-        //     const normalModel = faceNormals[i];
-
-        //     // 4. 将法向量从模型空间变换到视图空间
-        //     const normalView = normalMatrix.multiplyVector3(normalModel);
-
-        //     // 5. 计算法向量与观察方向的点积
-        //     const dot = normalView.dot(cameraViewDirection);
-
-        //     // 6. 点积 > 0 表示面向相机（可见）
-        //     if (dot > 0) {
-        //         visibleTriangles.push(
-        //             triangles[i * 3],
-        //             triangles[i * 3 + 1],
-        //             triangles[i * 3 + 2]
-        //         );
-        //     }
-
-
-        //     // console.log(
-        //     //     'Camera Transform:',
-        //     //     '\nPosition:', camera.transform.position,
-        //     //     '\nRotation:', camera.transform.rotation,
-        //     //     '\nAngle:', camera.transform.rotation.eulerAngles,
-        //     //     '\nScale:', camera.transform.scale,
-        //     //     '\nCamera Properties:',
-        //     //     '\nAspect:', camera.aspect,
-        //     //     '\nFOV:', camera.fov,
-        //     //     '\nNear Clip:', camera.nearClip,
-        //     //     '\nFar Clip:', camera.farClip,
-
-        //     //     '\nRenderer Transform:',
-        //     //     '\nPosition:', renderer.transform.position,
-        //     //     '\nRotation:', renderer.transform.rotation,
-        //     //     '\nScale:', renderer.transform.scale,
-        //     //     '\nVertices:',
-        //     //     mesh.vertices[triangles[i * 3]],
-        //     //     mesh.vertices[triangles[i * 3 + 1]],
-        //     //     mesh.vertices[triangles[i * 3 + 2]],
-        //     //     '\nFace Normal:', normalModel,
-        //     //     '\nDot Product:', dot,
-        //     // );
-        // }
-
-        // return visibleTriangles;
     }
 
     // 遮挡剔除
@@ -601,11 +449,8 @@ export class RasterizationPipeline {
         triangles = this.BackfaceCulling(triangles, mesh, renderer);
         this.OcclusionCulling();
 
-        // 2.变换
-        // MVP变换
+        // 2.MVP变换
         const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
-        // 简单MVP变换
-        // const screenVertices = this.EasyVertexProcessingStage(obj);
 
         // 3.裁剪
 
@@ -634,9 +479,9 @@ export class RasterizationPipeline {
                 this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             }
             if (this.drawMode & DrawMode.Normal) {
-                const p1_normal = TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-                const p2_normal = TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-                const p3_normal = TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
+                const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+                const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+                const p3_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
                 // 将法线分量从 [-1, 1] 映射到 [0, 255]
                 let r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
                 let g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
@@ -658,10 +503,11 @@ export class RasterizationPipeline {
         }
 
         // 调试：绘制面法线
-        // for (let i = 0; i < mesh._debug_faceNormalLine.length; i++) {
-        //     const normal = mesh._debug_faceNormalLine[i];
-        //     const start = this.ObjectToScreenPos(normal.start, renderer.transform);
-        //     const end = this.ObjectToScreenPos(normal.end, renderer.transform);
+        // for (let i = 0; i < mesh.faceNormals.length; i++) {
+        //     const normal = mesh.faceNormals[i];
+        //     const center = mesh.faceCenters[i];
+        //     const start = TransfromTools.ObjectToScreenPos(center, renderer.transform);
+        //     const end = TransfromTools.ObjectToScreenPos(Vector3.add(center, normal), renderer.transform);
         //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
         // }
 
@@ -682,7 +528,7 @@ export class RasterizationPipeline {
     private DrawBounds(bounds: Bounds, transform: Transform, color: number) {
         // 将所有顶点转换到屏幕空间
         const screenVertices = bounds.vertices.map(v =>
-            TransfromTools.ObjectToScreenPos(new Vector3(v.x, v.y, v.z), transform)
+            TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform)
         );
 
         // 绘制所有边
@@ -697,7 +543,7 @@ export class RasterizationPipeline {
 
         // 绘制中心点
         const center = bounds.center;
-        const screenCenter = TransfromTools.ObjectToScreenPos(center, transform);
+        const screenCenter = TransformTools.ModelToScreenPos(center, transform);
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
             const size = 5;

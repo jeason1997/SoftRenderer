@@ -1,13 +1,15 @@
 import { Camera } from "../Component/Camera";
 import { EngineConfig } from "../Core/Engine";
 import { Transform } from "../Core/Transform";
+import { Quaternion } from "./Quaternion";
 import { Vector2 } from "./Vector2";
 import { Vector3 } from "./Vector3";
 import { Vector4 } from "./Vector4";
 
-export class TransfromTools {
+export class TransformTools {
 
-    public static WorldToScreenPos(pos: Vector3): { x: number, y: number } {
+    // 世界坐标转为屏幕坐标
+    public static WorldToScreenPos(pos: Vector3): Vector2 {
         const camera = Camera.mainCamera;
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
@@ -21,65 +23,11 @@ export class TransfromTools {
         const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
         const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
 
-        return { x: screenX, y: screenY };
+        return new Vector2(screenX, screenY);
     }
 
-    public static LocalToScreenPos(pos: Vector3, transform: Transform): { x: number, y: number } {
-        const modelMatrix = transform.localToWorldMatrix;
-        const camera = Camera.mainCamera;
-        const viewMatrix = camera.getViewMatrix();
-        const projectionMatrix = camera.getProjectionMatrix();
-        const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
-        const clipPos = mvpMatrix.multiplyVector4(new Vector4(pos.x, pos.y, pos.z, 1));
-
-        const w = clipPos.w;
-        const ndcX = clipPos.x / w;
-        const ndcY = clipPos.y / w;
-
-        const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
-        const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
-
-        return { x: screenX, y: screenY };
-    }
-
-    // 将视口上的内容映射到实际屏幕上
-    public static ViewportToCanvas(point: Vector2) {
-        // 假设视口宽度为1个单位
-        // 因为aspectRatio = canvasWidth / canvasHeight，
-        // 所以视口高度 = 1 / aspectRatio = canvasHeight / canvasWidth
-        const viewportWidth = 1;
-        const viewportHeight = 1 / EngineConfig.aspectRatio;
-
-        // 将投影坐标映射到Canvas像素坐标
-        // X坐标：从 [-viewportWidth/2, viewportWidth/2] 映射到 [0, canvasWidth]
-        // Y坐标：从 [-viewportHeight/2, viewportHeight/2] 映射到 [0, canvasHeight] (注意Y轴方向)
-        const canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * EngineConfig.canvasWidth;
-        const canvasY = EngineConfig.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * EngineConfig.canvasHeight); // Canvas的Y轴通常是向下的
-        point.x = canvasX;
-        point.y = canvasY;
-    }
-
-    // 透视投影，将3D场景的坐标转换为2D屏幕坐标，投射到视口上
-    public static ProjectVertex(vertex: Vector3): Vector2 {
-        // 假设视点到近裁面（视口）的距离是d，视口的宽是1
-        // 根据三角函数有：tan(fov/2) = (0.5 / d)
-        // 所以：d = 0.5 / tan(fov/2)
-        const fovDegrees = 60;
-        const fovRadians = fovDegrees * (Math.PI / 180); // 将角度转换为弧度
-        const d = 0.5 / Math.tan(fovRadians / 2);
-
-        // 透视公式，假设视点位置(0,0)，视点到视口距离为d，场景里的点为P(x,y,z)，投射到视口上的点为P'(x,y)
-        // 则根据相似三角形有：z / d = x / x' = y / y'，可得到：
-        // x' = (d * x) / z
-        // y' = (d * y) / z
-        const projectionX = (d * vertex.x) / vertex.z;
-        const projectionY = (d * vertex.y) / vertex.z;
-
-        return new Vector2(projectionX, projectionY);
-    }
-
-    // 将模型空间坐标转换为裁剪空间坐标（Clip Space）
-    public static ObjectToClipPos(vertex: Vector3, transform: Transform): Vector4 {
+    // 模型坐标转为裁剪坐标
+    public static ModelToClipPos(vertex: Vector3, transform: Transform): Vector4 {
         // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
         // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
         const modelMatrix = transform.localToWorldMatrix;
@@ -95,7 +43,7 @@ export class TransfromTools {
         return mvpMatrix.multiplyVector4(new Vector4(vertex, 1));
     }
 
-    // 将裁剪空间坐标最终转换为屏幕空间坐标（Screen Space）
+    // 裁剪坐标转为屏幕坐标
     public static ClipToScreenPos(vertex: Vector4): Vector3 {
         // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
         const w = vertex.w;
@@ -119,12 +67,14 @@ export class TransfromTools {
         return new Vector3(screenX, screenY, screenZ);
     }
 
-    public static ObjectToScreenPos(vertex: Vector3, transform: Transform): Vector3 {
-        const clipPos = this.ObjectToClipPos(vertex, transform);
+    // 模型坐标转为屏幕坐标
+    public static ModelToScreenPos(vertex: Vector3, transform: Transform): Vector3 {
+        const clipPos = this.ModelToClipPos(vertex, transform);
         return this.ClipToScreenPos(clipPos);
     }
 
-    public static ObjectToWorldNormal(normal: Vector3, transform: Transform): Vector3 {
+    // 模型法线转为世界法线
+    public static ModelToWorldNormal(normal: Vector3, transform: Transform): Vector3 {
         // 获取模型矩阵（局部到世界空间的变换矩阵）
         const modelMatrix = transform.localToWorldMatrix;
 
@@ -137,5 +87,38 @@ export class TransfromTools {
 
         // 归一化结果，确保法线保持单位长度
         return worldNormal.normalize();
+    }
+
+    public static ApplyScaleToVertex(vertex: Vector3, transform: Transform) {
+        vertex.x *= transform.scale.x;
+        vertex.y *= transform.scale.y;
+        vertex.z *= transform.scale.z;
+    }
+
+    public static ApplyRotationToVertex(vertex: Vector3, quaternion: Quaternion) {
+        // 四元数旋转公式: v' = q * v * q⁻¹
+        const qx = quaternion.x, qy = quaternion.y, qz = quaternion.z, qw = quaternion.w;
+        const x = vertex.x, y = vertex.y, z = vertex.z;
+
+        // 计算 q * v
+        const ix = qw * x + qy * z - qz * y;
+        const iy = qw * y + qz * x - qx * z;
+        const iz = qw * z + qx * y - qy * x;
+        const iw = -qx * x - qy * y - qz * z;
+
+        // 计算 (q * v) * q⁻¹ (q⁻¹ 是 q的共轭)
+        const rx = ix * qw + iw * (-qx) + iy * (-qz) - iz * (-qy);
+        const ry = iy * qw + iw * (-qy) + iz * (-qx) - ix * (-qz);
+        const rz = iz * qw + iw * (-qz) + ix * (-qy) - iy * (-qx);
+
+        vertex.x = rx;
+        vertex.y = ry;
+        vertex.z = rz;
+    }
+
+    public static ApplyTranslationToVertex(vertex: Vector3, transform: Transform) {
+        vertex.x += transform.position.x;
+        vertex.y += transform.position.y;
+        vertex.z += transform.position.z;
     }
 }

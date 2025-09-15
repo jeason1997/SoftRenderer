@@ -8,7 +8,7 @@ export class Mesh {
     public material: string[];                     // 材质
     public triangles: number[];                    // 三角形
     public faceNormals: Vector3[];                 // 面法线
-    public faceCenter: Vector3[];                  // 面中心
+    public faceCenters: Vector3[];                 // 面中心
     public vertices: Vector3[];                    // 顶点
     public uv: Vector2[];                          // UV
     public normals: Vector3[];                     // 法线
@@ -34,7 +34,9 @@ export class Mesh {
             && this.vertices.length === this.uv.length
             && this.vertices.length === this.normals.length
             && this.triangles.length !== 0
-            && this.triangles.length % 3 === 0;
+            && this.triangles.length % 3 === 0
+            && this.faceNormals.length === this.faceCenters.length
+            && this.faceNormals.length * 3 === this.triangles.length;
     }
 
     // 重新计算包围盒
