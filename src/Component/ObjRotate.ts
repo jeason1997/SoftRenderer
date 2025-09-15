@@ -26,7 +26,6 @@ export class ObjRotate extends Component {
         //     sacle.multiply(zoomFactor);
         //     this.transform.scale = sacle;
         // }
-
         
         if(Input.GetKey(Input.KeyCode.Numpad4)) this.angleY -= 1;
         if(Input.GetKey(Input.KeyCode.Numpad6)) this.angleY += 1;

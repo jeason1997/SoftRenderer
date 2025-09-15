@@ -79,6 +79,10 @@ export class Vector2 {
         return this;
     }
 
+    public dot(v: Vector2): number {
+        return (this.x * v.x + this.y * v.y);
+    }
+
     public negate(): Vector2 {
         return this.multiply(-1);
     }

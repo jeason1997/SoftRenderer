@@ -1,5 +1,4 @@
 import { Color } from "../Math/Color";
-import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
 import { Transform } from "../Core/Transform";
@@ -7,12 +6,13 @@ import { Renderer } from "../Component/Renderer";
 import { MeshRenderer } from "../Component/MeshRenderer";
 import { Camera } from "../Component/Camera";
 import { Engine, EngineConfig } from "../Core/Engine";
-import { Logger } from "../Utils/Logger";
 import { Mesh } from "./Mesh";
 import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
-import { test } from "../Math/Lerp"
+import { interpolateOverTriangle } from "../Math/Lerp"
 import { TransformTools } from "../Math/TransformTools";
+import { Logger } from "../Utils/Logger";
+import { Vector2 } from "../Math/Vector2";
 
 enum DrawMode {
     Wireframe = 1,
@@ -25,17 +25,22 @@ enum DrawMode {
 export class RasterizationPipeline {
     public drawMode: DrawMode = DrawMode.Wireframe;
     private frameBuffer: Uint32Array;
-    private depthBuffer: Uint32Array;
+    private depthBuffer: number[];
 
     constructor(frameBuffer: Uint32Array) {
         this.frameBuffer = frameBuffer;
-        this.depthBuffer = new Uint32Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
+        this.depthBuffer = new Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
+        // 深度缓冲区初始化为最大值（表示最远）
+        this.depthBuffer.fill(1.0);
     }
 
     public Render() {
         this.Clear(Color.BLACK);
 
-        //test(this.DrawPixel.bind(this));
+        // const v = TransformTools.WorldToScreenPos(new Vector3(0, 0, 128+5));
+        // console.log(v);
+        // test(this.DrawPixel.bind(this));
+        // this.DrawTriangle(100, 100, 200, 150, 150, 200, Color.WHITE);
 
         // 获取场景中的所有根游戏对象并渲染
         const rootObjects = Engine.sceneManager.getActiveScene()?.getRootGameObjects();
@@ -362,7 +367,7 @@ export class RasterizationPipeline {
     /*
      * 顶点处理阶段：模型空间 →（模型矩阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
-    public VertexProcessingStage(vertices: Vector3[], transform: Transform) {
+    public VertexProcessingStage(vertices: Vector3[], transform: Transform): Vector3[] {
         const outVertices = new Array(vertices.length);
 
         // 1. MVP变换到裁剪空间
@@ -400,8 +405,9 @@ export class RasterizationPipeline {
         const normalMatrix = modelMatrix.clone().invert().transpose();
 
         for (let i = 0; i < faceNormals.length; i++) {
-            //TODO：看能不能把计算提到循环外
+            // 要把Vec3转为齐次坐标点，即w=1
             const world_center = new Vector3(modelMatrix.multiplyVector4(new Vector4(faceCenters[i], 1)));
+            // 要把Vec3转为齐次坐向量，即w=0
             const world_normal = new Vector3(normalMatrix.multiplyVector4(new Vector4(faceNormals[i], 0)));
 
             // 2.获取面的中心到摄像机的向量
@@ -461,45 +467,101 @@ export class RasterizationPipeline {
             const p2 = screenVertices[triangles[i + 1]];
             const p3 = screenVertices[triangles[i + 2]];
 
-            if (this.drawMode & DrawMode.Wireframe) {
-                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
-            }
-            if (this.drawMode & DrawMode.Point) {
-                this.DrawPixel(p1.x, p1.y, Color.WHITE);
-                this.DrawPixel(p2.x, p2.y, Color.WHITE);
-                this.DrawPixel(p3.x, p3.y, Color.WHITE);
-            }
-            if (this.drawMode & DrawMode.UV) {
-                const p1_uv = mesh.uv[triangles[i]];
-                const p2_uv = mesh.uv[triangles[i + 1]];
-                const p3_uv = mesh.uv[triangles[i + 2]];
-                const p1_color = new Color(p1_uv.x * 255, p1_uv.y * 255, 0).ToUint32();
-                const p2_color = new Color(p2_uv.x * 255, p2_uv.y * 255, 0).ToUint32();
-                const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0).ToUint32();
-                this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
-            }
-            if (this.drawMode & DrawMode.Normal) {
-                const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-                const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-                const p3_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
-                // 将法线分量从 [-1, 1] 映射到 [0, 255]
-                let r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
-                let g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
-                let b = Math.floor((p1_normal.z + 1) * 0.5 * 255);
-                const p1_color = new Color(r, g, b).ToUint32();
-                r = Math.floor((p2_normal.x + 1) * 0.5 * 255);
-                g = Math.floor((p2_normal.y + 1) * 0.5 * 255);
-                b = Math.floor((p2_normal.z + 1) * 0.5 * 255);
-                const p2_color = new Color(r, g, b).ToUint32();
-                r = Math.floor((p3_normal.x + 1) * 0.5 * 255);
-                g = Math.floor((p3_normal.y + 1) * 0.5 * 255);
-                b = Math.floor((p3_normal.z + 1) * 0.5 * 255);
-                const p3_color = new Color(r, g, b).ToUint32();
-                this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
-            }
-            if (this.drawMode & DrawMode.Shader) {
-                this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
-            }
+            const p1_uv = mesh.uv[triangles[i]];
+            const p2_uv = mesh.uv[triangles[i + 1]];
+            const p3_uv = mesh.uv[triangles[i + 2]];
+
+            const p1_color = new Color(p1_uv.x * 255, p1_uv.y * 255, 0);
+            const p2_color = new Color(p2_uv.x * 255, p2_uv.y * 255, 0);
+            const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0);
+
+            const v1 = new Vector2(p1.x, p1.y);
+            const v2 = new Vector2(p2.x, p2.y);
+            const v3 = new Vector2(p3.x, p3.y);
+
+            const attrs1 = {
+                color: p1_color,
+                texCoord: p1_uv,
+                z: p1.z
+            };
+
+            const attrs2 = {
+                color: p2_color,
+                texCoord: p2_uv,
+                z: p2.z
+            };
+
+            const attrs3 = {
+                color: p3_color,
+                texCoord: p3_uv,
+                z: p3.z
+            };
+
+            // 栅格化三角形
+            const fragments = interpolateOverTriangle(v1, v2, v3, attrs1, attrs2, attrs3);
+
+            fragments.forEach(fragment => {
+                const x = Math.round(fragment.x);
+                const y = Math.round(fragment.y);
+                const z = fragment.attributes.z as number;
+
+                // 检查坐标是否在屏幕范围内
+                if (x < 0 || x >= EngineConfig.canvasWidth ||
+                    y < 0 || y >= EngineConfig.canvasHeight) {
+                    return;
+                }
+
+                // 计算深度缓冲区索引
+                const index = y * EngineConfig.canvasWidth + x;
+                const currentDepth = this.depthBuffer[index];
+
+                // 深度测试：只有当前像素更近（z值更小）时才绘制
+                if (z < currentDepth) {
+                    this.depthBuffer[index] = z;
+                    const color = fragment.attributes.color as Color;
+                    this.DrawPixel(x, y, color.ToUint32());
+                }
+            });
+
+            // if (this.drawMode & DrawMode.Wireframe) {
+            //     this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
+            // }
+            // if (this.drawMode & DrawMode.Point) {
+            //     this.DrawPixel(p1.x, p1.y, Color.WHITE);
+            //     this.DrawPixel(p2.x, p2.y, Color.WHITE);
+            //     this.DrawPixel(p3.x, p3.y, Color.WHITE);
+            // }
+            // if (this.drawMode & DrawMode.UV) {
+            //     const p1_uv = mesh.uv[triangles[i]];
+            //     const p2_uv = mesh.uv[triangles[i + 1]];
+            //     const p3_uv = mesh.uv[triangles[i + 2]];
+            //     const p1_color = new Color(p1_uv.x * 255, p1_uv.y * 255, 0).ToUint32();
+            //     const p2_color = new Color(p2_uv.x * 255, p2_uv.y * 255, 0).ToUint32();
+            //     const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0).ToUint32();
+            //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
+            // }
+            // if (this.drawMode & DrawMode.Normal) {
+            //     const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+            //     const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+            //     const p3_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
+            //     // 将法线分量从 [-1, 1] 映射到 [0, 255]
+            //     let r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
+            //     let g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
+            //     let b = Math.floor((p1_normal.z + 1) * 0.5 * 255);
+            //     const p1_color = new Color(r, g, b).ToUint32();
+            //     r = Math.floor((p2_normal.x + 1) * 0.5 * 255);
+            //     g = Math.floor((p2_normal.y + 1) * 0.5 * 255);
+            //     b = Math.floor((p2_normal.z + 1) * 0.5 * 255);
+            //     const p2_color = new Color(r, g, b).ToUint32();
+            //     r = Math.floor((p3_normal.x + 1) * 0.5 * 255);
+            //     g = Math.floor((p3_normal.y + 1) * 0.5 * 255);
+            //     b = Math.floor((p3_normal.z + 1) * 0.5 * 255);
+            //     const p3_color = new Color(r, g, b).ToUint32();
+            //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
+            // }
+            // if (this.drawMode & DrawMode.Shader) {
+            //     this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
+            // }
         }
 
         // 调试：绘制面法线

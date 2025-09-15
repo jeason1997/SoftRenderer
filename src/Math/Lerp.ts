@@ -1,4 +1,23 @@
 import { Color } from "./Color";
+import { Vector2 } from "./Vector2";
+import { Vector3 } from "./Vector3";
+import { Vector4 } from "./Vector4";
+import { Matrix4x4 } from "./Matrix4x4";
+
+// 支持的属性类型
+type AttributeType = number | Color | Vector2 | Vector3 | Vector4 | Matrix4x4;
+
+// 顶点属性集合，键为属性名称，值为任意支持的类型
+interface VertexAttributes {
+    [key: string]: AttributeType;
+}
+
+// 片段数据接口，包含像素位置和插值后的属性
+interface Fragment {
+    x: number;
+    y: number;
+    attributes: VertexAttributes;
+}
 
 /**
  * 计算点 p 在三角形 (v0, v1, v2) 中的重心坐标。
@@ -10,28 +29,25 @@ import { Color } from "./Color";
  */
 function computeBarycentricCoords(
     p: [number, number],
-    v0: [number, number],
-    v1: [number, number],
-    v2: [number, number]
+    v0: Vector2,
+    v1: Vector2,
+    v2: Vector2
 ): [number, number, number] {
     const [x, y] = p;
-    const [x0, y0] = v0;
-    const [x1, y1] = v1;
-    const [x2, y2] = v2;
 
     // 计算整个三角形的面积（的两倍，有符号）
-    const areaABC = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+    const areaABC = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
 
     // 计算子三角形 PBC 的面积（的两倍，有符号）
-    const areaPBC = (x1 - x) * (y2 - y) - (x2 - x) * (y1 - y);
+    const areaPBC = (v1.x - x) * (v2.y - y) - (v2.x - x) * (v1.y - y);
     const alpha = areaPBC / areaABC;
 
     // 计算子三角形 PCA 的面积（的两倍，有签名）
-    const areaPCA = (x2 - x) * (y0 - y) - (x0 - x) * (y2 - y);
+    const areaPCA = (v2.x - x) * (v0.y - y) - (v0.x - x) * (v2.y - y);
     const beta = areaPCA / areaABC;
 
     // 计算子三角形 PAB 的面积（的两倍，有签名）
-    const areaPAB = (x0 - x) * (y1 - y) - (x1 - x) * (y0 - y);
+    const areaPAB = (v0.x - x) * (v1.y - y) - (v1.x - x) * (v0.y - y);
     const gamma = areaPAB / areaABC;
     // 或者 gamma = 1 - alpha - beta;
 
@@ -39,50 +55,30 @@ function computeBarycentricCoords(
 }
 
 /**
- * 线性插值函数
- * @param a 起始值
- * @param b 结束值
- * @param t 插值权重 (0.0 返回 a, 1.0 返回 b)
- * @returns 插值结果
+ * 对三角形进行栅格化并插值顶点属性
+ * @param v0 第一个顶点的屏幕坐标
+ * @param v1 第二个顶点的屏幕坐标
+ * @param v2 第三个顶点的屏幕坐标
+ * @param attrs0 第一个顶点的所有属性
+ * @param attrs1 第二个顶点的所有属性
+ * @param attrs2 第三个顶点的所有属性
+ * @returns 所有像素及其插值后的属性
  */
-function lerp<T>(a: T, b: T, t: number): T {
-    if (typeof a === 'number' && typeof b === 'number') {
-        return (a + (b - a) * t) as T;
-    } else if (Array.isArray(a) && Array.isArray(b)) {
-        // 假设是数字数组（如 vec2, vec3, vec4, color[R,G,B]）
-        if (a.length !== b.length) {
-            throw new Error('Arrays must have the same length for interpolation');
-        }
-        return a.map((val, idx) => lerp(val, b[idx], t)) as T;
-    }
-    // 可以扩展支持其他类型，如自定义的 Vector2/3/4 类
-    // 例如，如果 T 有 lerp 方法： return a.lerp(b, t);
-    else {
-        throw new Error(`Unsupported type for interpolation: ${typeof a}`);
-    }
-}
+export function interpolateOverTriangle(
+    v0: Vector2,
+    v1: Vector2,
+    v2: Vector2,
+    attrs0: VertexAttributes,
+    attrs1: VertexAttributes,
+    attrs2: VertexAttributes
+): Fragment[] {
+    const fragments: Fragment[] = [];
 
-/**
- * 对三角形内的像素点进行属性插值（屏幕坐标）
- * @param v0 顶点0信息 { pos: [x, y], attr: T }
- * @param v1 顶点1信息 { pos: [x, y], attr: T }
- * @param v2 顶点2信息 { pos: [x, y], attr: T }
- * @returns 一个数组，包含三角形内每个像素点的坐标 [x, y] 及其插值后的属性值
- */
-function interpolateOverTriangle<T>(
-    v0: { pos: [number, number]; attr: T },
-    v1: { pos: [number, number]; attr: T },
-    v2: { pos: [number, number]; attr: T }
-): { pixel: [number, number]; value: T }[] {
-    const results: { pixel: [number, number]; value: T }[] = [];
-
-    // 1. 确定三角形的边界框（Bounding Box）以提高效率
-    const allX = [v0.pos[0], v1.pos[0], v2.pos[0]];
-    const allY = [v0.pos[1], v1.pos[1], v2.pos[1]];
-    const minX = Math.floor(Math.min(...allX));
-    const maxX = Math.ceil(Math.max(...allX));
-    const minY = Math.floor(Math.min(...allY));
-    const maxY = Math.ceil(Math.max(...allY));
+    // 1. 计算三角形的包围盒
+    const minX = Math.floor(Math.min(v0.x, v1.x, v2.x));
+    const maxX = Math.ceil(Math.max(v0.x, v1.x, v2.x));
+    const minY = Math.floor(Math.min(v0.y, v1.y, v2.y));
+    const maxY = Math.ceil(Math.max(v0.y, v1.y, v2.y));
 
     // 2. 遍历边界框内的每一个像素点
     for (let y = minY; y <= maxY; y++) {
@@ -90,7 +86,7 @@ function interpolateOverTriangle<T>(
             const pixel: [number, number] = [x, y];
 
             // 3. 计算当前像素点的重心坐标
-            const [alpha, beta, gamma] = computeBarycentricCoords(pixel, v0.pos, v1.pos, v2.pos);
+            const [alpha, beta, gamma] = computeBarycentricCoords(pixel, v0, v1, v2);
 
             // 4. 判断点是否在三角形内部（重心坐标均非负，且近似和为1）
             const tolerance = 1e-5; // 浮点数精度容差
@@ -101,38 +97,233 @@ function interpolateOverTriangle<T>(
                 Math.abs(alpha + beta + gamma - 1) < tolerance
             ) {
                 // 5. 使用重心坐标作为权重对属性进行插值
-                // f(p) = α * f(v0) + β * f(v1) + γ * f(v2)
-                const interpolatedValue = lerp(
-                    lerp(v0.attr, v1.attr, beta / (alpha + beta + gamma)), // 可先两两插值，再与第三个插值
-                    v2.attr,
-                    gamma / (alpha + beta + gamma)
-                );
-                // 或者直接加权求和（要求属性类型支持数乘和加法）
                 // 例如，如果 T 是 number: interpolatedValue = alpha * v0.attr + beta * v1.attr + gamma * v2.attr;
                 // 如果 T 是数组，需要每个分量分别计算。
+                const interpolatedAttrs = interpolateAttributes(
+                    attrs0, attrs1, attrs2, alpha, beta, gamma
+                );
 
-                results.push({ pixel, value: interpolatedValue });
+                // 添加到片段列表
+                fragments.push({
+                    x, y,
+                    attributes: interpolatedAttrs
+                });
             }
         }
     }
 
-    return results;
+    return fragments;
+}
+
+/**
+ * 基于 barycentric 坐标插值顶点属性，支持多种类型
+ */
+function interpolateAttributes(
+    a: VertexAttributes,
+    b: VertexAttributes,
+    c: VertexAttributes,
+    w: number,  // 顶点a的权重
+    u: number, // 顶点b的权重
+    v: number // 顶点c的权重
+): VertexAttributes {
+    const result: VertexAttributes = {};
+
+    // 获取所有属性名称并验证
+    const attributeNames = Object.keys(a);
+    validateAttributes(attributeNames, b, c);
+
+    // 对每个属性进行插值
+    for (const name of attributeNames) {
+        const valA = a[name];
+        const valB = b[name];
+        const valC = c[name];
+
+        // 根据属性类型执行相应的插值
+        if (typeof valA === 'number') {
+            // 标量插值
+            result[name] = interpolateNumber(
+                valA as number,
+                valB as number,
+                valC as number,
+                w, u, v
+            );
+        }
+        else if (valA instanceof Color) {
+            // Color插值
+            result[name] = interpolateColor(
+                valA,
+                valB as Color,
+                valC as Color,
+                w, u, v
+            );
+        }
+        else if (valA instanceof Vector2) {
+            // Vector2插值
+            result[name] = interpolateVector2(
+                valA,
+                valB as Vector2,
+                valC as Vector2,
+                w, u, v
+            );
+        }
+        else if (valA instanceof Vector3) {
+            // Vector3插值
+            result[name] = interpolateVector3(
+                valA,
+                valB as Vector3,
+                valC as Vector3,
+                w, u, v
+            );
+        }
+        else if (valA instanceof Vector4) {
+            // Vector4插值
+            result[name] = interpolateVector4(
+                valA,
+                valB as Vector4,
+                valC as Vector4,
+                w, u, v
+            );
+        }
+        else if (valA instanceof Matrix4x4) {
+            // 矩阵插值 - 对矩阵的每个元素分别插值
+            result[name] = interpolateMatrix4x4(
+                valA,
+                valB as Matrix4x4,
+                valC as Matrix4x4,
+                w, u, v
+            );
+        }
+        else {
+            throw new Error(`不支持的属性类型: ${typeof valA} 用于属性 ${name}`);
+        }
+    }
+
+    return result;
+}
+
+/**
+ * 验证所有顶点是否具有相同的属性
+ */
+function validateAttributes(attributeNames: string[], ...otherAttrs: VertexAttributes[]) {
+    for (const attrs of otherAttrs) {
+        for (const name of attributeNames) {
+            if (!(name in attrs)) {
+                throw new Error(`顶点属性不匹配: 缺少属性 ${name}`);
+            }
+        }
+
+        for (const name of Object.keys(attrs)) {
+            if (!attributeNames.includes(name)) {
+                throw new Error(`顶点属性不匹配: 存在额外属性 ${name}`);
+            }
+        }
+    }
+}
+
+/**
+ * 插值标量
+ */
+function interpolateNumber(a: number, b: number, c: number, w: number, u: number, v: number): number {
+    return a * w + b * u + c * v;
+}
+
+/**
+ * 插值Color
+ */
+function interpolateColor(a: Color, b: Color, c: Color, w: number, u: number, v: number): Color {
+    return new Color(
+        a.r * w + b.r * u + c.r * v,
+        a.g * w + b.g * u + c.g * v,
+        a.b * w + b.b * u + c.b * v,
+        a.a * w + b.a * u + c.a * v
+    );
+}
+
+/**
+ * 插值Vector2
+ */
+function interpolateVector2(a: Vector2, b: Vector2, c: Vector2, w: number, u: number, v: number): Vector2 {
+    return new Vector2(
+        a.x * w + b.x * u + c.x * v,
+        a.y * w + b.y * u + c.y * v
+    );
+}
+
+/**
+ * 插值Vector3
+ */
+function interpolateVector3(a: Vector3, b: Vector3, c: Vector3, w: number, u: number, v: number): Vector3 {
+    return new Vector3(
+        a.x * w + b.x * u + c.x * v,
+        a.y * w + b.y * u + c.y * v,
+        a.z * w + b.z * u + c.z * v
+    );
+}
+
+/**
+ * 插值Vector4
+ */
+function interpolateVector4(a: Vector4, b: Vector4, c: Vector4, w: number, u: number, v: number): Vector4 {
+    return new Vector4(
+        a.x * w + b.x * u + c.x * v,
+        a.y * w + b.y * u + c.y * v,
+        a.z * w + b.z * u + c.z * v,
+        a.w * w + b.w * u + c.w * v
+    );
+}
+
+/**
+ * 插值4x4矩阵 - 对矩阵的每个元素分别进行插值
+ */
+function interpolateMatrix4x4(a: Matrix4x4, b: Matrix4x4, c: Matrix4x4, w: number, u: number, v: number): Matrix4x4 {
+    const result = new Matrix4x4();
+    for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
+            result.matrix[row][col] = a.matrix[row][col] * w + b.matrix[row][col] * u + c.matrix[row][col] * v;
+        }
+    }
+    return result;
 }
 
 export function test(DrawPixel: Function) {
-    // 定义三个顶点（假设已在屏幕空间）
-    const vertex0 = { pos: [100, 100] as [number, number], attr: [255, 0, 0] }; // 红色
-    const vertex1 = { pos: [200, 150] as [number, number], attr: [0, 255, 0] }; // 绿色
-    const vertex2 = { pos: [150, 200] as [number, number], attr: [0, 0, 255] }; // 蓝色
+    // 定义三个顶点的屏幕坐标
+    const v0 = new Vector2(100, 100);
+    const v1 = new Vector2(200, 150);
+    const v2 = new Vector2(150, 200);
 
-    // 执行插值
-    const interpolatedPixels = interpolateOverTriangle(vertex0, vertex1, vertex2);
+    // 每个顶点可以有多个不同类型的属性
+    const attrs0 = {
+        color: new Color(255, 0, 0),
+        texCoord: new Vector2(0, 0),
+        intensity: 1.0,
+        transform: Matrix4x4.identity
+    };
+
+    const attrs1 = {
+        color: new Color(0, 255, 0),
+        texCoord: new Vector2(1, 0),
+        intensity: 0.5,
+        transform: new Matrix4x4().translate(new Vector3(1, 0, 0))
+    };
+
+    const attrs2 = {
+        color: new Color(0, 0, 255),
+        texCoord: new Vector2(0, 1),
+        intensity: 0.0,
+        transform: new Matrix4x4().translate(new Vector3(0, 1, 0))
+    };
+
+    // 栅格化三角形
+    const fragments = interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2);
 
     // 输出部分结果
-    console.log(`共计算了 ${interpolatedPixels.length} 个像素点的插值颜色。`);
-    for(let i = 0; i < interpolatedPixels.length; i++){
-        const pixel = interpolatedPixels[i].pixel;
-        const value = interpolatedPixels[i].value;
-        DrawPixel(pixel[0], pixel[1], new Color(value[0], value[1], value[2]).ToUint32());
+    console.log(`共计算了 ${fragments.length} 个像素点的插值颜色。`);
+    for (let i = 0; i < fragments.length; i++) {
+        const pixel = [fragments[i].x, fragments[i].y];
+        const color = fragments[i].attributes.color as Color;
+        color.r *= fragments[i].attributes.intensity as number;
+        color.g *= fragments[i].attributes.intensity as number;
+        color.b *= fragments[i].attributes.intensity as number;
+        DrawPixel(pixel[0], pixel[1], color.ToUint32());
     }
 }

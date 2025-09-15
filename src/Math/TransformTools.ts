@@ -9,21 +9,23 @@ import { Vector4 } from "./Vector4";
 export class TransformTools {
 
     // 世界坐标转为屏幕坐标
-    public static WorldToScreenPos(pos: Vector3): Vector2 {
+    public static WorldToScreenPos(pos: Vector3): { x: number, y: number, z: number } {
         const camera = Camera.mainCamera;
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
         const vpMatrix = projectionMatrix.multiply(viewMatrix);
-        const clipPos = vpMatrix.multiplyVector4(new Vector4(pos.x, pos.y, pos.z, 1));
+        const clipPos = vpMatrix.multiplyVector4(new Vector4(pos, 1));
 
         const w = clipPos.w;
         const ndcX = clipPos.x / w;
         const ndcY = clipPos.y / w;
+        const ndcZ = clipPos.z / w;
 
         const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
         const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
+        const screenZ = (ndcZ + 1) / 2;
 
-        return new Vector2(screenX, screenY);
+        return { x: screenX, y: screenY, z: screenZ };
     }
 
     // 模型坐标转为裁剪坐标
@@ -40,6 +42,8 @@ export class TransformTools {
         // const cameraUp = camera.transform.up;
         // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
         // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+
+        // 要把Vec3转为齐次坐标点，即w=1
         return mvpMatrix.multiplyVector4(new Vector4(vertex, 1));
     }
 
@@ -61,8 +65,18 @@ export class TransformTools {
         // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
         const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
 
-        // z分量通常用于深度测试
+        // 方法1: 保留透视校正的深度（原逻辑）
         const screenZ = (ndcZ + 1) / 2;
+
+        // 方法2: 转换为线性深度（与实际距离成正比）
+        /*
+            在透视投影中，NDC 的 z 值与实际深度（到相机的距离）是非线性关系：
+            近处物体的 z 值变化非常快（精度高）
+            远处物体的 z 值变化缓慢（精度低，容易出现深度冲突）
+            这是因为透视投影矩阵会将深度值进行非线性压缩，导致远处的深度精度不足。
+        */
+        // const linearDepth = (2 * near * far) / (far + near - ndcZ * (far - near));
+        // const screenZ = linearDepth / far; // 归一化到 [0, 1]
 
         return new Vector3(screenX, screenY, screenZ);
     }
