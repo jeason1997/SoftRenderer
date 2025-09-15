@@ -1,8 +1,11 @@
+import { DisallowComponent } from "../Core/Decorators";
 import { Input } from "../Core/Input";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Component } from "./Component";
+import { Rigidbody } from "./RigidBody";
 
+@DisallowComponent(Rigidbody)
 export class ObjRotate extends Component {
     private angleX = 0;
     private angleY = 0;

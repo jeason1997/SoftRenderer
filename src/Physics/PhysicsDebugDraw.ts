@@ -1,8 +1,10 @@
 import * as CANNON from 'cannon';
-import { Color } from '../Utils/Color';
+import { Color } from '../Math/Color';
 import { Camera } from '../Component/Camera';
 import { Vector4 } from '../Math/Vector4';
 import { EngineConfig } from '../Core/Engine';
+import { TransfromTools } from '../Math/TransfromTools';
+import { Vector3 } from '../Math/Vector3';
 
 export class PhysicsDebugDraw {
     // 存储绘图函数的引用
@@ -94,7 +96,7 @@ export class PhysicsDebugDraw {
                 bodyRotated.z + body.position.z
             );
             // 转换到屏幕坐标
-            return this.ObjectToScreenPos(worldPos);
+            return this.WorldToScreenPos(worldPos);
         });
 
         // 定义盒子的边
@@ -128,7 +130,7 @@ export class PhysicsDebugDraw {
             rotatedCenter.y + body.position.y,
             rotatedCenter.z + body.position.z
         );
-        const screenCenter = this.ObjectToScreenPos(worldCenter);
+        const screenCenter = this.WorldToScreenPos(worldCenter);
 
         if (!screenCenter) return;
 
@@ -179,8 +181,8 @@ export class PhysicsDebugDraw {
             );
 
             // 转换到屏幕坐标
-            const screenP1 = this.ObjectToScreenPos(worldP1);
-            const screenP2 = this.ObjectToScreenPos(worldP2);
+            const screenP1 = this.WorldToScreenPos(worldP1);
+            const screenP2 = this.WorldToScreenPos(worldP2);
 
             if (screenP1 && screenP2) {
                 this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
@@ -232,8 +234,8 @@ export class PhysicsDebugDraw {
                 bodyP2.z + body.position.z
             );
 
-            const screenP1 = this.ObjectToScreenPos(worldP1);
-            const screenP2 = this.ObjectToScreenPos(worldP2);
+            const screenP1 = this.WorldToScreenPos(worldP1);
+            const screenP2 = this.WorldToScreenPos(worldP2);
 
             if (screenP1 && screenP2) {
                 this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
@@ -265,7 +267,7 @@ export class PhysicsDebugDraw {
                 bodyRotated.y + body.position.y,
                 bodyRotated.z + body.position.z
             );
-            return this.ObjectToScreenPos(worldPos);
+            return this.WorldToScreenPos(worldPos);
         });
 
         // 定义平面的边和对角线
@@ -285,21 +287,8 @@ export class PhysicsDebugDraw {
     }
 
     // 将3D世界坐标转换为2D屏幕坐标
-    private static ObjectToScreenPos(pos: CANNON.Vec3): { x: number, y: number } | null {
-        const camera = Camera.mainCamera;
-        const viewMatrix = camera.getViewMatrix();
-        const projectionMatrix = camera.getProjectionMatrix();
-        const vpMatrix = projectionMatrix.multiply(viewMatrix);
-        const clipPos = vpMatrix.multiplyVector4(new Vector4(pos.x, pos.y, pos.z, 1));
-
-        const w = clipPos.w;
-        const ndcX = clipPos.x / w;
-        const ndcY = clipPos.y / w;
-
-        const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
-        const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
-
-        return { x: screenX, y: screenY };
+    private static WorldToScreenPos(pos: CANNON.Vec3): { x: number, y: number } | null {
+        return TransfromTools.WorldToScreenPos(new Vector3(pos.x, pos.y, pos.z));
     }
 
     // 用四元数旋转向量（不依赖内置方法）

@@ -32,34 +32,35 @@ export const MainScene = {
 
         AssetLoader.loadModel('resources/cube.obj').then((model) => {
             const obj = new GameObject("cube");
-            obj.transform.position = new Vector3(2, 2, 0);
-            //obj.transform.scale = Vector3.ONE.multiply(0.5);
-            // obj.addComponent(Rigidbody);
-            // obj.addComponent(BoxCollider);
-            obj.addComponent(ObjRotate);
+            obj.transform.position = new Vector3(0.01, 3, 0);
+            obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
+            obj.transform.scale = Vector3.ONE.multiply(0.5);
+            obj.addComponent(Rigidbody);
+            obj.addComponent(BoxCollider);
+            //obj.addComponent(ObjRotate);
             const renderer = obj.addComponent(MeshRenderer);
-            renderer.mesh = model;
+            if (renderer) renderer.mesh = model;
             scene.addGameObject(obj);
         });
 
-        // AssetLoader.loadModel('resources/spheres.obj').then((model) => {
-        //     const obj = new GameObject("spheres");
-        //     obj.transform.position = new Vector3(0.1, 1.5, 0);
-        //     const body = obj.addComponent(Rigidbody);
-        //     obj.addComponent(SphereCollider);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     renderer.mesh = model;
-        //     scene.addGameObject(obj);
-        // });
+        AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+            const obj = new GameObject("spheres");
+            obj.transform.position = new Vector3(0.1, 1.5, 0);
+            const body = obj.addComponent(Rigidbody);
+            obj.addComponent(SphereCollider);
+            const renderer = obj.addComponent(MeshRenderer);
+            if (renderer) renderer.mesh = model;
+            scene.addGameObject(obj);
+        });
 
         AssetLoader.loadModel('resources/panel.obj').then((model) => {
             const obj = new GameObject("panel");
-            //obj.transform.scale = Vector3.ONE.multiply(2);
-            // const collider = obj.addComponent(BoxCollider);
-            // const body = obj.addComponent(Rigidbody);
-            // body.isKinematic = true;
+            obj.transform.scale = Vector3.ONE.multiply(2);
+            const collider = obj.addComponent(BoxCollider);
+            const body = obj.addComponent(Rigidbody);
+            if (body) body.isKinematic = true;
             const renderer = obj.addComponent(MeshRenderer);
-            renderer.mesh = model;
+            if (renderer) renderer.mesh = model;
             scene.addGameObject(obj);
         });
 

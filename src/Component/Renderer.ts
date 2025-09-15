@@ -1,8 +1,9 @@
 import { Component } from "./Component";
 import { Material } from "../Renderer/Material";
 import { Bounds } from "../Math/Bounds";
+import { DisallowMultipleComponent } from "../Core/Decorators";
 
-// Renderer是所有渲染组件的基类
+@DisallowMultipleComponent
 export abstract class Renderer extends Component {
     private _bounds: Bounds = new Bounds();
     private _material: Material | null = null;

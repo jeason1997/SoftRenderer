@@ -1,3 +1,4 @@
+import { RequireComponent } from "../Core/Decorators";
 import { Engine } from "../Core/Engine";
 import { Input, InputAxis } from "../Core/Input";
 import { Time } from "../Core/Time";
@@ -6,6 +7,7 @@ import { Vector3 } from "../Math/Vector3";
 import { Camera } from "./Camera";
 import { Component } from "./Component";
 
+@RequireComponent(Camera)
 export class CameraController extends Component {
     public moveSpeed = 0.5;
     public moveSpeedShiftScale = 2.5;

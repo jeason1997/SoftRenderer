@@ -3,6 +3,7 @@ import { Component } from "../Component/Component";
 import { Vector3 } from "../Math/Vector3";
 import { Quaternion } from "../Math/Quaternion";
 import { UObject } from "./UObject";
+import { DISALLOW_COMPONENTS_KEY, DISALLOW_MULTIPLE_COMPONENT_KEY } from "./Decorators";
 
 export class GameObject extends UObject {
     public name: string;
@@ -90,14 +91,54 @@ export class GameObject extends UObject {
         }
     }
 
-    // 添加组件
-    public addComponent<T extends Component>(componentType: { new(gameObject: GameObject): T }): T {
-        var comp = this.getComponent(componentType);
-        if (comp == null) {
-            comp = new componentType(this);
-            this.components.push(comp);
+    /**
+     * 添加组件到游戏对象
+     * @param componentType 组件类型
+     * @returns 添加的组件实例
+     */
+    public addComponent<T extends Component>(componentType: new (gameObject: GameObject) => T): T | null {
+        // 1.检查是否已经存在该类型的组件
+        const existingComponent = this.getComponent(componentType);
+        if (existingComponent) {
+            if (!existingComponent.checkComponentUniqueness()) {
+                // 不允许添加多个相同的组件，返回已经存在的
+                return existingComponent;
+            }
         }
-        return comp;
+
+        // 2.判断是否有与该组件排斥的组件
+        for (const existingComponent of this.components) {
+            const existingDisallowed: Function[] | undefined =
+                Reflect.getMetadata(DISALLOW_COMPONENTS_KEY, existingComponent.constructor);
+
+            if (existingDisallowed && existingDisallowed.includes(componentType)) {
+                console.error(
+                    `Cannot add ${componentType.name}: existing ${existingComponent.constructor.name} ` +
+                    `forbids this component type`
+                );
+                return null;
+            }
+        }
+
+        // 创建新组件实例
+        const comp = new componentType(this);
+
+        // 3.判断是否有依赖组件，有的话添加
+        if (comp.checkRequiredComponents()) {
+            this.components.push(comp);
+            // 4.检查是否有冲突的组件，有的话移除它们
+            comp.checkComponentCompatibility();
+            return comp;
+        }
+        else {
+            // 添加失败，则该组件也销毁，避免出现逻辑问题
+            comp.Destroy();
+            return null;
+        }
+    }
+
+    public getAllComponents(): Component[] {
+        return this.components;
     }
 
     // 获取指定类型的组件

@@ -8,6 +8,7 @@ import { RaycastHit } from "../Physics/RaycastHit";
 import { Collider } from "./Collider";
 import { Component } from "./Component";
 import * as CANNON from 'cannon';
+import { DisallowMultipleComponent } from "../Core/Decorators";
 
 export enum ForceMode {
     Force,
@@ -48,6 +49,7 @@ export enum QueryTriggerInteraction {
     Collide
 }
 
+@DisallowMultipleComponent
 export class Rigidbody extends Component {
     public velocity: Vector3;
     public angularVelocity: Vector3;

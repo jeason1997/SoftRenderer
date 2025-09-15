@@ -1,4 +1,4 @@
-import { Color } from "../Utils/Color";
+import { Color } from "../Math/Color";
 import { Vector2 } from "../Math/Vector2";
 
 export class Material {

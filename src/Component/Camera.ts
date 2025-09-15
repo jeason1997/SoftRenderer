@@ -1,10 +1,10 @@
-import { Color } from "../Utils/Color";
+import { Color } from "../Math/Color";
 import { EngineConfig } from "../Core/Engine";
 import { Vector4 } from "../Math/Vector4";
 import { Component } from "./Component";
 import { Matrix4x4 } from "../Math/Matrix4x4";
 import { Time } from "../Core/Time";
-import { Vector2 } from "../Math/Vector2";
+import { DisallowMultipleComponent } from "../Core/Decorators";
 
 export enum CameraClearFlags {
     NONE = 0,
@@ -13,6 +13,7 @@ export enum CameraClearFlags {
     Depth = 256,    //gl.DEPTH_BUFFER_BIT
 }
 
+@DisallowMultipleComponent
 export class Camera extends Component {
     public static mainCamera: Camera;
     private static cameras: Array<Camera> = new Array<Camera>();

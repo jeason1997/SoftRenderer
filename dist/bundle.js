@@ -15095,6 +15095,1426 @@ World.prototype.clearForces = function(){
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],3:[function(require,module,exports){
+(function (global){(function (){
+/*! *****************************************************************************
+Copyright (C) Microsoft. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+var Reflect;
+(function (Reflect) {
+    // Metadata Proposal
+    // https://rbuckton.github.io/reflect-metadata/
+    (function (factory) {
+        var root = typeof globalThis === "object" ? globalThis :
+            typeof global === "object" ? global :
+                typeof self === "object" ? self :
+                    typeof this === "object" ? this :
+                        sloppyModeThis();
+        var exporter = makeExporter(Reflect);
+        if (typeof root.Reflect !== "undefined") {
+            exporter = makeExporter(root.Reflect, exporter);
+        }
+        factory(exporter, root);
+        if (typeof root.Reflect === "undefined") {
+            root.Reflect = Reflect;
+        }
+        function makeExporter(target, previous) {
+            return function (key, value) {
+                Object.defineProperty(target, key, { configurable: true, writable: true, value: value });
+                if (previous)
+                    previous(key, value);
+            };
+        }
+        function functionThis() {
+            try {
+                return Function("return this;")();
+            }
+            catch (_) { }
+        }
+        function indirectEvalThis() {
+            try {
+                return (void 0, eval)("(function() { return this; })()");
+            }
+            catch (_) { }
+        }
+        function sloppyModeThis() {
+            return functionThis() || indirectEvalThis();
+        }
+    })(function (exporter, root) {
+        var hasOwn = Object.prototype.hasOwnProperty;
+        // feature test for Symbol support
+        var supportsSymbol = typeof Symbol === "function";
+        var toPrimitiveSymbol = supportsSymbol && typeof Symbol.toPrimitive !== "undefined" ? Symbol.toPrimitive : "@@toPrimitive";
+        var iteratorSymbol = supportsSymbol && typeof Symbol.iterator !== "undefined" ? Symbol.iterator : "@@iterator";
+        var supportsCreate = typeof Object.create === "function"; // feature test for Object.create support
+        var supportsProto = { __proto__: [] } instanceof Array; // feature test for __proto__ support
+        var downLevel = !supportsCreate && !supportsProto;
+        var HashMap = {
+            // create an object in dictionary mode (a.k.a. "slow" mode in v8)
+            create: supportsCreate
+                ? function () { return MakeDictionary(Object.create(null)); }
+                : supportsProto
+                    ? function () { return MakeDictionary({ __proto__: null }); }
+                    : function () { return MakeDictionary({}); },
+            has: downLevel
+                ? function (map, key) { return hasOwn.call(map, key); }
+                : function (map, key) { return key in map; },
+            get: downLevel
+                ? function (map, key) { return hasOwn.call(map, key) ? map[key] : undefined; }
+                : function (map, key) { return map[key]; },
+        };
+        // Load global or shim versions of Map, Set, and WeakMap
+        var functionPrototype = Object.getPrototypeOf(Function);
+        var _Map = typeof Map === "function" && typeof Map.prototype.entries === "function" ? Map : CreateMapPolyfill();
+        var _Set = typeof Set === "function" && typeof Set.prototype.entries === "function" ? Set : CreateSetPolyfill();
+        var _WeakMap = typeof WeakMap === "function" ? WeakMap : CreateWeakMapPolyfill();
+        var registrySymbol = supportsSymbol ? Symbol.for("@reflect-metadata:registry") : undefined;
+        var metadataRegistry = GetOrCreateMetadataRegistry();
+        var metadataProvider = CreateMetadataProvider(metadataRegistry);
+        /**
+         * Applies a set of decorators to a property of a target object.
+         * @param decorators An array of decorators.
+         * @param target The target object.
+         * @param propertyKey (Optional) The property key to decorate.
+         * @param attributes (Optional) The property descriptor for the target key.
+         * @remarks Decorators are applied in reverse order.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     Example = Reflect.decorate(decoratorsArray, Example);
+         *
+         *     // property (on constructor)
+         *     Reflect.decorate(decoratorsArray, Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     Reflect.decorate(decoratorsArray, Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     Object.defineProperty(Example, "staticMethod",
+         *         Reflect.decorate(decoratorsArray, Example, "staticMethod",
+         *             Object.getOwnPropertyDescriptor(Example, "staticMethod")));
+         *
+         *     // method (on prototype)
+         *     Object.defineProperty(Example.prototype, "method",
+         *         Reflect.decorate(decoratorsArray, Example.prototype, "method",
+         *             Object.getOwnPropertyDescriptor(Example.prototype, "method")));
+         *
+         */
+        function decorate(decorators, target, propertyKey, attributes) {
+            if (!IsUndefined(propertyKey)) {
+                if (!IsArray(decorators))
+                    throw new TypeError();
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsObject(attributes) && !IsUndefined(attributes) && !IsNull(attributes))
+                    throw new TypeError();
+                if (IsNull(attributes))
+                    attributes = undefined;
+                propertyKey = ToPropertyKey(propertyKey);
+                return DecorateProperty(decorators, target, propertyKey, attributes);
+            }
+            else {
+                if (!IsArray(decorators))
+                    throw new TypeError();
+                if (!IsConstructor(target))
+                    throw new TypeError();
+                return DecorateConstructor(decorators, target);
+            }
+        }
+        exporter("decorate", decorate);
+        // 4.1.2 Reflect.metadata(metadataKey, metadataValue)
+        // https://rbuckton.github.io/reflect-metadata/#reflect.metadata
+        /**
+         * A default metadata decorator factory that can be used on a class, class member, or parameter.
+         * @param metadataKey The key for the metadata entry.
+         * @param metadataValue The value for the metadata entry.
+         * @returns A decorator function.
+         * @remarks
+         * If `metadataKey` is already defined for the target and target key, the
+         * metadataValue for that key will be overwritten.
+         * @example
+         *
+         *     // constructor
+         *     @Reflect.metadata(key, value)
+         *     class Example {
+         *     }
+         *
+         *     // property (on constructor, TypeScript only)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         static staticProperty;
+         *     }
+         *
+         *     // property (on prototype, TypeScript only)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         property;
+         *     }
+         *
+         *     // method (on constructor)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         static staticMethod() { }
+         *     }
+         *
+         *     // method (on prototype)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         method() { }
+         *     }
+         *
+         */
+        function metadata(metadataKey, metadataValue) {
+            function decorator(target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey))
+                    throw new TypeError();
+                OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+            }
+            return decorator;
+        }
+        exporter("metadata", metadata);
+        /**
+         * Define a unique metadata entry on the target.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param metadataValue A value that contains attached metadata.
+         * @param target The target object on which to define metadata.
+         * @param propertyKey (Optional) The property key for the target.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     Reflect.defineMetadata("custom:annotation", options, Example);
+         *
+         *     // property (on constructor)
+         *     Reflect.defineMetadata("custom:annotation", options, Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     Reflect.defineMetadata("custom:annotation", options, Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     Reflect.defineMetadata("custom:annotation", options, Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     Reflect.defineMetadata("custom:annotation", options, Example.prototype, "method");
+         *
+         *     // decorator factory as metadata-producing annotation.
+         *     function MyAnnotation(options): Decorator {
+         *         return (target, key?) => Reflect.defineMetadata("custom:annotation", options, target, key);
+         *     }
+         *
+         */
+        function defineMetadata(metadataKey, metadataValue, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+        }
+        exporter("defineMetadata", defineMetadata);
+        /**
+         * Gets a value indicating whether the target object or its prototype chain has the provided metadata key defined.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns `true` if the metadata key was defined on the target object or its prototype chain; otherwise, `false`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.hasMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.hasMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.hasMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.hasMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.hasMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function hasMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryHasMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("hasMetadata", hasMetadata);
+        /**
+         * Gets a value indicating whether the target object has the provided metadata key defined.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns `true` if the metadata key was defined on the target object; otherwise, `false`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function hasOwnMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryHasOwnMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("hasOwnMetadata", hasOwnMetadata);
+        /**
+         * Gets the metadata value for the provided metadata key on the target object or its prototype chain.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns The metadata value for the metadata key if found; otherwise, `undefined`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function getMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryGetMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("getMetadata", getMetadata);
+        /**
+         * Gets the metadata value for the provided metadata key on the target object.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns The metadata value for the metadata key if found; otherwise, `undefined`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function getOwnMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryGetOwnMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("getOwnMetadata", getOwnMetadata);
+        /**
+         * Gets the metadata keys defined on the target object or its prototype chain.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns An array of unique metadata keys.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getMetadataKeys(Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getMetadataKeys(Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getMetadataKeys(Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getMetadataKeys(Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getMetadataKeys(Example.prototype, "method");
+         *
+         */
+        function getMetadataKeys(target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryMetadataKeys(target, propertyKey);
+        }
+        exporter("getMetadataKeys", getMetadataKeys);
+        /**
+         * Gets the unique metadata keys defined on the target object.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns An array of unique metadata keys.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getOwnMetadataKeys(Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getOwnMetadataKeys(Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getOwnMetadataKeys(Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getOwnMetadataKeys(Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getOwnMetadataKeys(Example.prototype, "method");
+         *
+         */
+        function getOwnMetadataKeys(target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryOwnMetadataKeys(target, propertyKey);
+        }
+        exporter("getOwnMetadataKeys", getOwnMetadataKeys);
+        /**
+         * Deletes the metadata entry from the target object with the provided key.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns `true` if the metadata entry was found and deleted; otherwise, false.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.deleteMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function deleteMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            var provider = GetMetadataProvider(target, propertyKey, /*Create*/ false);
+            if (IsUndefined(provider))
+                return false;
+            return provider.OrdinaryDeleteMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("deleteMetadata", deleteMetadata);
+        function DecorateConstructor(decorators, target) {
+            for (var i = decorators.length - 1; i >= 0; --i) {
+                var decorator = decorators[i];
+                var decorated = decorator(target);
+                if (!IsUndefined(decorated) && !IsNull(decorated)) {
+                    if (!IsConstructor(decorated))
+                        throw new TypeError();
+                    target = decorated;
+                }
+            }
+            return target;
+        }
+        function DecorateProperty(decorators, target, propertyKey, descriptor) {
+            for (var i = decorators.length - 1; i >= 0; --i) {
+                var decorator = decorators[i];
+                var decorated = decorator(target, propertyKey, descriptor);
+                if (!IsUndefined(decorated) && !IsNull(decorated)) {
+                    if (!IsObject(decorated))
+                        throw new TypeError();
+                    descriptor = decorated;
+                }
+            }
+            return descriptor;
+        }
+        // 3.1.1.1 OrdinaryHasMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinaryhasmetadata
+        function OrdinaryHasMetadata(MetadataKey, O, P) {
+            var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
+            if (hasOwn)
+                return true;
+            var parent = OrdinaryGetPrototypeOf(O);
+            if (!IsNull(parent))
+                return OrdinaryHasMetadata(MetadataKey, parent, P);
+            return false;
+        }
+        // 3.1.2.1 OrdinaryHasOwnMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinaryhasownmetadata
+        function OrdinaryHasOwnMetadata(MetadataKey, O, P) {
+            var provider = GetMetadataProvider(O, P, /*Create*/ false);
+            if (IsUndefined(provider))
+                return false;
+            return ToBoolean(provider.OrdinaryHasOwnMetadata(MetadataKey, O, P));
+        }
+        // 3.1.3.1 OrdinaryGetMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarygetmetadata
+        function OrdinaryGetMetadata(MetadataKey, O, P) {
+            var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
+            if (hasOwn)
+                return OrdinaryGetOwnMetadata(MetadataKey, O, P);
+            var parent = OrdinaryGetPrototypeOf(O);
+            if (!IsNull(parent))
+                return OrdinaryGetMetadata(MetadataKey, parent, P);
+            return undefined;
+        }
+        // 3.1.4.1 OrdinaryGetOwnMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarygetownmetadata
+        function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
+            var provider = GetMetadataProvider(O, P, /*Create*/ false);
+            if (IsUndefined(provider))
+                return;
+            return provider.OrdinaryGetOwnMetadata(MetadataKey, O, P);
+        }
+        // 3.1.5.1 OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarydefineownmetadata
+        function OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P) {
+            var provider = GetMetadataProvider(O, P, /*Create*/ true);
+            provider.OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P);
+        }
+        // 3.1.6.1 OrdinaryMetadataKeys(O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarymetadatakeys
+        function OrdinaryMetadataKeys(O, P) {
+            var ownKeys = OrdinaryOwnMetadataKeys(O, P);
+            var parent = OrdinaryGetPrototypeOf(O);
+            if (parent === null)
+                return ownKeys;
+            var parentKeys = OrdinaryMetadataKeys(parent, P);
+            if (parentKeys.length <= 0)
+                return ownKeys;
+            if (ownKeys.length <= 0)
+                return parentKeys;
+            var set = new _Set();
+            var keys = [];
+            for (var _i = 0, ownKeys_1 = ownKeys; _i < ownKeys_1.length; _i++) {
+                var key = ownKeys_1[_i];
+                var hasKey = set.has(key);
+                if (!hasKey) {
+                    set.add(key);
+                    keys.push(key);
+                }
+            }
+            for (var _a = 0, parentKeys_1 = parentKeys; _a < parentKeys_1.length; _a++) {
+                var key = parentKeys_1[_a];
+                var hasKey = set.has(key);
+                if (!hasKey) {
+                    set.add(key);
+                    keys.push(key);
+                }
+            }
+            return keys;
+        }
+        // 3.1.7.1 OrdinaryOwnMetadataKeys(O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinaryownmetadatakeys
+        function OrdinaryOwnMetadataKeys(O, P) {
+            var provider = GetMetadataProvider(O, P, /*create*/ false);
+            if (!provider) {
+                return [];
+            }
+            return provider.OrdinaryOwnMetadataKeys(O, P);
+        }
+        // 6 ECMAScript Data Types and Values
+        // https://tc39.github.io/ecma262/#sec-ecmascript-data-types-and-values
+        function Type(x) {
+            if (x === null)
+                return 1 /* Null */;
+            switch (typeof x) {
+                case "undefined": return 0 /* Undefined */;
+                case "boolean": return 2 /* Boolean */;
+                case "string": return 3 /* String */;
+                case "symbol": return 4 /* Symbol */;
+                case "number": return 5 /* Number */;
+                case "object": return x === null ? 1 /* Null */ : 6 /* Object */;
+                default: return 6 /* Object */;
+            }
+        }
+        // 6.1.1 The Undefined Type
+        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-undefined-type
+        function IsUndefined(x) {
+            return x === undefined;
+        }
+        // 6.1.2 The Null Type
+        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-null-type
+        function IsNull(x) {
+            return x === null;
+        }
+        // 6.1.5 The Symbol Type
+        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-symbol-type
+        function IsSymbol(x) {
+            return typeof x === "symbol";
+        }
+        // 6.1.7 The Object Type
+        // https://tc39.github.io/ecma262/#sec-object-type
+        function IsObject(x) {
+            return typeof x === "object" ? x !== null : typeof x === "function";
+        }
+        // 7.1 Type Conversion
+        // https://tc39.github.io/ecma262/#sec-type-conversion
+        // 7.1.1 ToPrimitive(input [, PreferredType])
+        // https://tc39.github.io/ecma262/#sec-toprimitive
+        function ToPrimitive(input, PreferredType) {
+            switch (Type(input)) {
+                case 0 /* Undefined */: return input;
+                case 1 /* Null */: return input;
+                case 2 /* Boolean */: return input;
+                case 3 /* String */: return input;
+                case 4 /* Symbol */: return input;
+                case 5 /* Number */: return input;
+            }
+            var hint = PreferredType === 3 /* String */ ? "string" : PreferredType === 5 /* Number */ ? "number" : "default";
+            var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
+            if (exoticToPrim !== undefined) {
+                var result = exoticToPrim.call(input, hint);
+                if (IsObject(result))
+                    throw new TypeError();
+                return result;
+            }
+            return OrdinaryToPrimitive(input, hint === "default" ? "number" : hint);
+        }
+        // 7.1.1.1 OrdinaryToPrimitive(O, hint)
+        // https://tc39.github.io/ecma262/#sec-ordinarytoprimitive
+        function OrdinaryToPrimitive(O, hint) {
+            if (hint === "string") {
+                var toString_1 = O.toString;
+                if (IsCallable(toString_1)) {
+                    var result = toString_1.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+                var valueOf = O.valueOf;
+                if (IsCallable(valueOf)) {
+                    var result = valueOf.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+            }
+            else {
+                var valueOf = O.valueOf;
+                if (IsCallable(valueOf)) {
+                    var result = valueOf.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+                var toString_2 = O.toString;
+                if (IsCallable(toString_2)) {
+                    var result = toString_2.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+            }
+            throw new TypeError();
+        }
+        // 7.1.2 ToBoolean(argument)
+        // https://tc39.github.io/ecma262/2016/#sec-toboolean
+        function ToBoolean(argument) {
+            return !!argument;
+        }
+        // 7.1.12 ToString(argument)
+        // https://tc39.github.io/ecma262/#sec-tostring
+        function ToString(argument) {
+            return "" + argument;
+        }
+        // 7.1.14 ToPropertyKey(argument)
+        // https://tc39.github.io/ecma262/#sec-topropertykey
+        function ToPropertyKey(argument) {
+            var key = ToPrimitive(argument, 3 /* String */);
+            if (IsSymbol(key))
+                return key;
+            return ToString(key);
+        }
+        // 7.2 Testing and Comparison Operations
+        // https://tc39.github.io/ecma262/#sec-testing-and-comparison-operations
+        // 7.2.2 IsArray(argument)
+        // https://tc39.github.io/ecma262/#sec-isarray
+        function IsArray(argument) {
+            return Array.isArray
+                ? Array.isArray(argument)
+                : argument instanceof Object
+                    ? argument instanceof Array
+                    : Object.prototype.toString.call(argument) === "[object Array]";
+        }
+        // 7.2.3 IsCallable(argument)
+        // https://tc39.github.io/ecma262/#sec-iscallable
+        function IsCallable(argument) {
+            // NOTE: This is an approximation as we cannot check for [[Call]] internal method.
+            return typeof argument === "function";
+        }
+        // 7.2.4 IsConstructor(argument)
+        // https://tc39.github.io/ecma262/#sec-isconstructor
+        function IsConstructor(argument) {
+            // NOTE: This is an approximation as we cannot check for [[Construct]] internal method.
+            return typeof argument === "function";
+        }
+        // 7.2.7 IsPropertyKey(argument)
+        // https://tc39.github.io/ecma262/#sec-ispropertykey
+        function IsPropertyKey(argument) {
+            switch (Type(argument)) {
+                case 3 /* String */: return true;
+                case 4 /* Symbol */: return true;
+                default: return false;
+            }
+        }
+        function SameValueZero(x, y) {
+            return x === y || x !== x && y !== y;
+        }
+        // 7.3 Operations on Objects
+        // https://tc39.github.io/ecma262/#sec-operations-on-objects
+        // 7.3.9 GetMethod(V, P)
+        // https://tc39.github.io/ecma262/#sec-getmethod
+        function GetMethod(V, P) {
+            var func = V[P];
+            if (func === undefined || func === null)
+                return undefined;
+            if (!IsCallable(func))
+                throw new TypeError();
+            return func;
+        }
+        // 7.4 Operations on Iterator Objects
+        // https://tc39.github.io/ecma262/#sec-operations-on-iterator-objects
+        function GetIterator(obj) {
+            var method = GetMethod(obj, iteratorSymbol);
+            if (!IsCallable(method))
+                throw new TypeError(); // from Call
+            var iterator = method.call(obj);
+            if (!IsObject(iterator))
+                throw new TypeError();
+            return iterator;
+        }
+        // 7.4.4 IteratorValue(iterResult)
+        // https://tc39.github.io/ecma262/2016/#sec-iteratorvalue
+        function IteratorValue(iterResult) {
+            return iterResult.value;
+        }
+        // 7.4.5 IteratorStep(iterator)
+        // https://tc39.github.io/ecma262/#sec-iteratorstep
+        function IteratorStep(iterator) {
+            var result = iterator.next();
+            return result.done ? false : result;
+        }
+        // 7.4.6 IteratorClose(iterator, completion)
+        // https://tc39.github.io/ecma262/#sec-iteratorclose
+        function IteratorClose(iterator) {
+            var f = iterator["return"];
+            if (f)
+                f.call(iterator);
+        }
+        // 9.1 Ordinary Object Internal Methods and Internal Slots
+        // https://tc39.github.io/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots
+        // 9.1.1.1 OrdinaryGetPrototypeOf(O)
+        // https://tc39.github.io/ecma262/#sec-ordinarygetprototypeof
+        function OrdinaryGetPrototypeOf(O) {
+            var proto = Object.getPrototypeOf(O);
+            if (typeof O !== "function" || O === functionPrototype)
+                return proto;
+            // TypeScript doesn't set __proto__ in ES5, as it's non-standard.
+            // Try to determine the superclass constructor. Compatible implementations
+            // must either set __proto__ on a subclass constructor to the superclass constructor,
+            // or ensure each class has a valid `constructor` property on its prototype that
+            // points back to the constructor.
+            // If this is not the same as Function.[[Prototype]], then this is definately inherited.
+            // This is the case when in ES6 or when using __proto__ in a compatible browser.
+            if (proto !== functionPrototype)
+                return proto;
+            // If the super prototype is Object.prototype, null, or undefined, then we cannot determine the heritage.
+            var prototype = O.prototype;
+            var prototypeProto = prototype && Object.getPrototypeOf(prototype);
+            if (prototypeProto == null || prototypeProto === Object.prototype)
+                return proto;
+            // If the constructor was not a function, then we cannot determine the heritage.
+            var constructor = prototypeProto.constructor;
+            if (typeof constructor !== "function")
+                return proto;
+            // If we have some kind of self-reference, then we cannot determine the heritage.
+            if (constructor === O)
+                return proto;
+            // we have a pretty good guess at the heritage.
+            return constructor;
+        }
+        // Global metadata registry
+        // - Allows `import "reflect-metadata"` and `import "reflect-metadata/no-conflict"` to interoperate.
+        // - Uses isolated metadata if `Reflect` is frozen before the registry can be installed.
+        /**
+         * Creates a registry used to allow multiple `reflect-metadata` providers.
+         */
+        function CreateMetadataRegistry() {
+            var fallback;
+            if (!IsUndefined(registrySymbol) &&
+                typeof root.Reflect !== "undefined" &&
+                !(registrySymbol in root.Reflect) &&
+                typeof root.Reflect.defineMetadata === "function") {
+                // interoperate with older version of `reflect-metadata` that did not support a registry.
+                fallback = CreateFallbackProvider(root.Reflect);
+            }
+            var first;
+            var second;
+            var rest;
+            var targetProviderMap = new _WeakMap();
+            var registry = {
+                registerProvider: registerProvider,
+                getProvider: getProvider,
+                setProvider: setProvider,
+            };
+            return registry;
+            function registerProvider(provider) {
+                if (!Object.isExtensible(registry)) {
+                    throw new Error("Cannot add provider to a frozen registry.");
+                }
+                switch (true) {
+                    case fallback === provider: break;
+                    case IsUndefined(first):
+                        first = provider;
+                        break;
+                    case first === provider: break;
+                    case IsUndefined(second):
+                        second = provider;
+                        break;
+                    case second === provider: break;
+                    default:
+                        if (rest === undefined)
+                            rest = new _Set();
+                        rest.add(provider);
+                        break;
+                }
+            }
+            function getProviderNoCache(O, P) {
+                if (!IsUndefined(first)) {
+                    if (first.isProviderFor(O, P))
+                        return first;
+                    if (!IsUndefined(second)) {
+                        if (second.isProviderFor(O, P))
+                            return first;
+                        if (!IsUndefined(rest)) {
+                            var iterator = GetIterator(rest);
+                            while (true) {
+                                var next = IteratorStep(iterator);
+                                if (!next) {
+                                    return undefined;
+                                }
+                                var provider = IteratorValue(next);
+                                if (provider.isProviderFor(O, P)) {
+                                    IteratorClose(iterator);
+                                    return provider;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!IsUndefined(fallback) && fallback.isProviderFor(O, P)) {
+                    return fallback;
+                }
+                return undefined;
+            }
+            function getProvider(O, P) {
+                var providerMap = targetProviderMap.get(O);
+                var provider;
+                if (!IsUndefined(providerMap)) {
+                    provider = providerMap.get(P);
+                }
+                if (!IsUndefined(provider)) {
+                    return provider;
+                }
+                provider = getProviderNoCache(O, P);
+                if (!IsUndefined(provider)) {
+                    if (IsUndefined(providerMap)) {
+                        providerMap = new _Map();
+                        targetProviderMap.set(O, providerMap);
+                    }
+                    providerMap.set(P, provider);
+                }
+                return provider;
+            }
+            function hasProvider(provider) {
+                if (IsUndefined(provider))
+                    throw new TypeError();
+                return first === provider || second === provider || !IsUndefined(rest) && rest.has(provider);
+            }
+            function setProvider(O, P, provider) {
+                if (!hasProvider(provider)) {
+                    throw new Error("Metadata provider not registered.");
+                }
+                var existingProvider = getProvider(O, P);
+                if (existingProvider !== provider) {
+                    if (!IsUndefined(existingProvider)) {
+                        return false;
+                    }
+                    var providerMap = targetProviderMap.get(O);
+                    if (IsUndefined(providerMap)) {
+                        providerMap = new _Map();
+                        targetProviderMap.set(O, providerMap);
+                    }
+                    providerMap.set(P, provider);
+                }
+                return true;
+            }
+        }
+        /**
+         * Gets or creates the shared registry of metadata providers.
+         */
+        function GetOrCreateMetadataRegistry() {
+            var metadataRegistry;
+            if (!IsUndefined(registrySymbol) && IsObject(root.Reflect) && Object.isExtensible(root.Reflect)) {
+                metadataRegistry = root.Reflect[registrySymbol];
+            }
+            if (IsUndefined(metadataRegistry)) {
+                metadataRegistry = CreateMetadataRegistry();
+            }
+            if (!IsUndefined(registrySymbol) && IsObject(root.Reflect) && Object.isExtensible(root.Reflect)) {
+                Object.defineProperty(root.Reflect, registrySymbol, {
+                    enumerable: false,
+                    configurable: false,
+                    writable: false,
+                    value: metadataRegistry
+                });
+            }
+            return metadataRegistry;
+        }
+        function CreateMetadataProvider(registry) {
+            // [[Metadata]] internal slot
+            // https://rbuckton.github.io/reflect-metadata/#ordinary-object-internal-methods-and-internal-slots
+            var metadata = new _WeakMap();
+            var provider = {
+                isProviderFor: function (O, P) {
+                    var targetMetadata = metadata.get(O);
+                    if (IsUndefined(targetMetadata))
+                        return false;
+                    return targetMetadata.has(P);
+                },
+                OrdinaryDefineOwnMetadata: OrdinaryDefineOwnMetadata,
+                OrdinaryHasOwnMetadata: OrdinaryHasOwnMetadata,
+                OrdinaryGetOwnMetadata: OrdinaryGetOwnMetadata,
+                OrdinaryOwnMetadataKeys: OrdinaryOwnMetadataKeys,
+                OrdinaryDeleteMetadata: OrdinaryDeleteMetadata,
+            };
+            metadataRegistry.registerProvider(provider);
+            return provider;
+            function GetOrCreateMetadataMap(O, P, Create) {
+                var targetMetadata = metadata.get(O);
+                var createdTargetMetadata = false;
+                if (IsUndefined(targetMetadata)) {
+                    if (!Create)
+                        return undefined;
+                    targetMetadata = new _Map();
+                    metadata.set(O, targetMetadata);
+                    createdTargetMetadata = true;
+                }
+                var metadataMap = targetMetadata.get(P);
+                if (IsUndefined(metadataMap)) {
+                    if (!Create)
+                        return undefined;
+                    metadataMap = new _Map();
+                    targetMetadata.set(P, metadataMap);
+                    if (!registry.setProvider(O, P, provider)) {
+                        targetMetadata.delete(P);
+                        if (createdTargetMetadata) {
+                            metadata.delete(O);
+                        }
+                        throw new Error("Wrong provider for target.");
+                    }
+                }
+                return metadataMap;
+            }
+            // 3.1.2.1 OrdinaryHasOwnMetadata(MetadataKey, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinaryhasownmetadata
+            function OrdinaryHasOwnMetadata(MetadataKey, O, P) {
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return false;
+                return ToBoolean(metadataMap.has(MetadataKey));
+            }
+            // 3.1.4.1 OrdinaryGetOwnMetadata(MetadataKey, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinarygetownmetadata
+            function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return undefined;
+                return metadataMap.get(MetadataKey);
+            }
+            // 3.1.5.1 OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinarydefineownmetadata
+            function OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P) {
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ true);
+                metadataMap.set(MetadataKey, MetadataValue);
+            }
+            // 3.1.7.1 OrdinaryOwnMetadataKeys(O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinaryownmetadatakeys
+            function OrdinaryOwnMetadataKeys(O, P) {
+                var keys = [];
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return keys;
+                var keysObj = metadataMap.keys();
+                var iterator = GetIterator(keysObj);
+                var k = 0;
+                while (true) {
+                    var next = IteratorStep(iterator);
+                    if (!next) {
+                        keys.length = k;
+                        return keys;
+                    }
+                    var nextValue = IteratorValue(next);
+                    try {
+                        keys[k] = nextValue;
+                    }
+                    catch (e) {
+                        try {
+                            IteratorClose(iterator);
+                        }
+                        finally {
+                            throw e;
+                        }
+                    }
+                    k++;
+                }
+            }
+            function OrdinaryDeleteMetadata(MetadataKey, O, P) {
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return false;
+                if (!metadataMap.delete(MetadataKey))
+                    return false;
+                if (metadataMap.size === 0) {
+                    var targetMetadata = metadata.get(O);
+                    if (!IsUndefined(targetMetadata)) {
+                        targetMetadata.delete(P);
+                        if (targetMetadata.size === 0) {
+                            metadata.delete(targetMetadata);
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        function CreateFallbackProvider(reflect) {
+            var defineMetadata = reflect.defineMetadata, hasOwnMetadata = reflect.hasOwnMetadata, getOwnMetadata = reflect.getOwnMetadata, getOwnMetadataKeys = reflect.getOwnMetadataKeys, deleteMetadata = reflect.deleteMetadata;
+            var metadataOwner = new _WeakMap();
+            var provider = {
+                isProviderFor: function (O, P) {
+                    var metadataPropertySet = metadataOwner.get(O);
+                    if (!IsUndefined(metadataPropertySet) && metadataPropertySet.has(P)) {
+                        return true;
+                    }
+                    if (getOwnMetadataKeys(O, P).length) {
+                        if (IsUndefined(metadataPropertySet)) {
+                            metadataPropertySet = new _Set();
+                            metadataOwner.set(O, metadataPropertySet);
+                        }
+                        metadataPropertySet.add(P);
+                        return true;
+                    }
+                    return false;
+                },
+                OrdinaryDefineOwnMetadata: defineMetadata,
+                OrdinaryHasOwnMetadata: hasOwnMetadata,
+                OrdinaryGetOwnMetadata: getOwnMetadata,
+                OrdinaryOwnMetadataKeys: getOwnMetadataKeys,
+                OrdinaryDeleteMetadata: deleteMetadata,
+            };
+            return provider;
+        }
+        /**
+         * Gets the metadata provider for an object. If the object has no metadata provider and this is for a create operation,
+         * then this module's metadata provider is assigned to the object.
+         */
+        function GetMetadataProvider(O, P, Create) {
+            var registeredProvider = metadataRegistry.getProvider(O, P);
+            if (!IsUndefined(registeredProvider)) {
+                return registeredProvider;
+            }
+            if (Create) {
+                if (metadataRegistry.setProvider(O, P, metadataProvider)) {
+                    return metadataProvider;
+                }
+                throw new Error("Illegal state.");
+            }
+            return undefined;
+        }
+        // naive Map shim
+        function CreateMapPolyfill() {
+            var cacheSentinel = {};
+            var arraySentinel = [];
+            var MapIterator = /** @class */ (function () {
+                function MapIterator(keys, values, selector) {
+                    this._index = 0;
+                    this._keys = keys;
+                    this._values = values;
+                    this._selector = selector;
+                }
+                MapIterator.prototype["@@iterator"] = function () { return this; };
+                MapIterator.prototype[iteratorSymbol] = function () { return this; };
+                MapIterator.prototype.next = function () {
+                    var index = this._index;
+                    if (index >= 0 && index < this._keys.length) {
+                        var result = this._selector(this._keys[index], this._values[index]);
+                        if (index + 1 >= this._keys.length) {
+                            this._index = -1;
+                            this._keys = arraySentinel;
+                            this._values = arraySentinel;
+                        }
+                        else {
+                            this._index++;
+                        }
+                        return { value: result, done: false };
+                    }
+                    return { value: undefined, done: true };
+                };
+                MapIterator.prototype.throw = function (error) {
+                    if (this._index >= 0) {
+                        this._index = -1;
+                        this._keys = arraySentinel;
+                        this._values = arraySentinel;
+                    }
+                    throw error;
+                };
+                MapIterator.prototype.return = function (value) {
+                    if (this._index >= 0) {
+                        this._index = -1;
+                        this._keys = arraySentinel;
+                        this._values = arraySentinel;
+                    }
+                    return { value: value, done: true };
+                };
+                return MapIterator;
+            }());
+            var Map = /** @class */ (function () {
+                function Map() {
+                    this._keys = [];
+                    this._values = [];
+                    this._cacheKey = cacheSentinel;
+                    this._cacheIndex = -2;
+                }
+                Object.defineProperty(Map.prototype, "size", {
+                    get: function () { return this._keys.length; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Map.prototype.has = function (key) { return this._find(key, /*insert*/ false) >= 0; };
+                Map.prototype.get = function (key) {
+                    var index = this._find(key, /*insert*/ false);
+                    return index >= 0 ? this._values[index] : undefined;
+                };
+                Map.prototype.set = function (key, value) {
+                    var index = this._find(key, /*insert*/ true);
+                    this._values[index] = value;
+                    return this;
+                };
+                Map.prototype.delete = function (key) {
+                    var index = this._find(key, /*insert*/ false);
+                    if (index >= 0) {
+                        var size = this._keys.length;
+                        for (var i = index + 1; i < size; i++) {
+                            this._keys[i - 1] = this._keys[i];
+                            this._values[i - 1] = this._values[i];
+                        }
+                        this._keys.length--;
+                        this._values.length--;
+                        if (SameValueZero(key, this._cacheKey)) {
+                            this._cacheKey = cacheSentinel;
+                            this._cacheIndex = -2;
+                        }
+                        return true;
+                    }
+                    return false;
+                };
+                Map.prototype.clear = function () {
+                    this._keys.length = 0;
+                    this._values.length = 0;
+                    this._cacheKey = cacheSentinel;
+                    this._cacheIndex = -2;
+                };
+                Map.prototype.keys = function () { return new MapIterator(this._keys, this._values, getKey); };
+                Map.prototype.values = function () { return new MapIterator(this._keys, this._values, getValue); };
+                Map.prototype.entries = function () { return new MapIterator(this._keys, this._values, getEntry); };
+                Map.prototype["@@iterator"] = function () { return this.entries(); };
+                Map.prototype[iteratorSymbol] = function () { return this.entries(); };
+                Map.prototype._find = function (key, insert) {
+                    if (!SameValueZero(this._cacheKey, key)) {
+                        this._cacheIndex = -1;
+                        for (var i = 0; i < this._keys.length; i++) {
+                            if (SameValueZero(this._keys[i], key)) {
+                                this._cacheIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (this._cacheIndex < 0 && insert) {
+                        this._cacheIndex = this._keys.length;
+                        this._keys.push(key);
+                        this._values.push(undefined);
+                    }
+                    return this._cacheIndex;
+                };
+                return Map;
+            }());
+            return Map;
+            function getKey(key, _) {
+                return key;
+            }
+            function getValue(_, value) {
+                return value;
+            }
+            function getEntry(key, value) {
+                return [key, value];
+            }
+        }
+        // naive Set shim
+        function CreateSetPolyfill() {
+            var Set = /** @class */ (function () {
+                function Set() {
+                    this._map = new _Map();
+                }
+                Object.defineProperty(Set.prototype, "size", {
+                    get: function () { return this._map.size; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Set.prototype.has = function (value) { return this._map.has(value); };
+                Set.prototype.add = function (value) { return this._map.set(value, value), this; };
+                Set.prototype.delete = function (value) { return this._map.delete(value); };
+                Set.prototype.clear = function () { this._map.clear(); };
+                Set.prototype.keys = function () { return this._map.keys(); };
+                Set.prototype.values = function () { return this._map.keys(); };
+                Set.prototype.entries = function () { return this._map.entries(); };
+                Set.prototype["@@iterator"] = function () { return this.keys(); };
+                Set.prototype[iteratorSymbol] = function () { return this.keys(); };
+                return Set;
+            }());
+            return Set;
+        }
+        // naive WeakMap shim
+        function CreateWeakMapPolyfill() {
+            var UUID_SIZE = 16;
+            var keys = HashMap.create();
+            var rootKey = CreateUniqueKey();
+            return /** @class */ (function () {
+                function WeakMap() {
+                    this._key = CreateUniqueKey();
+                }
+                WeakMap.prototype.has = function (target) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                    return table !== undefined ? HashMap.has(table, this._key) : false;
+                };
+                WeakMap.prototype.get = function (target) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                    return table !== undefined ? HashMap.get(table, this._key) : undefined;
+                };
+                WeakMap.prototype.set = function (target, value) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ true);
+                    table[this._key] = value;
+                    return this;
+                };
+                WeakMap.prototype.delete = function (target) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                    return table !== undefined ? delete table[this._key] : false;
+                };
+                WeakMap.prototype.clear = function () {
+                    // NOTE: not a real clear, just makes the previous data unreachable
+                    this._key = CreateUniqueKey();
+                };
+                return WeakMap;
+            }());
+            function CreateUniqueKey() {
+                var key;
+                do
+                    key = "@@WeakMap@@" + CreateUUID();
+                while (HashMap.has(keys, key));
+                keys[key] = true;
+                return key;
+            }
+            function GetOrCreateWeakMapTable(target, create) {
+                if (!hasOwn.call(target, rootKey)) {
+                    if (!create)
+                        return undefined;
+                    Object.defineProperty(target, rootKey, { value: HashMap.create() });
+                }
+                return target[rootKey];
+            }
+            function FillRandomBytes(buffer, size) {
+                for (var i = 0; i < size; ++i)
+                    buffer[i] = Math.random() * 0xff | 0;
+                return buffer;
+            }
+            function GenRandomBytes(size) {
+                if (typeof Uint8Array === "function") {
+                    var array = new Uint8Array(size);
+                    if (typeof crypto !== "undefined") {
+                        crypto.getRandomValues(array);
+                    }
+                    else if (typeof msCrypto !== "undefined") {
+                        msCrypto.getRandomValues(array);
+                    }
+                    else {
+                        FillRandomBytes(array, size);
+                    }
+                    return array;
+                }
+                return FillRandomBytes(new Array(size), size);
+            }
+            function CreateUUID() {
+                var data = GenRandomBytes(UUID_SIZE);
+                // mark as random - RFC 4122 § 4.4
+                data[6] = data[6] & 0x4f | 0x40;
+                data[8] = data[8] & 0xbf | 0x80;
+                var result = "";
+                for (var offset = 0; offset < UUID_SIZE; ++offset) {
+                    var byte = data[offset];
+                    if (offset === 4 || offset === 6 || offset === 8)
+                        result += "-";
+                    if (byte < 16)
+                        result += "0";
+                    result += byte.toString(16).toLowerCase();
+                }
+                return result;
+            }
+        }
+        // uses a heuristic used by v8 and chakra to force an object into dictionary mode.
+        function MakeDictionary(obj) {
+            obj.__ = undefined;
+            delete obj.__;
+            return obj;
+        }
+    });
+})(Reflect || (Reflect = {}));
+
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],4:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15111,14 +16531,158 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BoxCollider = void 0;
+var Vector3_1 = require("../Math/Vector3");
+var Collider_1 = require("./Collider");
+var MeshRenderer_1 = require("./MeshRenderer");
+var CANNON = __importStar(require("cannon"));
+var BoxCollider = /** @class */ (function (_super) {
+    __extends(BoxCollider, _super);
+    function BoxCollider() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    BoxCollider.prototype.createCollider = function (rigidbody) {
+        this.attachedRigidbody = rigidbody;
+        if (this.center == null || this.size == null) {
+            this.updateSizeFromMeshBounds();
+        }
+        // 不允许为0的尺寸，否则无法正常碰撞，例如高度为0的平面，高度设置成一个极低的数值
+        if (this.size.x <= 0)
+            this.size.x = 0.01;
+        if (this.size.y <= 0)
+            this.size.y = 0.01;
+        if (this.size.z <= 0)
+            this.size.z = 0.01;
+        // 先移除旧的
+        this.destroyCollider();
+        this.collider = new CANNON.Box(new CANNON.Vec3(this.size.x / 2, this.size.y / 2, this.size.z / 2));
+        var body = this.attachedRigidbody.connonBody;
+        if (body) {
+            body.addShape(this.collider);
+        }
+    };
+    BoxCollider.prototype.updateSizeFromMeshBounds = function () {
+        var _a;
+        // 获取MeshRenderer组件
+        var meshRenderer = this.gameObject.getComponent(MeshRenderer_1.MeshRenderer);
+        // 获取网格包围盒
+        var bounds = (_a = meshRenderer === null || meshRenderer === void 0 ? void 0 : meshRenderer.mesh) === null || _a === void 0 ? void 0 : _a.bounds[0];
+        if (bounds) {
+            // 如果有包围盒数据，使用包围盒的尺寸和中心点
+            var x = bounds.halfExtents.x * 2 * this.gameObject.transform.scale.x;
+            var y = bounds.halfExtents.y * 2 * this.gameObject.transform.scale.y;
+            var z = bounds.halfExtents.z * 2 * this.gameObject.transform.scale.z;
+            this.size = new Vector3_1.Vector3(x, y, z);
+            this.center = bounds.center;
+        }
+        else {
+            // 如果没有包围盒数据，使用默认值
+            this.size = Vector3_1.Vector3.ONE;
+            this.center = Vector3_1.Vector3.ZERO;
+        }
+    };
+    return BoxCollider;
+}(Collider_1.Collider));
+exports.BoxCollider = BoxCollider;
+
+},{"../Math/Vector3":27,"./Collider":7,"./MeshRenderer":9,"cannon":2}],5:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
+    function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
+    var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
+    var target = !descriptorIn && ctor ? contextIn["static"] ? ctor : ctor.prototype : null;
+    var descriptor = descriptorIn || (target ? Object.getOwnPropertyDescriptor(target, contextIn.name) : {});
+    var _, done = false;
+    for (var i = decorators.length - 1; i >= 0; i--) {
+        var context = {};
+        for (var p in contextIn) context[p] = p === "access" ? {} : contextIn[p];
+        for (var p in contextIn.access) context.access[p] = contextIn.access[p];
+        context.addInitializer = function (f) { if (done) throw new TypeError("Cannot add initializers after decoration has completed"); extraInitializers.push(accept(f || null)); };
+        var result = (0, decorators[i])(kind === "accessor" ? { get: descriptor.get, set: descriptor.set } : descriptor[key], context);
+        if (kind === "accessor") {
+            if (result === void 0) continue;
+            if (result === null || typeof result !== "object") throw new TypeError("Object expected");
+            if (_ = accept(result.get)) descriptor.get = _;
+            if (_ = accept(result.set)) descriptor.set = _;
+            if (_ = accept(result.init)) initializers.unshift(_);
+        }
+        else if (_ = accept(result)) {
+            if (kind === "field") initializers.unshift(_);
+            else descriptor[key] = _;
+        }
+    }
+    if (target) Object.defineProperty(target, contextIn.name, descriptor);
+    done = true;
+};
+var __runInitializers = (this && this.__runInitializers) || function (thisArg, initializers, value) {
+    var useValue = arguments.length > 2;
+    for (var i = 0; i < initializers.length; i++) {
+        value = useValue ? initializers[i].call(thisArg, value) : initializers[i].call(thisArg);
+    }
+    return useValue ? value : void 0;
+};
+var __setFunctionName = (this && this.__setFunctionName) || function (f, name, prefix) {
+    if (typeof name === "symbol") name = name.description ? "[".concat(name.description, "]") : "";
+    return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Camera = exports.CameraClearFlags = void 0;
-var Color_1 = require("../Utils/Color");
+var Color_1 = require("../Math/Color");
 var Engine_1 = require("../Core/Engine");
 var Vector4_1 = require("../Math/Vector4");
 var Component_1 = require("./Component");
 var Matrix4x4_1 = require("../Math/Matrix4x4");
 var Time_1 = require("../Core/Time");
+var Decorators_1 = require("../Core/Decorators");
 var CameraClearFlags;
 (function (CameraClearFlags) {
     CameraClearFlags[CameraClearFlags["NONE"] = 0] = "NONE";
@@ -15126,78 +16690,269 @@ var CameraClearFlags;
     CameraClearFlags[CameraClearFlags["Color"] = 16384] = "Color";
     CameraClearFlags[CameraClearFlags["Depth"] = 256] = "Depth";
 })(CameraClearFlags || (exports.CameraClearFlags = CameraClearFlags = {}));
-var Camera = /** @class */ (function (_super) {
-    __extends(Camera, _super);
-    function Camera() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.backGroundColor = new Color_1.Color(0.27, 0.27, 0.27, 1.0);
-        _this.fogColor = new Color_1.Color(0.27, 0.27, 0.27, 1.0);
-        _this.clearFlags = CameraClearFlags.Color | CameraClearFlags.Depth;
-        _this.nearClip = 1;
-        _this.farClip = 128;
-        _this.fov = 60;
-        _this.depth = 0;
-        _this.viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
-        _this.orthographic = false;
-        _this.orthographicSize = 1;
-        _this.timer = 0;
-        _this.counter = 0;
-        return _this;
-    }
-    Object.defineProperty(Camera.prototype, "aspect", {
-        get: function () {
-            var v = this.viewPort;
-            return (v.z * Engine_1.EngineConfig.canvasWidth) / (v.w * Engine_1.EngineConfig.canvasHeight);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Camera.prototype.awake = function () {
-        if (Camera.mainCamera == null) {
-            Camera.mainCamera = this;
+var Camera = function () {
+    var _classDecorators = [Decorators_1.DisallowMultipleComponent];
+    var _classDescriptor;
+    var _classExtraInitializers = [];
+    var _classThis;
+    var _classSuper = Component_1.Component;
+    var Camera = _classThis = /** @class */ (function (_super) {
+        __extends(Camera_1, _super);
+        function Camera_1() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.backGroundColor = new Color_1.Color(0.27, 0.27, 0.27, 1.0);
+            _this.fogColor = new Color_1.Color(0.27, 0.27, 0.27, 1.0);
+            _this.clearFlags = CameraClearFlags.Color | CameraClearFlags.Depth;
+            _this.nearClip = 1;
+            _this.farClip = 128;
+            _this.fov = 60;
+            _this.depth = 0;
+            _this.viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
+            _this.orthographic = false;
+            _this.orthographicSize = 1;
+            _this.timer = 0;
+            _this.counter = 0;
+            return _this;
         }
-        Camera.cameras.push(this);
-        this.transform.forward;
-    };
-    Camera.prototype.update = function () {
-        if (Time_1.Time.time - this.timer >= 1) {
-            this.timer = Time_1.Time.time;
-            this.counter++;
-        }
-    };
-    Camera.prototype.onDestroy = function () {
-        var index = Camera.cameras.indexOf(this, 0);
-        if (index > -1) {
-            Camera.cameras.splice(index, 1);
-        }
-        if (Camera.mainCamera == this) {
-            if (Camera.cameras.length > 0)
-                Camera.mainCamera = Camera.cameras[0];
-            else
-                Camera.mainCamera = undefined;
-        }
-    };
-    Camera.prototype.getViewMatrix = function () {
-        // 1. 获取相机的世界变换矩阵
-        var worldMatrix = this.transform.localToWorldMatrix;
-        // 2. 计算逆矩阵（世界空间 → 视图空间）
-        var viewMatrix = worldMatrix.clone().invert();
-        return viewMatrix;
-    };
-    Camera.prototype.getProjectionMatrix = function () {
-        if (this.orthographic) {
-            return Matrix4x4_1.Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
-        }
-        else {
-            return Matrix4x4_1.Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
-        }
-    };
-    Camera.cameras = new Array();
-    return Camera;
-}(Component_1.Component));
+        Object.defineProperty(Camera_1.prototype, "aspect", {
+            get: function () {
+                var v = this.viewPort;
+                return (v.z * Engine_1.EngineConfig.canvasWidth) / (v.w * Engine_1.EngineConfig.canvasHeight);
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Camera_1.prototype.awake = function () {
+            if (Camera.mainCamera == null) {
+                Camera.mainCamera = this;
+            }
+            Camera.cameras.push(this);
+            this.transform.forward;
+        };
+        Camera_1.prototype.update = function () {
+            if (Time_1.Time.time - this.timer >= 1) {
+                this.timer = Time_1.Time.time;
+                this.counter++;
+            }
+        };
+        Camera_1.prototype.onDestroy = function () {
+            var index = Camera.cameras.indexOf(this, 0);
+            if (index > -1) {
+                Camera.cameras.splice(index, 1);
+            }
+            if (Camera.mainCamera == this) {
+                if (Camera.cameras.length > 0)
+                    Camera.mainCamera = Camera.cameras[0];
+                else
+                    Camera.mainCamera = undefined;
+            }
+        };
+        Camera_1.prototype.getViewMatrix = function () {
+            // 1. 获取相机的世界变换矩阵
+            var worldMatrix = this.transform.localToWorldMatrix;
+            // 2. 计算逆矩阵（世界空间 → 视图空间）
+            var viewMatrix = worldMatrix.clone().invert();
+            return viewMatrix;
+        };
+        Camera_1.prototype.getProjectionMatrix = function () {
+            if (this.orthographic) {
+                return Matrix4x4_1.Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
+            }
+            else {
+                return Matrix4x4_1.Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
+            }
+        };
+        return Camera_1;
+    }(_classSuper));
+    __setFunctionName(_classThis, "Camera");
+    (function () {
+        var _a;
+        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        Camera = _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+    })();
+    _classThis.cameras = new Array();
+    (function () {
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return Camera = _classThis;
+}();
 exports.Camera = Camera;
 
-},{"../Core/Engine":9,"../Core/Time":12,"../Math/Matrix4x4":17,"../Math/Vector4":21,"../Utils/Color":29,"./Component":5}],4:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Math/Color":22,"../Math/Matrix4x4":23,"../Math/Vector4":28,"./Component":8}],6:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
+    function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
+    var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
+    var target = !descriptorIn && ctor ? contextIn["static"] ? ctor : ctor.prototype : null;
+    var descriptor = descriptorIn || (target ? Object.getOwnPropertyDescriptor(target, contextIn.name) : {});
+    var _, done = false;
+    for (var i = decorators.length - 1; i >= 0; i--) {
+        var context = {};
+        for (var p in contextIn) context[p] = p === "access" ? {} : contextIn[p];
+        for (var p in contextIn.access) context.access[p] = contextIn.access[p];
+        context.addInitializer = function (f) { if (done) throw new TypeError("Cannot add initializers after decoration has completed"); extraInitializers.push(accept(f || null)); };
+        var result = (0, decorators[i])(kind === "accessor" ? { get: descriptor.get, set: descriptor.set } : descriptor[key], context);
+        if (kind === "accessor") {
+            if (result === void 0) continue;
+            if (result === null || typeof result !== "object") throw new TypeError("Object expected");
+            if (_ = accept(result.get)) descriptor.get = _;
+            if (_ = accept(result.set)) descriptor.set = _;
+            if (_ = accept(result.init)) initializers.unshift(_);
+        }
+        else if (_ = accept(result)) {
+            if (kind === "field") initializers.unshift(_);
+            else descriptor[key] = _;
+        }
+    }
+    if (target) Object.defineProperty(target, contextIn.name, descriptor);
+    done = true;
+};
+var __runInitializers = (this && this.__runInitializers) || function (thisArg, initializers, value) {
+    var useValue = arguments.length > 2;
+    for (var i = 0; i < initializers.length; i++) {
+        value = useValue ? initializers[i].call(thisArg, value) : initializers[i].call(thisArg);
+    }
+    return useValue ? value : void 0;
+};
+var __setFunctionName = (this && this.__setFunctionName) || function (f, name, prefix) {
+    if (typeof name === "symbol") name = name.description ? "[".concat(name.description, "]") : "";
+    return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CameraController = void 0;
+var Decorators_1 = require("../Core/Decorators");
+var Engine_1 = require("../Core/Engine");
+var Input_1 = require("../Core/Input");
+var Time_1 = require("../Core/Time");
+var Quaternion_1 = require("../Math/Quaternion");
+var Vector3_1 = require("../Math/Vector3");
+var Camera_1 = require("./Camera");
+var Component_1 = require("./Component");
+var CameraController = function () {
+    var _classDecorators = [(0, Decorators_1.RequireComponent)(Camera_1.Camera)];
+    var _classDescriptor;
+    var _classExtraInitializers = [];
+    var _classThis;
+    var _classSuper = Component_1.Component;
+    var CameraController = _classThis = /** @class */ (function (_super) {
+        __extends(CameraController_1, _super);
+        function CameraController_1() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.moveSpeed = 0.5;
+            _this.moveSpeedShiftScale = 2.5;
+            _this.dragSpeed = 0.3;
+            _this.damp = 0.2;
+            _this.rotateSpeed = 1;
+            _this._euler = new Vector3_1.Vector3();
+            _this._velocity = new Vector3_1.Vector3();
+            _this._position = new Vector3_1.Vector3();
+            _this._speedScale = 1;
+            _this._rotateCamera = false;
+            _this._rotateCenter = new Vector3_1.Vector3();
+            return _this;
+        }
+        CameraController_1.prototype.start = function () {
+            this._camera = this.gameObject.getComponent(Camera_1.Camera);
+            this._euler = this.transform.rotation.eulerAngles;
+            this._position = this.transform.position;
+        };
+        CameraController_1.prototype.updateInput = function () {
+            var _a;
+            // WSADQE+SHIFT相机移动以及加速
+            this._velocity.x = -Input_1.Input.GetAxis(Input_1.InputAxis.Horizontal);
+            this._velocity.z = Input_1.Input.GetAxis(Input_1.InputAxis.Vertical);
+            this._velocity.y = Input_1.Input.GetKey(Input_1.Input.KeyCode.Q) ? -1 : Input_1.Input.GetKey(Input_1.Input.KeyCode.E) ? 1 : 0;
+            this._speedScale = Input_1.Input.GetKey(Input_1.Input.KeyCode.Shift) ? this.moveSpeedShiftScale : 1;
+            // 鼠标中键相机拖动
+            if (Input_1.Input.GetMouseButton(1)) {
+                var moveDelta = Input_1.Input.mouseDelta;
+                //TODO:这里应该是托多少就移动多少，而不是乘一个系数
+                this._velocity.x += moveDelta.x * this.dragSpeed;
+                this._velocity.y += moveDelta.y * this.dragSpeed;
+            }
+            // 鼠标滚轮相机缩放
+            var scrollDelta = Input_1.Input.mouseScrollDelta.y * this.moveSpeed;
+            if ((_a = this._camera) === null || _a === void 0 ? void 0 : _a.orthographic) {
+                this._camera.orthographicSize += scrollDelta * 0.01;
+            }
+            else {
+                var pos = this.transform.rotation.transformQuat(Vector3_1.Vector3.BACK);
+                this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta * 0.1);
+            }
+            // 鼠标右键相机旋转
+            if (Input_1.Input.GetMouseButtonDown(2)) {
+                Engine_1.Engine.canvas.requestPointerLock();
+                this._rotateCamera = true;
+            }
+            if (Input_1.Input.GetMouseButtonUp(2)) {
+                if (document.exitPointerLock)
+                    document.exitPointerLock();
+                this._rotateCamera = false;
+            }
+            if (this._rotateCamera) {
+                var moveDelta = Input_1.Input.mouseDelta;
+                this._euler.y += moveDelta.x * this.rotateSpeed * 0.1;
+                this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
+            }
+            // ALT+鼠标左键相机绕中心点旋转
+            if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Alt) && Input_1.Input.GetMouseButton(0)) {
+                var moveDelta = Input_1.Input.mouseDelta;
+                this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
+                this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
+            }
+        };
+        CameraController_1.prototype.scaleAndAdd = function (a, b, scale) {
+            var out = new Vector3_1.Vector3();
+            out.x = a.x + b.x * scale;
+            out.y = a.y + b.y * scale;
+            out.z = a.z + b.z * scale;
+            return out;
+        };
+        CameraController_1.prototype.update = function () {
+            this.updateInput();
+            // position
+            var v = this.transform.rotation.transformQuat(this._velocity);
+            this._position = this.scaleAndAdd(this._position, v, this.moveSpeed * this._speedScale);
+            v = Vector3_1.Vector3.lerp(this.transform.position, this._position, Time_1.Time.deltaTime / this.damp);
+            this.transform.position = v;
+            // rotation
+            var q = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this._euler.x, this._euler.y, this._euler.z));
+            q = Quaternion_1.Quaternion.slerp(this.transform.rotation, q, Time_1.Time.deltaTime / this.damp);
+            this.transform.rotation = q;
+        };
+        return CameraController_1;
+    }(_classSuper));
+    __setFunctionName(_classThis, "CameraController");
+    (function () {
+        var _a;
+        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        CameraController = _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return CameraController = _classThis;
+}();
+exports.CameraController = CameraController;
+
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Input":16,"../Core/Time":17,"../Math/Quaternion":24,"../Math/Vector3":27,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15215,105 +16970,51 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CameraController = void 0;
-var Engine_1 = require("../Core/Engine");
-var Input_1 = require("../Core/Input");
-var Time_1 = require("../Core/Time");
-var Quaternion_1 = require("../Math/Quaternion");
-var Vector3_1 = require("../Math/Vector3");
-var Camera_1 = require("./Camera");
+exports.Collider = void 0;
 var Component_1 = require("./Component");
-var CameraController = /** @class */ (function (_super) {
-    __extends(CameraController, _super);
-    function CameraController() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.moveSpeed = 0.5;
-        _this.moveSpeedShiftScale = 2.5;
-        _this.dragSpeed = 0.3;
-        _this.damp = 0.2;
-        _this.rotateSpeed = 1;
-        _this._euler = new Vector3_1.Vector3();
-        _this._velocity = new Vector3_1.Vector3();
-        _this._position = new Vector3_1.Vector3();
-        _this._speedScale = 1;
-        _this._rotateCamera = false;
-        _this._rotateCenter = new Vector3_1.Vector3();
-        return _this;
+var RigidBody_1 = require("./RigidBody");
+var Collider = /** @class */ (function (_super) {
+    __extends(Collider, _super);
+    function Collider() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-    CameraController.prototype.start = function () {
-        this._camera = this.gameObject.getComponent(Camera_1.Camera);
-        this._euler = this.transform.rotation.eulerAngles;
-        this._position = this.transform.position;
+    Collider.prototype.onEnable = function () {
+        if (this.attachedRigidbody == null || this.collider == null) {
+            this.attachedRigidbody = this.gameObject.getComponetInParent(RigidBody_1.Rigidbody);
+            if (this.attachedRigidbody == null)
+                return;
+            this.collider = this.createCollider(this.attachedRigidbody);
+        }
     };
-    CameraController.prototype.updateInput = function () {
+    // 移除刚体中指定的形状
+    Collider.prototype.destroyCollider = function () {
         var _a;
-        // WSADQE+SHIFT相机移动以及加速
-        this._velocity.x = -Input_1.Input.GetAxis(Input_1.InputAxis.Horizontal);
-        this._velocity.z = Input_1.Input.GetAxis(Input_1.InputAxis.Vertical);
-        this._velocity.y = Input_1.Input.GetKey(Input_1.Input.KeyCode.Q) ? -1 : Input_1.Input.GetKey(Input_1.Input.KeyCode.E) ? 1 : 0;
-        this._speedScale = Input_1.Input.GetKey(Input_1.Input.KeyCode.Shift) ? this.moveSpeedShiftScale : 1;
-        // 鼠标中键相机拖动
-        if (Input_1.Input.GetMouseButton(1)) {
-            var moveDelta = Input_1.Input.mouseDelta;
-            //TODO:这里应该是托多少就移动多少，而不是乘一个系数
-            this._velocity.x += moveDelta.x * this.dragSpeed;
-            this._velocity.y += moveDelta.y * this.dragSpeed;
+        var body = (_a = this.attachedRigidbody) === null || _a === void 0 ? void 0 : _a.connonBody;
+        if (body == null || this.collider == null)
+            return;
+        // 1. 找到目标形状的索引
+        var index = body.shapes.indexOf(this.collider);
+        if (index === -1)
+            return; // 形状不存在则退出
+        // 2. 移除形状及对应的偏移和旋转信息
+        body.shapes.splice(index, 1);
+        body.shapeOffsets.splice(index, 1); // 移除对应的偏移
+        body.shapeOrientations.splice(index, 1); // 移除对应的旋转
+        // 3. 如果是动态刚体，重新计算惯性
+        if (body.mass > 0) {
+            //body.updateInertiaFromShapes();
         }
-        // 鼠标滚轮相机缩放
-        var scrollDelta = Input_1.Input.mouseScrollDelta.y * this.moveSpeed;
-        if ((_a = this._camera) === null || _a === void 0 ? void 0 : _a.orthographic) {
-            this._camera.orthographicSize += scrollDelta * 0.01;
-        }
-        else {
-            var pos = this.transform.rotation.transformQuat(Vector3_1.Vector3.BACK);
-            this._position = this.scaleAndAdd(this.transform.position, pos, scrollDelta * 0.1);
-        }
-        // 鼠标右键相机旋转
-        if (Input_1.Input.GetMouseButtonDown(2)) {
-            Engine_1.Engine.canvas.requestPointerLock();
-            this._rotateCamera = true;
-        }
-        if (Input_1.Input.GetMouseButtonUp(2)) {
-            if (document.exitPointerLock)
-                document.exitPointerLock();
-            this._rotateCamera = false;
-        }
-        if (this._rotateCamera) {
-            var moveDelta = Input_1.Input.mouseDelta;
-            this._euler.y += moveDelta.x * this.rotateSpeed * 0.1;
-            this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
-        }
-        // ALT+鼠标左键相机绕中心点旋转
-        if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Alt) && Input_1.Input.GetMouseButton(0)) {
-            var moveDelta = Input_1.Input.mouseDelta;
-            this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
-            this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
-        }
+        // 4. 强制更新碰撞检测信息
+        body.aabbNeedsUpdate = true;
     };
-    CameraController.prototype.scaleAndAdd = function (a, b, scale) {
-        var out = new Vector3_1.Vector3();
-        out.x = a.x + b.x * scale;
-        out.y = a.y + b.y * scale;
-        out.z = a.z + b.z * scale;
-        return out;
+    Collider.prototype.onDestroy = function () {
+        this.destroyCollider();
     };
-    CameraController.prototype.update = function () {
-        this.updateInput();
-        // position
-        var v = this.transform.rotation.transformQuat(this._velocity);
-        this._position = this.scaleAndAdd(this._position, v, this.moveSpeed * this._speedScale);
-        v = Vector3_1.Vector3.lerp(this.transform.position, this._position, Time_1.Time.deltaTime / this.damp);
-        this.transform.position = v;
-        // rotation
-        var q = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this._euler.x, this._euler.y, this._euler.z));
-        q = Quaternion_1.Quaternion.slerp(this.transform.rotation, q, Time_1.Time.deltaTime / this.damp);
-        this.transform.rotation = q;
-    };
-    return CameraController;
+    return Collider;
 }(Component_1.Component));
-exports.CameraController = CameraController;
+exports.Collider = Collider;
 
-},{"../Core/Engine":9,"../Core/Input":11,"../Core/Time":12,"../Math/Quaternion":18,"../Math/Vector3":20,"./Camera":3,"./Component":5}],5:[function(require,module,exports){
+},{"./Component":8,"./RigidBody":11}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15332,6 +17033,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Component = void 0;
+var Decorators_1 = require("../Core/Decorators");
 var UObject_1 = require("../Core/UObject");
 var Component = /** @class */ (function (_super) {
     __extends(Component, _super);
@@ -15339,6 +17041,9 @@ var Component = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this._enabled = true;
         _this.gameObject = gameObject;
+        _this.checkRequiredComponents();
+        _this.checkComponentUniqueness();
+        _this.checkComponentCompatibility();
         _this.awake();
         return _this;
     }
@@ -15380,11 +17085,92 @@ var Component = /** @class */ (function (_super) {
     Component.prototype.onDisable = function () { };
     // 当组件被销毁时调用
     Component.prototype.onDestroy = function () { };
+    /**
+     * 检查通过@RequireComponent装饰器声明的依赖组件是否存在
+     */
+    Component.prototype.checkRequiredComponents = function () {
+        // 1. 获取通过装饰器声明的依赖组件类型数组
+        var requiredComponents = Reflect.getMetadata(Decorators_1.REQUIRED_COMPONENTS_KEY, this.constructor);
+        // 如果没有声明任何依赖，则直接返回
+        if (!requiredComponents || requiredComponents.length === 0) {
+            return true;
+        }
+        // 2. 遍历所有必需的组件类型
+        for (var _i = 0, requiredComponents_1 = requiredComponents; _i < requiredComponents_1.length; _i++) {
+            var compType = requiredComponents_1[_i];
+            // 跳过未定义的组件类型
+            if (compType == null) {
+                continue;
+            }
+            // 3. 检查该GameObject上是否已挂载所需的组件类型
+            var existingComponent = this.gameObject.getComponent(compType);
+            if (existingComponent == null) {
+                // 4. 如果依赖组件不存在，输出错误信息
+                console.error("Component ".concat(this.constructor.name, " requires a ").concat(compType.name, " on the same GameObject."));
+                // 5. 自动添加缺失的组件（使用类型断言确保类型安全）
+                try {
+                    this.gameObject.addComponent(compType);
+                    console.log("Auto-added missing component: ".concat(compType.name));
+                }
+                catch (error) {
+                    console.error("Failed to auto-add component ".concat(compType.name, ":"), error);
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+    /**
+     * 检查是否存在多个不允许同时存在的组件
+     */
+    Component.prototype.checkComponentUniqueness = function () {
+        var _this = this;
+        var componentType = this.constructor;
+        var isDisallowed = Reflect.getMetadata(Decorators_1.DISALLOW_MULTIPLE_COMPONENT_KEY, componentType);
+        if (isDisallowed) {
+            // 查找同类型组件
+            var sameTypeComponents = this.gameObject.getAllComponents().filter(function (comp) { return comp instanceof componentType && comp !== _this; });
+            if (sameTypeComponents.length > 0) {
+                console.error("Component ".concat(componentType.name, " is marked with @DisallowMultipleComponent, but multiple instances were found. This may cause unexpected behavior."));
+                return false;
+            }
+        }
+        return true;
+    };
+    /**
+     * 检查组件共存限制
+     */
+    Component.prototype.checkComponentCompatibility = function () {
+        // 获取当前组件类上通过@DisallowComponent声明的禁止共存组件类型
+        var disallowedComponents = Reflect.getMetadata(Decorators_1.DISALLOW_COMPONENTS_KEY, this.constructor);
+        if (!disallowedComponents || disallowedComponents.length === 0) {
+            return true; // 如果没有声明任何禁止共存的组件，直接返回
+        }
+        // 检查所有被禁止的组件类型
+        for (var _i = 0, disallowedComponents_1 = disallowedComponents; _i < disallowedComponents_1.length; _i++) {
+            var disallowedType = disallowedComponents_1[_i];
+            if (disallowedType == null)
+                continue;
+            // 检查是否存在被禁止的组件
+            var foundComponent = this.gameObject.getComponent(disallowedType);
+            if (foundComponent) {
+                // 如果找到被禁止的组件，抛出错误或警告
+                console.error("Component ".concat(this.constructor.name, " cannot coexist with ").concat(disallowedType.name, " ") +
+                    "on the same GameObject. Please remove one of them.");
+                // 自动移除冲突组件
+                this.gameObject.removeComponent(disallowedType);
+                // 或者抛出异常阻止游戏运行
+                // throw new Error(`Component compatibility error: ${this.constructor.name} vs ${disallowedType.name}`);
+                return false;
+            }
+        }
+        return true;
+    };
     return Component;
 }(UObject_1.UObject));
 exports.Component = Component;
 
-},{"../Core/UObject":15}],6:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/UObject":20}],9:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15422,7 +17208,7 @@ var MeshRenderer = /** @class */ (function (_super) {
 }(Renderer_1.Renderer));
 exports.MeshRenderer = MeshRenderer;
 
-},{"./Renderer":8}],7:[function(require,module,exports){
+},{"./Renderer":10}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15439,155 +17225,627 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ObjRotate = void 0;
-var Input_1 = require("../Core/Input");
-var Quaternion_1 = require("../Math/Quaternion");
-var Vector3_1 = require("../Math/Vector3");
-var Component_1 = require("./Component");
-var ObjRotate = /** @class */ (function (_super) {
-    __extends(ObjRotate, _super);
-    function ObjRotate() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.angleX = 0;
-        _this.angleY = 0;
-        return _this;
+var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
+    function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
+    var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
+    var target = !descriptorIn && ctor ? contextIn["static"] ? ctor : ctor.prototype : null;
+    var descriptor = descriptorIn || (target ? Object.getOwnPropertyDescriptor(target, contextIn.name) : {});
+    var _, done = false;
+    for (var i = decorators.length - 1; i >= 0; i--) {
+        var context = {};
+        for (var p in contextIn) context[p] = p === "access" ? {} : contextIn[p];
+        for (var p in contextIn.access) context.access[p] = contextIn.access[p];
+        context.addInitializer = function (f) { if (done) throw new TypeError("Cannot add initializers after decoration has completed"); extraInitializers.push(accept(f || null)); };
+        var result = (0, decorators[i])(kind === "accessor" ? { get: descriptor.get, set: descriptor.set } : descriptor[key], context);
+        if (kind === "accessor") {
+            if (result === void 0) continue;
+            if (result === null || typeof result !== "object") throw new TypeError("Object expected");
+            if (_ = accept(result.get)) descriptor.get = _;
+            if (_ = accept(result.set)) descriptor.set = _;
+            if (_ = accept(result.init)) initializers.unshift(_);
+        }
+        else if (_ = accept(result)) {
+            if (kind === "field") initializers.unshift(_);
+            else descriptor[key] = _;
+        }
     }
-    ObjRotate.prototype.update = function () {
-        // // 键盘输入
-        // const horizontalInput = Input.GetAxis(InputAxis.Horizontal);
-        // const verticalInput = Input.GetAxis(InputAxis.Vertical);
-        // this.angleX += verticalInput;
-        // this.angleY += horizontalInput;
-        // this.transform.rotation = new Quaternion(new Vector3(this.angleX, this.angleY, 0));
-        // // 鼠标滚轮
-        // if (Input.mouseScrollDelta.y !== 0) {
-        //     // 缩放
-        //     const zoomFactor = Input.mouseScrollDelta.y > 0 ? 0.9 : 1.1;
-        //     const sacle = this.transform.scale;
-        //     sacle.multiply(zoomFactor);
-        //     this.transform.scale = sacle;
-        // }
-        if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad4))
-            this.angleY -= 1;
-        if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad6))
-            this.angleY += 1;
-        if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad8))
-            this.angleX -= 1;
-        if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad2))
-            this.angleX += 1;
-        this.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this.angleX, this.angleY, 0));
-    };
-    return ObjRotate;
-}(Component_1.Component));
-exports.ObjRotate = ObjRotate;
-
-},{"../Core/Input":11,"../Math/Quaternion":18,"../Math/Vector3":20,"./Component":5}],8:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+    if (target) Object.defineProperty(target, contextIn.name, descriptor);
+    done = true;
+};
+var __runInitializers = (this && this.__runInitializers) || function (thisArg, initializers, value) {
+    var useValue = arguments.length > 2;
+    for (var i = 0; i < initializers.length; i++) {
+        value = useValue ? initializers[i].call(thisArg, value) : initializers[i].call(thisArg);
+    }
+    return useValue ? value : void 0;
+};
+var __setFunctionName = (this && this.__setFunctionName) || function (f, name, prefix) {
+    if (typeof name === "symbol") name = name.description ? "[".concat(name.description, "]") : "";
+    return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Renderer = void 0;
 var Component_1 = require("./Component");
 var Bounds_1 = require("../Math/Bounds");
-// Renderer是所有渲染组件的基类
-var Renderer = /** @class */ (function (_super) {
-    __extends(Renderer, _super);
-    function Renderer() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this._bounds = new Bounds_1.Bounds();
-        _this._material = null;
-        _this._sortingLayerID = 0;
-        _this._sortingOrder = 0;
-        _this._castShadows = true;
-        _this._receiveShadows = true;
-        return _this;
-    }
-    Object.defineProperty(Renderer.prototype, "material", {
-        // 材质属性
-        get: function () {
-            return this._material;
-        },
-        set: function (value) {
-            this._material = value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Renderer.prototype, "sortingLayerID", {
-        // 排序层ID
-        get: function () {
-            return this._sortingLayerID;
-        },
-        set: function (value) {
-            this._sortingLayerID = value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Renderer.prototype, "sortingOrder", {
-        // 排序顺序
-        get: function () {
-            return this._sortingOrder;
-        },
-        set: function (value) {
-            this._sortingOrder = value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Renderer.prototype, "castShadows", {
-        // 是否投射阴影
-        get: function () {
-            return this._castShadows;
-        },
-        set: function (value) {
-            this._castShadows = value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Renderer.prototype, "receiveShadows", {
-        // 是否接收阴影
-        get: function () {
-            return this._receiveShadows;
-        },
-        set: function (value) {
-            this._receiveShadows = value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Renderer.prototype, "shouldRender", {
-        // 是否应该被渲染
-        get: function () {
-            return this.enabled && this.gameObject.active;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Renderer.prototype.onDestroy = function () {
-        // 清理资源
-        this._material = null;
-    };
-    return Renderer;
-}(Component_1.Component));
+var Decorators_1 = require("../Core/Decorators");
+var Renderer = function () {
+    var _classDecorators = [Decorators_1.DisallowMultipleComponent];
+    var _classDescriptor;
+    var _classExtraInitializers = [];
+    var _classThis;
+    var _classSuper = Component_1.Component;
+    var Renderer = _classThis = /** @class */ (function (_super) {
+        __extends(Renderer_1, _super);
+        function Renderer_1() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this._bounds = new Bounds_1.Bounds();
+            _this._material = null;
+            _this._sortingLayerID = 0;
+            _this._sortingOrder = 0;
+            _this._castShadows = true;
+            _this._receiveShadows = true;
+            return _this;
+        }
+        Object.defineProperty(Renderer_1.prototype, "material", {
+            // 材质属性
+            get: function () {
+                return this._material;
+            },
+            set: function (value) {
+                this._material = value;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(Renderer_1.prototype, "sortingLayerID", {
+            // 排序层ID
+            get: function () {
+                return this._sortingLayerID;
+            },
+            set: function (value) {
+                this._sortingLayerID = value;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(Renderer_1.prototype, "sortingOrder", {
+            // 排序顺序
+            get: function () {
+                return this._sortingOrder;
+            },
+            set: function (value) {
+                this._sortingOrder = value;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(Renderer_1.prototype, "castShadows", {
+            // 是否投射阴影
+            get: function () {
+                return this._castShadows;
+            },
+            set: function (value) {
+                this._castShadows = value;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(Renderer_1.prototype, "receiveShadows", {
+            // 是否接收阴影
+            get: function () {
+                return this._receiveShadows;
+            },
+            set: function (value) {
+                this._receiveShadows = value;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(Renderer_1.prototype, "shouldRender", {
+            // 是否应该被渲染
+            get: function () {
+                return this.enabled && this.gameObject.active;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Renderer_1.prototype.onDestroy = function () {
+            // 清理资源
+            this._material = null;
+        };
+        return Renderer_1;
+    }(_classSuper));
+    __setFunctionName(_classThis, "Renderer");
+    (function () {
+        var _a;
+        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        Renderer = _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return Renderer = _classThis;
+}();
 exports.Renderer = Renderer;
 
-},{"../Math/Bounds":16,"./Component":5}],9:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Math/Bounds":21,"./Component":8}],11:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
+    function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
+    var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
+    var target = !descriptorIn && ctor ? contextIn["static"] ? ctor : ctor.prototype : null;
+    var descriptor = descriptorIn || (target ? Object.getOwnPropertyDescriptor(target, contextIn.name) : {});
+    var _, done = false;
+    for (var i = decorators.length - 1; i >= 0; i--) {
+        var context = {};
+        for (var p in contextIn) context[p] = p === "access" ? {} : contextIn[p];
+        for (var p in contextIn.access) context.access[p] = contextIn.access[p];
+        context.addInitializer = function (f) { if (done) throw new TypeError("Cannot add initializers after decoration has completed"); extraInitializers.push(accept(f || null)); };
+        var result = (0, decorators[i])(kind === "accessor" ? { get: descriptor.get, set: descriptor.set } : descriptor[key], context);
+        if (kind === "accessor") {
+            if (result === void 0) continue;
+            if (result === null || typeof result !== "object") throw new TypeError("Object expected");
+            if (_ = accept(result.get)) descriptor.get = _;
+            if (_ = accept(result.set)) descriptor.set = _;
+            if (_ = accept(result.init)) initializers.unshift(_);
+        }
+        else if (_ = accept(result)) {
+            if (kind === "field") initializers.unshift(_);
+            else descriptor[key] = _;
+        }
+    }
+    if (target) Object.defineProperty(target, contextIn.name, descriptor);
+    done = true;
+};
+var __runInitializers = (this && this.__runInitializers) || function (thisArg, initializers, value) {
+    var useValue = arguments.length > 2;
+    for (var i = 0; i < initializers.length; i++) {
+        value = useValue ? initializers[i].call(thisArg, value) : initializers[i].call(thisArg);
+    }
+    return useValue ? value : void 0;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __setFunctionName = (this && this.__setFunctionName) || function (f, name, prefix) {
+    if (typeof name === "symbol") name = name.description ? "[".concat(name.description, "]") : "";
+    return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Rigidbody = exports.QueryTriggerInteraction = exports.RigidbodyConstraints = exports.CollisionDetectionMode = exports.RigidbodyInterpolation = exports.ForceMode = void 0;
+var Engine_1 = require("../Core/Engine");
+var UObject_1 = require("../Core/UObject");
+var Time_1 = require("../Core/Time");
+var Quaternion_1 = require("../Math/Quaternion");
+var Vector3_1 = require("../Math/Vector3");
+var Collider_1 = require("./Collider");
+var Component_1 = require("./Component");
+var CANNON = __importStar(require("cannon"));
+var Decorators_1 = require("../Core/Decorators");
+var ForceMode;
+(function (ForceMode) {
+    ForceMode[ForceMode["Force"] = 0] = "Force";
+    ForceMode[ForceMode["Acceleration"] = 1] = "Acceleration";
+    ForceMode[ForceMode["Impulse"] = 2] = "Impulse";
+    ForceMode[ForceMode["VelocityChange"] = 3] = "VelocityChange";
+})(ForceMode || (exports.ForceMode = ForceMode = {}));
+var RigidbodyInterpolation;
+(function (RigidbodyInterpolation) {
+    RigidbodyInterpolation[RigidbodyInterpolation["None"] = 0] = "None";
+    RigidbodyInterpolation[RigidbodyInterpolation["Interpolate"] = 1] = "Interpolate";
+    RigidbodyInterpolation[RigidbodyInterpolation["Extrapolate"] = 2] = "Extrapolate";
+})(RigidbodyInterpolation || (exports.RigidbodyInterpolation = RigidbodyInterpolation = {}));
+var CollisionDetectionMode;
+(function (CollisionDetectionMode) {
+    CollisionDetectionMode[CollisionDetectionMode["Discrete"] = 0] = "Discrete";
+    CollisionDetectionMode[CollisionDetectionMode["Continuous"] = 1] = "Continuous";
+    CollisionDetectionMode[CollisionDetectionMode["ContinuousDynamic"] = 2] = "ContinuousDynamic";
+    CollisionDetectionMode[CollisionDetectionMode["ContinuousSpeculative"] = 3] = "ContinuousSpeculative";
+})(CollisionDetectionMode || (exports.CollisionDetectionMode = CollisionDetectionMode = {}));
+var RigidbodyConstraints;
+(function (RigidbodyConstraints) {
+    RigidbodyConstraints[RigidbodyConstraints["None"] = 0] = "None";
+    RigidbodyConstraints[RigidbodyConstraints["FreezePositionX"] = 1] = "FreezePositionX";
+    RigidbodyConstraints[RigidbodyConstraints["FreezePositionY"] = 2] = "FreezePositionY";
+    RigidbodyConstraints[RigidbodyConstraints["FreezePositionZ"] = 4] = "FreezePositionZ";
+    RigidbodyConstraints[RigidbodyConstraints["FreezeRotationX"] = 8] = "FreezeRotationX";
+    RigidbodyConstraints[RigidbodyConstraints["FreezeRotationY"] = 16] = "FreezeRotationY";
+    RigidbodyConstraints[RigidbodyConstraints["FreezeRotationZ"] = 32] = "FreezeRotationZ";
+    RigidbodyConstraints[RigidbodyConstraints["FreezePosition"] = 7] = "FreezePosition";
+    RigidbodyConstraints[RigidbodyConstraints["FreezeRotation"] = 56] = "FreezeRotation";
+    RigidbodyConstraints[RigidbodyConstraints["FreezeAll"] = 63] = "FreezeAll";
+})(RigidbodyConstraints || (exports.RigidbodyConstraints = RigidbodyConstraints = {}));
+var QueryTriggerInteraction;
+(function (QueryTriggerInteraction) {
+    QueryTriggerInteraction[QueryTriggerInteraction["UseGlobal"] = 0] = "UseGlobal";
+    QueryTriggerInteraction[QueryTriggerInteraction["Ignore"] = 1] = "Ignore";
+    QueryTriggerInteraction[QueryTriggerInteraction["Collide"] = 2] = "Collide";
+})(QueryTriggerInteraction || (exports.QueryTriggerInteraction = QueryTriggerInteraction = {}));
+var Rigidbody = function () {
+    var _classDecorators = [Decorators_1.DisallowMultipleComponent];
+    var _classDescriptor;
+    var _classExtraInitializers = [];
+    var _classThis;
+    var _classSuper = Component_1.Component;
+    var Rigidbody = _classThis = /** @class */ (function (_super) {
+        __extends(Rigidbody_1, _super);
+        function Rigidbody_1() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.mass = 1;
+            _this.isKinematic = false;
+            return _this;
+        }
+        Object.defineProperty(Rigidbody_1.prototype, "connonBody", {
+            get: function () {
+                return this._connonBody;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Rigidbody_1.prototype.start = function () {
+            var parentRigidbody = this.gameObject.getComponetInParent(Rigidbody);
+            if (parentRigidbody && parentRigidbody != this) {
+                console.warn("一个节点层级只能拥有一个Rigidbody组件");
+                UObject_1.UObject.Destroy(this);
+                return;
+            }
+            var childRigidbodies = this.gameObject.getComponentsInChildren(Rigidbody);
+            for (var _i = 0, childRigidbodies_1 = childRigidbodies; _i < childRigidbodies_1.length; _i++) {
+                var childRigidbody = childRigidbodies_1[_i];
+                if (childRigidbody == this)
+                    continue;
+                console.warn("一个节点层级只能拥有一个Rigidbody组件");
+                UObject_1.UObject.Destroy(childRigidbody);
+            }
+            if (this._connonBody != null) {
+                Engine_1.Engine.physicsEngine.world.remove(this._connonBody);
+            }
+            this._connonBody = new CANNON.Body({
+                mass: this.isKinematic ? 0 : this.mass,
+                position: new CANNON.Vec3(this.transform.position.x, this.transform.position.y, this.transform.position.z),
+                quaternion: new CANNON.Quaternion(this.transform.rotation.x, this.transform.rotation.y, this.transform.rotation.z, this.transform.rotation.w),
+            });
+            var colliders = this.gameObject.getComponentsInChildren(Collider_1.Collider);
+            for (var _a = 0, colliders_1 = colliders; _a < colliders_1.length; _a++) {
+                var collider = colliders_1[_a];
+                collider.createCollider(this);
+            }
+            Engine_1.Engine.physicsEngine.world.addBody(this._connonBody);
+        };
+        Rigidbody_1.prototype.update = function () {
+            if (this._connonBody == null)
+                return;
+            var pos = this._connonBody.position;
+            var rot = this._connonBody.quaternion;
+            this.transform.position = new Vector3_1.Vector3(pos.x, pos.y, pos.z);
+            this.transform.rotation = new Quaternion_1.Quaternion(rot.x, rot.y, rot.z, rot.w);
+        };
+        Rigidbody_1.prototype.onDestroy = function () {
+            if (this._connonBody != null) {
+                Engine_1.Engine.physicsEngine.world.remove(this._connonBody);
+                this._connonBody = null;
+            }
+        };
+        Object.defineProperty(Rigidbody_1.prototype, "worldCenterOfMass", {
+            // 只读属性
+            get: function () {
+                // 实现获取世界坐标系下的质心
+                return new Vector3_1.Vector3();
+            },
+            enumerable: false,
+            configurable: true
+        });
+        // 方法
+        Rigidbody_1.prototype.setDensity = function (density) {
+            // 根据密度设置质量
+        };
+        Rigidbody_1.prototype.movePosition = function (position) {
+            // 移动刚体到指定位置
+        };
+        Rigidbody_1.prototype.moveRotation = function (rotation) {
+            // 旋转刚体到指定方向
+        };
+        Rigidbody_1.prototype.move = function (position, rotation) {
+            // 同时移动和旋转刚体
+        };
+        Rigidbody_1.prototype.sleep = function () {
+            // 让刚体进入睡眠状态
+        };
+        Rigidbody_1.prototype.isSleeping = function () {
+            // 检查刚体是否在睡眠状态
+            return false;
+        };
+        Rigidbody_1.prototype.wakeUp = function () {
+            // 唤醒刚体
+        };
+        Rigidbody_1.prototype.resetCenterOfMass = function () {
+            // 重置质心
+        };
+        Rigidbody_1.prototype.resetInertiaTensor = function () {
+            // 重置惯性张量
+        };
+        Rigidbody_1.prototype.getRelativePointVelocity = function (relativePoint) {
+            // 获取相对点的速度
+            return new Vector3_1.Vector3();
+        };
+        Rigidbody_1.prototype.getPointVelocity = function (worldPoint) {
+            // 获取世界点的速度
+            return new Vector3_1.Vector3();
+        };
+        Rigidbody_1.prototype.getAccumulatedForce = function (step) {
+            if (step === void 0) { step = Time_1.Time.fixedDeltaTime; }
+            // 获取累积的力
+            return new Vector3_1.Vector3();
+        };
+        Rigidbody_1.prototype.getAccumulatedTorque = function (step) {
+            if (step === void 0) { step = Time_1.Time.fixedDeltaTime; }
+            // 获取累积的扭矩
+            return new Vector3_1.Vector3();
+        };
+        Rigidbody_1.prototype.addForce = function (forceOrX, modeOrY, z, mode) {
+        };
+        Rigidbody_1.prototype.addRelativeForce = function (forceOrX, modeOrY, z, mode) {
+            // 实现添加相对力的重载
+        };
+        Rigidbody_1.prototype.addTorque = function (torqueOrX, modeOrY, z, mode) {
+            // 实现添加扭矩的重载
+        };
+        Rigidbody_1.prototype.addRelativeTorque = function (torqueOrX, modeOrY, z, mode) {
+            // 实现添加相对扭矩的重载
+        };
+        Rigidbody_1.prototype.addForceAtPosition = function (force, position, mode) {
+            if (mode === void 0) { mode = ForceMode.Force; }
+            // 在指定位置添加力
+        };
+        Rigidbody_1.prototype.addExplosionForce = function (explosionForce, explosionPosition, explosionRadius, upwardsModifier, mode) {
+            if (upwardsModifier === void 0) { upwardsModifier = 0; }
+            if (mode === void 0) { mode = ForceMode.Force; }
+            // 添加爆炸力
+        };
+        Rigidbody_1.prototype.closestPointOnBounds = function (position) {
+            // 获取边界上最近的点
+            return new Vector3_1.Vector3();
+        };
+        Rigidbody_1.prototype.sweepTest = function (direction, hitInfo, maxDistance, queryTriggerInteraction) {
+            if (maxDistance === void 0) { maxDistance = Number.POSITIVE_INFINITY; }
+            if (queryTriggerInteraction === void 0) { queryTriggerInteraction = QueryTriggerInteraction.UseGlobal; }
+            // 扫描测试
+            return false;
+        };
+        Rigidbody_1.prototype.sweepTestAll = function (direction, maxDistance, queryTriggerInteraction) {
+            if (maxDistance === void 0) { maxDistance = Number.POSITIVE_INFINITY; }
+            if (queryTriggerInteraction === void 0) { queryTriggerInteraction = QueryTriggerInteraction.UseGlobal; }
+            // 扫描测试所有碰撞
+            return [];
+        };
+        // 已废弃的方法（保持兼容性）
+        Rigidbody_1.prototype.setMaxAngularVelocity = function (a) {
+            this.maxAngularVelocity = a;
+        };
+        return Rigidbody_1;
+    }(_classSuper));
+    __setFunctionName(_classThis, "Rigidbody");
+    (function () {
+        var _a;
+        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        Rigidbody = _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return Rigidbody = _classThis;
+}();
+exports.Rigidbody = Rigidbody;
+
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Core/UObject":20,"../Math/Quaternion":24,"../Math/Vector3":27,"./Collider":7,"./Component":8,"cannon":2}],12:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SphereCollider = void 0;
+var Vector3_1 = require("../Math/Vector3");
+var Collider_1 = require("./Collider");
+var CANNON = __importStar(require("cannon"));
+var SphereCollider = /** @class */ (function (_super) {
+    __extends(SphereCollider, _super);
+    function SphereCollider() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.center = Vector3_1.Vector3.ZERO;
+        _this.radius = 0.5;
+        return _this;
+    }
+    SphereCollider.prototype.createCollider = function (rigidbody) {
+        this.attachedRigidbody = rigidbody;
+        // 先移除旧的
+        this.destroyCollider();
+        this.collider = new CANNON.Sphere(this.radius);
+        var body = this.attachedRigidbody.connonBody;
+        if (body) {
+            body.addShape(this.collider);
+        }
+    };
+    /**
+     * 可选：在运行时更新球体半径（注意：Rapier 可能不支持直接修改现有碰撞体的形状参数，
+     * 通常需要销毁后重新创建，此方法仅供参考）
+     */
+    SphereCollider.prototype.setRadius = function (newRadius) {
+        if (this.radius !== newRadius) {
+            this.radius = newRadius;
+            // 通常需要重新初始化碰撞体
+            // this.recreateCollider();
+        }
+    };
+    /**
+     * 可选：在运行时更新中心偏移
+     */
+    SphereCollider.prototype.setCenter = function (newCenter) {
+        if (!this.center.equals(newCenter)) {
+            this.center = newCenter.clone();
+            // 通常需要重新初始化碰撞体
+            // this.recreateCollider();
+        }
+    };
+    /**
+     * 销毁并重新创建碰撞体（用于更新形状或位置）
+     * 注意：需要确保在物理世界的正确生命周期内操作，并处理可能的父刚体关联
+     */
+    SphereCollider.prototype.recreateCollider = function () {
+        if (this.collider) {
+            // 需要根据你的引擎架构实现销毁逻辑，例如：
+            // Engine.physicsEngine.getWorld().removeCollider(this.collider);
+        }
+        // 重新初始化
+    };
+    /**
+     * 返回球的体积（用于计算质量等）
+     */
+    SphereCollider.prototype.getVolume = function () {
+        return (4.0 / 3.0) * Math.PI * Math.pow(this.radius, 3);
+    };
+    return SphereCollider;
+}(Collider_1.Collider));
+exports.SphereCollider = SphereCollider;
+
+},{"../Math/Vector3":27,"./Collider":7,"cannon":2}],13:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DISALLOW_COMPONENTS_KEY = exports.DISALLOW_MULTIPLE_COMPONENT_KEY = exports.REQUIRED_COMPONENTS_KEY = void 0;
+exports.RequireComponent = RequireComponent;
+exports.DisallowComponent = DisallowComponent;
+exports.DisallowMultipleComponent = DisallowMultipleComponent;
+require("reflect-metadata");
+exports.REQUIRED_COMPONENTS_KEY = Symbol('requiredComponents');
+exports.DISALLOW_MULTIPLE_COMPONENT_KEY = Symbol('DisallowMultipleComponent');
+exports.DISALLOW_COMPONENTS_KEY = Symbol('DisallowedComponents');
+/**
+ * 装饰器：标记当前组件需要依赖的其他组件类型
+ * @param componentTypes 需要依赖的组件类型数组
+ */
+function RequireComponent() {
+    var componentTypes = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        componentTypes[_i] = arguments[_i];
+    }
+    return function (target) {
+        // 将依赖的组件类型元数据存储在目标组件上
+        Reflect.defineMetadata(exports.REQUIRED_COMPONENTS_KEY, componentTypes, target);
+    };
+}
+/**
+ * 装饰器：标记当前组件不允许与指定类型的组件共存于同一个GameObject上
+ * @param disallowedComponentTypes 不允许共存的组件类型数组
+ */
+function DisallowComponent() {
+    var disallowedComponentTypes = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        disallowedComponentTypes[_i] = arguments[_i];
+    }
+    return function (target) {
+        // 存储被禁止的组件类型数组到元数据中
+        Reflect.defineMetadata(exports.DISALLOW_COMPONENTS_KEY, disallowedComponentTypes, target);
+    };
+}
+/**
+ * 用于标记一个组件在一个GameObject上只能存在一个实例
+ * 使用反射元数据存储该标记
+ */
+function DisallowMultipleComponent(target) {
+    // 设置元数据，标记这个类不允许重复添加
+    Reflect.defineMetadata(exports.DISALLOW_MULTIPLE_COMPONENT_KEY, true, target);
+}
+
+},{"reflect-metadata":3}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EngineConfig = exports.Engine = void 0;
@@ -15677,7 +17935,7 @@ var EngineConfig = /** @class */ (function () {
 }());
 exports.EngineConfig = EngineConfig;
 
-},{"../Physics/PhysicsEngine":22,"../Renderer/RasterizationPipeline":24,"../Scene/MainScene":25,"../Scene/SceneManager":27,"../Utils/Logger":31,"./Input":11,"./Time":12,"./TweenManager":14}],10:[function(require,module,exports){
+},{"../Physics/PhysicsEngine":30,"../Renderer/RasterizationPipeline":32,"../Scene/MainScene":33,"../Scene/SceneManager":35,"../Utils/Logger":38,"./Input":16,"./Time":17,"./TweenManager":19}],15:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15698,6 +17956,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
 var Transform_1 = require("./Transform");
 var UObject_1 = require("./UObject");
+var Decorators_1 = require("./Decorators");
 var GameObject = /** @class */ (function (_super) {
     __extends(GameObject, _super);
     function GameObject(name) {
@@ -15784,14 +18043,47 @@ var GameObject = /** @class */ (function (_super) {
             }
         }
     };
-    // 添加组件
+    /**
+     * 添加组件到游戏对象
+     * @param componentType 组件类型
+     * @returns 添加的组件实例
+     */
     GameObject.prototype.addComponent = function (componentType) {
-        var comp = this.getComponent(componentType);
-        if (comp == null) {
-            comp = new componentType(this);
-            this.components.push(comp);
+        // 1.检查是否已经存在该类型的组件
+        var existingComponent = this.getComponent(componentType);
+        if (existingComponent) {
+            if (!existingComponent.checkComponentUniqueness()) {
+                // 不允许添加多个相同的组件，返回已经存在的
+                return existingComponent;
+            }
         }
-        return comp;
+        // 2.判断是否有与该组件排斥的组件
+        for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
+            var existingComponent_1 = _a[_i];
+            var existingDisallowed = Reflect.getMetadata(Decorators_1.DISALLOW_COMPONENTS_KEY, existingComponent_1.constructor);
+            if (existingDisallowed && existingDisallowed.includes(componentType)) {
+                console.error("Cannot add ".concat(componentType.name, ": existing ").concat(existingComponent_1.constructor.name, " ") +
+                    "forbids this component type");
+                return null;
+            }
+        }
+        // 创建新组件实例
+        var comp = new componentType(this);
+        // 3.判断是否有依赖组件，有的话添加
+        if (comp.checkRequiredComponents()) {
+            this.components.push(comp);
+            // 4.检查是否有冲突的组件，有的话移除它们
+            comp.checkComponentCompatibility();
+            return comp;
+        }
+        else {
+            // 添加失败，则该组件也销毁，避免出现逻辑问题
+            comp.Destroy();
+            return null;
+        }
+    };
+    GameObject.prototype.getAllComponents = function () {
+        return this.components;
     };
     // 获取指定类型的组件
     GameObject.prototype.getComponent = function (componentType) {
@@ -15944,7 +18236,7 @@ var GameObject = /** @class */ (function (_super) {
 }(UObject_1.UObject));
 exports.GameObject = GameObject;
 
-},{"./Transform":13,"./UObject":15}],11:[function(require,module,exports){
+},{"./Decorators":13,"./Transform":18,"./UObject":20}],16:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -16178,7 +18470,7 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":19}],12:[function(require,module,exports){
+},{"../Math/Vector2":26}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Time = void 0;
@@ -16296,7 +18588,7 @@ var Time = /** @class */ (function () {
 }());
 exports.Time = Time;
 
-},{}],13:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transform = void 0;
@@ -16554,7 +18846,7 @@ var Transform = /** @class */ (function () {
 }());
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":17,"../Math/Quaternion":18,"../Math/Vector3":20,"../Math/Vector4":21}],14:[function(require,module,exports){
+},{"../Math/Matrix4x4":23,"../Math/Quaternion":24,"../Math/Vector3":27,"../Math/Vector4":28}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TweenManager = void 0;
@@ -16589,7 +18881,7 @@ var TweenManager = /** @class */ (function () {
 }());
 exports.TweenManager = TweenManager;
 
-},{"@tweenjs/tween.js":1}],15:[function(require,module,exports){
+},{"@tweenjs/tween.js":1}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UObject = void 0;
@@ -16606,11 +18898,15 @@ var UObject = /** @class */ (function () {
 }());
 exports.UObject = UObject;
 
-},{}],16:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
 var Vector3_1 = require("./Vector3");
+/**
+ * 轴对齐包围盒 (AABB)
+ * 最简单的包围盒，边与坐标轴平行
+ */
 var Bounds = /** @class */ (function () {
     function Bounds(min, max) {
         if (min === void 0) { min = Vector3_1.Vector3.ZERO; }
@@ -16666,176 +18962,6 @@ var Bounds = /** @class */ (function () {
 }());
 exports.Bounds = Bounds;
 /**
- * 轴对齐包围盒 (AABB)
- * 最简单的包围盒，边与坐标轴平行
- */
-var AABB = /** @class */ (function () {
-    function AABB(min, max) {
-        this.min = min;
-        this.max = max;
-    }
-    /**
-     * 从顶点列表生成AABB
-     * @param vertices 三维顶点数组
-     * @returns 生成的AABB
-     */
-    AABB.fromVertices = function (vertices) {
-        if (vertices.length === 0) {
-            throw new Error("顶点数组不能为空");
-        }
-        // 初始化min和max为第一个顶点的值
-        var min = vertices[0].clone();
-        var max = vertices[0].clone();
-        // 遍历所有顶点，找到最小和最大值
-        for (var _i = 0, vertices_1 = vertices; _i < vertices_1.length; _i++) {
-            var v = vertices_1[_i];
-            min.x = Math.min(min.x, v.x);
-            min.y = Math.min(min.y, v.y);
-            min.z = Math.min(min.z, v.z);
-            max.x = Math.max(max.x, v.x);
-            max.y = Math.max(max.y, v.y);
-            max.z = Math.max(max.z, v.z);
-        }
-        return new AABB(min, max);
-    };
-    /** 获取AABB的中心点 */
-    AABB.prototype.getCenter = function () {
-        return new Vector3_1.Vector3((this.min.x + this.max.x) / 2, (this.min.y + this.max.y) / 2, (this.min.z + this.max.z) / 2);
-    };
-    /** 获取AABB的半边长 */
-    AABB.prototype.getHalfExtents = function () {
-        return new Vector3_1.Vector3((this.max.x - this.min.x) / 2, (this.max.y - this.min.y) / 2, (this.max.z - this.min.z) / 2);
-    };
-    return AABB;
-}());
-/**
- * 定向包围盒 (OBB)
- * 可以随物体旋转，边与物体自身坐标系对齐
- */
-var OBB = /** @class */ (function () {
-    function OBB(center, axes, extents) {
-        this.center = center;
-        this.axes = axes;
-        this.extents = extents;
-    }
-    /**
-     * 从顶点列表生成OBB（使用PCA主成分分析）
-     * 算法思路：通过计算顶点的协方差矩阵找到主方向作为OBB的轴
-     * @param vertices 三维顶点数组
-     * @returns 生成的OBB
-     */
-    OBB.fromVertices = function (vertices) {
-        if (vertices.length === 0) {
-            throw new Error("顶点数组不能为空");
-        }
-        // 1. 计算中心点（平均值）
-        var center = OBB.calculateCentroid(vertices);
-        // 2. 计算协方差矩阵
-        var covariance = OBB.calculateCovarianceMatrix(vertices, center);
-        // 3. 计算协方差矩阵的特征向量（主成分），作为OBB的轴
-        var eigenvectors = OBB.calculateEigenvectors(covariance);
-        // 确保轴是单位向量
-        var axes = [
-            eigenvectors[0].multiply(1 / eigenvectors[0].magnitude),
-            eigenvectors[1].multiply(1 / eigenvectors[1].magnitude),
-            eigenvectors[2].multiply(1 / eigenvectors[2].magnitude)
-        ];
-        // 4. 计算每个轴方向上的最大延伸（半长度）
-        var extents = OBB.calculateExtents(vertices, center, axes);
-        return new OBB(center, axes, extents);
-    };
-    /** 计算顶点的中心点（质心） */
-    OBB.calculateCentroid = function (vertices) {
-        var sum = new Vector3_1.Vector3();
-        for (var _i = 0, vertices_2 = vertices; _i < vertices_2.length; _i++) {
-            var v = vertices_2[_i];
-            sum.x += v.x;
-            sum.y += v.y;
-            sum.z += v.z;
-        }
-        return sum.multiply(1 / vertices.length);
-    };
-    /** 计算协方差矩阵 */
-    OBB.calculateCovarianceMatrix = function (vertices, centroid) {
-        // 初始化3x3协方差矩阵
-        var cov = [
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0]
-        ];
-        for (var _i = 0, vertices_3 = vertices; _i < vertices_3.length; _i++) {
-            var v = vertices_3[_i];
-            // 计算顶点相对于质心的偏移
-            var x = v.x - centroid.x;
-            var y = v.y - centroid.y;
-            var z = v.z - centroid.z;
-            // 累积协方差值
-            cov[0][0] += x * x;
-            cov[0][1] += x * y;
-            cov[0][2] += x * z;
-            cov[1][1] += y * y;
-            cov[1][2] += y * z;
-            cov[2][2] += z * z;
-        }
-        // 对称矩阵，填充下三角部分
-        cov[1][0] = cov[0][1];
-        cov[2][0] = cov[0][2];
-        cov[2][1] = cov[1][2];
-        // 除以顶点数量-1（无偏估计）
-        var n = vertices.length;
-        for (var i = 0; i < 3; i++) {
-            for (var j = 0; j < 3; j++) {
-                cov[i][j] /= (n - 1);
-            }
-        }
-        return cov;
-    };
-    /** 计算协方差矩阵的特征向量（简化实现） */
-    OBB.calculateEigenvectors = function (cov) {
-        // 这里使用简化的特征向量计算方法
-        // 实际应用中可能需要更精确的算法（如Jacobi迭代法）
-        // 对于演示目的，我们返回三个正交向量（实际项目中需替换为真实特征向量计算）
-        // 注意：这只是占位实现，真实场景需要正确计算特征向量
-        return [
-            new Vector3_1.Vector3(1, 0, 0), // 假设X轴为第一主成分
-            new Vector3_1.Vector3(0, 1, 0), // 假设Y轴为第二主成分
-            new Vector3_1.Vector3(0, 0, 1) // 假设Z轴为第三主成分
-        ];
-    };
-    /** 计算每个轴方向上的半长度 */
-    OBB.calculateExtents = function (vertices, center, axes) {
-        var extentX = 0;
-        var extentY = 0;
-        var extentZ = 0;
-        // 对每个轴计算顶点在该轴上的投影范围
-        for (var i = 0; i < 3; i++) {
-            var axis = axes[i];
-            var min = Infinity;
-            var max = -Infinity;
-            for (var _i = 0, vertices_4 = vertices; _i < vertices_4.length; _i++) {
-                var v = vertices_4[_i];
-                // 计算顶点相对于中心点的向量
-                var dir = v.subtract(center);
-                // 计算在当前轴上的投影
-                var proj = Vector3_1.Vector3.dot(dir, axis);
-                min = Math.min(min, proj);
-                max = Math.max(max, proj);
-            }
-            // 半长度取最大绝对值
-            var extent = Math.max(Math.abs(min), Math.abs(max));
-            // 直接赋值给对应分量
-            if (i === 0)
-                extentX = extent;
-            else if (i === 1)
-                extentY = extent;
-            else
-                extentZ = extent;
-        }
-        return new Vector3_1.Vector3(extentX, extentY, extentZ);
-    };
-    return OBB;
-}());
-/**
  * 球体包围盒
  * 用球心和半径表示的简化包围体
  */
@@ -16856,8 +18982,8 @@ var Sphere = /** @class */ (function () {
         }
         // 1. 计算中心点（平均值）
         var center = new Vector3_1.Vector3();
-        for (var _i = 0, vertices_5 = vertices; _i < vertices_5.length; _i++) {
-            var v = vertices_5[_i];
+        for (var _i = 0, vertices_1 = vertices; _i < vertices_1.length; _i++) {
+            var v = vertices_1[_i];
             center.x += v.x;
             center.y += v.y;
             center.z += v.z;
@@ -16867,8 +18993,8 @@ var Sphere = /** @class */ (function () {
         center.z /= vertices.length;
         // 2. 找到离中心点最远的顶点，其距离即为半径
         var maxDistanceSquared = 0;
-        for (var _a = 0, vertices_6 = vertices; _a < vertices_6.length; _a++) {
-            var v = vertices_6[_a];
+        for (var _a = 0, vertices_2 = vertices; _a < vertices_2.length; _a++) {
+            var v = vertices_2[_a];
             var dx = v.x - center.x;
             var dy = v.y - center.y;
             var dz = v.z - center.z;
@@ -16886,42 +19012,49 @@ var Sphere = /** @class */ (function () {
      * @returns 生成的球体
      */
     Sphere.fromAABB = function (aabb) {
-        var center = aabb.getCenter();
-        var halfExtents = aabb.getHalfExtents();
+        var center = aabb.center;
+        var halfExtents = aabb.halfExtents;
         // 半径是从中心到角落的距离
         var radius = halfExtents.magnitude;
         return new Sphere(center, radius);
     };
     return Sphere;
 }());
-// 示例用法
-function exampleUsage() {
-    // 创建一些示例顶点
-    var vertices = [
-        new Vector3_1.Vector3(0, 0, 0),
-        new Vector3_1.Vector3(1, 0, 0),
-        new Vector3_1.Vector3(0, 1, 0),
-        new Vector3_1.Vector3(0, 0, 1),
-        new Vector3_1.Vector3(1, 1, 1)
-    ];
-    // 生成AABB
-    var aabb = AABB.fromVertices(vertices);
-    console.log("AABB:");
-    console.log("  Min:", "(".concat(aabb.min.x, ", ").concat(aabb.min.y, ", ").concat(aabb.min.z, ")"));
-    console.log("  Max:", "(".concat(aabb.max.x, ", ").concat(aabb.max.y, ", ").concat(aabb.max.z, ")"));
-    // 生成OBB
-    var obb = OBB.fromVertices(vertices);
-    console.log("\nOBB:");
-    console.log("  Center:", "(".concat(obb.center.x, ", ").concat(obb.center.y, ", ").concat(obb.center.z, ")"));
-    console.log("  Extents:", "(".concat(obb.extents.x, ", ").concat(obb.extents.y, ", ").concat(obb.extents.z, ")"));
-    // 生成球体
-    var sphere = Sphere.fromVertices(vertices);
-    console.log("\nSphere:");
-    console.log("  Center:", "(".concat(sphere.center.x, ", ").concat(sphere.center.y, ", ").concat(sphere.center.z, ")"));
-    console.log("  Radius:", sphere.radius);
-}
 
-},{"./Vector3":20}],17:[function(require,module,exports){
+},{"./Vector3":27}],22:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Color = void 0;
+var Color = /** @class */ (function () {
+    function Color(r, g, b, a) {
+        if (a === void 0) { a = 255; }
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+    Color.prototype.ToUint32 = function () {
+        return (this.a << 24) | (this.b << 16) | (this.g << 8) | this.r;
+    };
+    Color.FromUint32 = function (uint32) {
+        return new Color(uint32 & 0xFF, (uint32 >> 8) & 0xFF, (uint32 >> 16) & 0xFF, (uint32 >> 24) & 0xFF);
+    };
+    Color.WHITE = new Color(255, 255, 255).ToUint32();
+    Color.BLACK = new Color(0, 0, 0).ToUint32();
+    Color.GRAY = new Color(128, 128, 128).ToUint32();
+    Color.RED = new Color(255, 0, 0).ToUint32();
+    Color.GREEN = new Color(0, 255, 0).ToUint32();
+    Color.BLUE = new Color(0, 0, 255).ToUint32();
+    Color.YELLOW = new Color(255, 255, 0).ToUint32();
+    Color.CYAN = new Color(0, 255, 255).ToUint32();
+    Color.MAGENTA = new Color(255, 0, 255).ToUint32();
+    Color.ORANGE = new Color(255, 165, 0).ToUint32();
+    Color.PURPLE = new Color(128, 0, 128).ToUint32();
+    return Color;
+}());
+exports.Color = Color;
+
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -17458,7 +19591,7 @@ var Matrix4x4 = /** @class */ (function () {
 }());
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":18,"./Vector3":20,"./Vector4":21}],18:[function(require,module,exports){
+},{"./Quaternion":24,"./Vector3":27,"./Vector4":28}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
@@ -17595,7 +19728,131 @@ var Quaternion = /** @class */ (function () {
 }());
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":17,"./Vector3":20}],19:[function(require,module,exports){
+},{"./Matrix4x4":23,"./Vector3":27}],25:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TransfromTools = void 0;
+var Camera_1 = require("../Component/Camera");
+var Engine_1 = require("../Core/Engine");
+var Vector2_1 = require("./Vector2");
+var Vector3_1 = require("./Vector3");
+var Vector4_1 = require("./Vector4");
+var TransfromTools = /** @class */ (function () {
+    function TransfromTools() {
+    }
+    TransfromTools.WorldToScreenPos = function (pos) {
+        var camera = Camera_1.Camera.mainCamera;
+        var viewMatrix = camera.getViewMatrix();
+        var projectionMatrix = camera.getProjectionMatrix();
+        var vpMatrix = projectionMatrix.multiply(viewMatrix);
+        var clipPos = vpMatrix.multiplyVector4(new Vector4_1.Vector4(pos.x, pos.y, pos.z, 1));
+        var w = clipPos.w;
+        var ndcX = clipPos.x / w;
+        var ndcY = clipPos.y / w;
+        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
+        var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
+        return { x: screenX, y: screenY };
+    };
+    TransfromTools.LocalToScreenPos = function (pos, transform) {
+        var modelMatrix = transform.localToWorldMatrix;
+        var camera = Camera_1.Camera.mainCamera;
+        var viewMatrix = camera.getViewMatrix();
+        var projectionMatrix = camera.getProjectionMatrix();
+        var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        var clipPos = mvpMatrix.multiplyVector4(new Vector4_1.Vector4(pos.x, pos.y, pos.z, 1));
+        var w = clipPos.w;
+        var ndcX = clipPos.x / w;
+        var ndcY = clipPos.y / w;
+        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
+        var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
+        return { x: screenX, y: screenY };
+    };
+    // 将视口上的内容映射到实际屏幕上
+    TransfromTools.ViewportToCanvas = function (point) {
+        // 假设视口宽度为1个单位
+        // 因为aspectRatio = canvasWidth / canvasHeight，
+        // 所以视口高度 = 1 / aspectRatio = canvasHeight / canvasWidth
+        var viewportWidth = 1;
+        var viewportHeight = 1 / Engine_1.EngineConfig.aspectRatio;
+        // 将投影坐标映射到Canvas像素坐标
+        // X坐标：从 [-viewportWidth/2, viewportWidth/2] 映射到 [0, canvasWidth]
+        // Y坐标：从 [-viewportHeight/2, viewportHeight/2] 映射到 [0, canvasHeight] (注意Y轴方向)
+        var canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * Engine_1.EngineConfig.canvasWidth;
+        var canvasY = Engine_1.EngineConfig.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * Engine_1.EngineConfig.canvasHeight); // Canvas的Y轴通常是向下的
+        point.x = canvasX;
+        point.y = canvasY;
+    };
+    // 透视投影，将3D场景的坐标转换为2D屏幕坐标，投射到视口上
+    TransfromTools.ProjectVertex = function (vertex) {
+        // 假设视点到近裁面（视口）的距离是d，视口的宽是1
+        // 根据三角函数有：tan(fov/2) = (0.5 / d)
+        // 所以：d = 0.5 / tan(fov/2)
+        var fovDegrees = 60;
+        var fovRadians = fovDegrees * (Math.PI / 180); // 将角度转换为弧度
+        var d = 0.5 / Math.tan(fovRadians / 2);
+        // 透视公式，假设视点位置(0,0)，视点到视口距离为d，场景里的点为P(x,y,z)，投射到视口上的点为P'(x,y)
+        // 则根据相似三角形有：z / d = x / x' = y / y'，可得到：
+        // x' = (d * x) / z
+        // y' = (d * y) / z
+        var projectionX = (d * vertex.x) / vertex.z;
+        var projectionY = (d * vertex.y) / vertex.z;
+        return new Vector2_1.Vector2(projectionX, projectionY);
+    };
+    // 将模型空间坐标转换为裁剪空间坐标（Clip Space）
+    TransfromTools.ObjectToClipPos = function (vertex, transform) {
+        // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
+        // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
+        var modelMatrix = transform.localToWorldMatrix;
+        var camera = Camera_1.Camera.mainCamera;
+        var viewMatrix = camera.getViewMatrix();
+        var projectionMatrix = camera.getProjectionMatrix();
+        var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
+        // const cameraForward = camera.transform.forward;
+        // const cameraUp = camera.transform.up;
+        // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
+        // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+        return mvpMatrix.multiplyVector4(new Vector4_1.Vector4(vertex, 1));
+    };
+    // 将裁剪空间坐标最终转换为屏幕空间坐标（Screen Space）
+    TransfromTools.ClipToScreenPos = function (vertex) {
+        // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
+        var w = vertex.w;
+        var ndcX = vertex.x / w;
+        var ndcY = vertex.y / w;
+        var ndcZ = vertex.z / w;
+        // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
+        // 将 NDC 转换为屏幕像素坐标：
+        // X 轴：screenX = (xNDC + 1) * 屏幕宽度 / 2
+        // Y 轴：screenY = (1 - yNDC) * 屏幕高度 / 2（注意 Y 轴翻转，因屏幕坐标系 Y 向下）
+        // 将NDC的x从[-1, 1]映射到[0, screenWidth]
+        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
+        // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
+        var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
+        // z分量通常用于深度测试
+        var screenZ = (ndcZ + 1) / 2;
+        return new Vector3_1.Vector3(screenX, screenY, screenZ);
+    };
+    TransfromTools.ObjectToScreenPos = function (vertex, transform) {
+        var clipPos = this.ObjectToClipPos(vertex, transform);
+        return this.ClipToScreenPos(clipPos);
+    };
+    TransfromTools.ObjectToWorldNormal = function (normal, transform) {
+        // 获取模型矩阵（局部到世界空间的变换矩阵）
+        var modelMatrix = transform.localToWorldMatrix;
+        // 计算模型矩阵的逆转置矩阵
+        // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
+        var inverseTransposeModel = modelMatrix.clone().invert().transpose();
+        // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
+        var worldNormal = inverseTransposeModel.multiplyVector3(normal);
+        // 归一化结果，确保法线保持单位长度
+        return worldNormal.normalize();
+    };
+    return TransfromTools;
+}());
+exports.TransfromTools = TransfromTools;
+
+},{"../Component/Camera":5,"../Core/Engine":14,"./Vector2":26,"./Vector3":27,"./Vector4":28}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -17773,7 +20030,7 @@ var Vector2 = /** @class */ (function () {
 }());
 exports.Vector2 = Vector2;
 
-},{"./Vector3":20,"./Vector4":21}],20:[function(require,module,exports){
+},{"./Vector3":27,"./Vector4":28}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
@@ -17992,7 +20249,7 @@ var Vector3 = /** @class */ (function () {
 }());
 exports.Vector3 = Vector3;
 
-},{"./Vector2":19,"./Vector4":21}],21:[function(require,module,exports){
+},{"./Vector2":26,"./Vector4":28}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
@@ -18170,7 +20427,270 @@ var Vector4 = /** @class */ (function () {
 }());
 exports.Vector4 = Vector4;
 
-},{"./Vector2":19,"./Vector3":20}],22:[function(require,module,exports){
+},{"./Vector2":26,"./Vector3":27}],29:[function(require,module,exports){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PhysicsDebugDraw = void 0;
+var CANNON = __importStar(require("cannon"));
+var Color_1 = require("../Math/Color");
+var TransfromTools_1 = require("../Math/TransfromTools");
+var Vector3_1 = require("../Math/Vector3");
+var PhysicsDebugDraw = /** @class */ (function () {
+    function PhysicsDebugDraw() {
+    }
+    PhysicsDebugDraw.setColor = function (body) {
+        var color = Color_1.Color.FromUint32(Color_1.Color.GRAY);
+        // 根据物体类型设置基础颜色
+        if (body.type === CANNON.Body.DYNAMIC) {
+            // 动态物体 - 红色系
+            color = Color_1.Color.FromUint32(Color_1.Color.RED);
+        }
+        else if (body.type === CANNON.Body.STATIC) {
+            // 静态物体 - 绿色系
+            color = Color_1.Color.FromUint32(Color_1.Color.GREEN);
+        }
+        else if (body.type === CANNON.Body.KINEMATIC) {
+            // 运动学物体 - 蓝色系
+            color = Color_1.Color.FromUint32(Color_1.Color.BLUE);
+        }
+        // 根据睡眠状态调整颜色
+        if (body.sleepState === CANNON.Body.AWAKE) {
+            // 清醒状态 - 原色
+        }
+        else if (body.sleepState === CANNON.Body.SLEEPY) {
+            // 困倦状态 - 半暗淡
+            color.r *= 0.7;
+            color.g *= 0.7;
+            color.b *= 0.7;
+        }
+        else if (body.sleepState === CANNON.Body.SLEEPING) {
+            // 睡眠状态 - 全暗淡
+            color.r *= 0.4;
+            color.g *= 0.4;
+            color.b *= 0.4;
+        }
+        return color.ToUint32();
+    };
+    // 绘制单个刚体的所有碰撞形状
+    PhysicsDebugDraw.drawRigidBody = function (body) {
+        var _this = this;
+        var color = this.setColor(body);
+        body.shapes.forEach(function (shape, i) {
+            var offset = body.shapeOffsets[i];
+            var orientation = body.shapeOrientations[i];
+            // 根据形状类型绘制不同的调试线框
+            if (shape instanceof CANNON.Box) {
+                _this.drawBox(body, shape, offset, orientation, color);
+            }
+            else if (shape instanceof CANNON.Sphere) {
+                _this.drawSphere(body, shape, offset, orientation, color);
+            }
+            else if (shape instanceof CANNON.Plane) {
+                _this.drawPlane(body, shape, offset, orientation, color);
+            }
+        });
+    };
+    // 绘制盒子形状
+    PhysicsDebugDraw.drawBox = function (body, shape, offset, orientation, color) {
+        var _this = this;
+        // 计算盒子的8个顶点
+        var halfExtents = shape.halfExtents;
+        var vertices = [
+            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, halfExtents.y, halfExtents.z),
+            new CANNON.Vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
+        ];
+        // 应用偏移和旋转，并转换到屏幕空间
+        var screenVertices = vertices.map(function (v) {
+            // 应用形状自身的旋转
+            var rotated = _this.rotateVector(v, orientation);
+            // 应用形状偏移
+            var offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
+            // 应用刚体旋转
+            var bodyRotated = _this.rotateVector(offsetApplied, body.quaternion);
+            // 应用刚体位置
+            var worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
+            // 转换到屏幕坐标
+            return _this.WorldToScreenPos(worldPos);
+        });
+        // 定义盒子的边
+        var edges = [
+            [0, 1], [1, 2], [2, 3], [3, 0], // 前面
+            [4, 5], [5, 6], [6, 7], [7, 4], // 后面
+            [0, 4], [1, 5], [2, 6], [3, 7] // 连接前后
+        ];
+        // 绘制所有边
+        edges.forEach(function (_a) {
+            var i1 = _a[0], i2 = _a[1];
+            var v1 = screenVertices[i1];
+            var v2 = screenVertices[i2];
+            // 确保转换后的顶点有效
+            if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
+                _this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
+            }
+        });
+    };
+    // 绘制球体形状
+    PhysicsDebugDraw.drawSphere = function (body, shape, offset, orientation, color) {
+        var radius = shape.radius;
+        var segments = 16; // 球体分段数
+        // 计算球体中心在世界空间中的位置
+        var center = new CANNON.Vec3(offset.x, offset.y, offset.z);
+        var rotatedCenter = this.rotateVector(center, body.quaternion);
+        var worldCenter = new CANNON.Vec3(rotatedCenter.x + body.position.x, rotatedCenter.y + body.position.y, rotatedCenter.z + body.position.z);
+        var screenCenter = this.WorldToScreenPos(worldCenter);
+        if (!screenCenter)
+            return;
+        // 绘制球体的赤道圆
+        for (var i = 0; i < segments; i++) {
+            var angle1 = (i / segments) * Math.PI * 2;
+            var angle2 = ((i + 1) / segments) * Math.PI * 2;
+            // 计算圆上两点
+            var p1 = new CANNON.Vec3(Math.cos(angle1) * radius, 0, Math.sin(angle1) * radius);
+            var p2 = new CANNON.Vec3(Math.cos(angle2) * radius, 0, Math.sin(angle2) * radius);
+            // 应用旋转和位置
+            var rotatedP1 = this.rotateVector(p1, orientation);
+            var rotatedP2 = this.rotateVector(p2, orientation);
+            var offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
+            var offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
+            var bodyP1 = this.rotateVector(offsetP1, body.quaternion);
+            var bodyP2 = this.rotateVector(offsetP2, body.quaternion);
+            var worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
+            var worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
+            // 转换到屏幕坐标
+            var screenP1 = this.WorldToScreenPos(worldP1);
+            var screenP2 = this.WorldToScreenPos(worldP2);
+            if (screenP1 && screenP2) {
+                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
+            }
+        }
+        // 绘制球体的子午线（垂直方向）
+        for (var i = 0; i < segments / 2; i++) {
+            var angle1 = (i / (segments / 2)) * Math.PI;
+            var angle2 = ((i + 1) / (segments / 2)) * Math.PI;
+            var p1 = new CANNON.Vec3(0, Math.cos(angle1) * radius, Math.sin(angle1) * radius);
+            var p2 = new CANNON.Vec3(0, Math.cos(angle2) * radius, Math.sin(angle2) * radius);
+            // 应用旋转和位置（与赤道圆处理相同）
+            var rotatedP1 = this.rotateVector(p1, orientation);
+            var rotatedP2 = this.rotateVector(p2, orientation);
+            var offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
+            var offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
+            var bodyP1 = this.rotateVector(offsetP1, body.quaternion);
+            var bodyP2 = this.rotateVector(offsetP2, body.quaternion);
+            var worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
+            var worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
+            var screenP1 = this.WorldToScreenPos(worldP1);
+            var screenP2 = this.WorldToScreenPos(worldP2);
+            if (screenP1 && screenP2) {
+                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
+            }
+        }
+    };
+    // 绘制平面形状
+    PhysicsDebugDraw.drawPlane = function (body, shape, offset, orientation, color) {
+        var _this = this;
+        var size = 5; // 平面可视大小
+        var vertices = [
+            new CANNON.Vec3(-size, 0, -size),
+            new CANNON.Vec3(size, 0, -size),
+            new CANNON.Vec3(size, 0, size),
+            new CANNON.Vec3(-size, 0, size),
+        ];
+        // 应用变换并转换到屏幕坐标
+        var screenVertices = vertices.map(function (v) {
+            var rotated = _this.rotateVector(v, orientation);
+            var offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
+            var bodyRotated = _this.rotateVector(offsetApplied, body.quaternion);
+            var worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
+            return _this.WorldToScreenPos(worldPos);
+        });
+        // 定义平面的边和对角线
+        var edges = [
+            [0, 1], [1, 2], [2, 3], [3, 0], // 四边形边框
+            [0, 2], [1, 3] // 对角线
+        ];
+        // 绘制所有边
+        edges.forEach(function (_a) {
+            var i1 = _a[0], i2 = _a[1];
+            var v1 = screenVertices[i1];
+            var v2 = screenVertices[i2];
+            if (v1 && v2) {
+                _this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
+            }
+        });
+    };
+    // 将3D世界坐标转换为2D屏幕坐标
+    PhysicsDebugDraw.WorldToScreenPos = function (pos) {
+        return TransfromTools_1.TransfromTools.WorldToScreenPos(new Vector3_1.Vector3(pos.x, pos.y, pos.z));
+    };
+    // 用四元数旋转向量（不依赖内置方法）
+    PhysicsDebugDraw.rotateVector = function (v, q) {
+        // 四元数旋转公式: v' = q * v * q⁻¹
+        var qx = q.x, qy = q.y, qz = q.z, qw = q.w;
+        var x = v.x, y = v.y, z = v.z;
+        // 计算 q * v
+        var ix = qw * x + qy * z - qz * y;
+        var iy = qw * y + qz * x - qx * z;
+        var iz = qw * z + qx * y - qy * x;
+        var iw = -qx * x - qy * y - qz * z;
+        // 计算 (q * v) * q⁻¹ (q⁻¹ 是 q的共轭)
+        var rx = ix * qw + iw * (-qx) + iy * (-qz) - iz * (-qy);
+        var ry = iy * qw + iw * (-qy) + iz * (-qx) - ix * (-qz);
+        var rz = iz * qw + iw * (-qz) + ix * (-qy) - iy * (-qx);
+        return new CANNON.Vec3(rx, ry, rz);
+    };
+    // 完善的物理调试绘制入口
+    PhysicsDebugDraw.DrawPhysicsDebug = function (world, DrawLine) {
+        var _this = this;
+        this.drawLineFunc = DrawLine;
+        // 遍历所有刚体并绘制
+        world.bodies.forEach(function (body) {
+            _this.drawRigidBody(body);
+        });
+    };
+    return PhysicsDebugDraw;
+}());
+exports.PhysicsDebugDraw = PhysicsDebugDraw;
+
+},{"../Math/Color":22,"../Math/TransfromTools":25,"../Math/Vector3":27,"cannon":2}],30:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -18239,7 +20759,7 @@ var PhysicsEngine = /** @class */ (function () {
 }());
 exports.PhysicsEngine = PhysicsEngine;
 
-},{"../Core/Time":12,"cannon":2}],23:[function(require,module,exports){
+},{"../Core/Time":17,"cannon":2}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Line = exports.SubMesh = exports.Mesh = void 0;
@@ -18293,18 +20813,19 @@ var Line = /** @class */ (function () {
 }());
 exports.Line = Line;
 
-},{"../Math/Bounds":16}],24:[function(require,module,exports){
+},{"../Math/Bounds":21}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
-var Color_1 = require("../Utils/Color");
-var Vector2_1 = require("../Math/Vector2");
+var Color_1 = require("../Math/Color");
 var Vector3_1 = require("../Math/Vector3");
 var Vector4_1 = require("../Math/Vector4");
 var Renderer_1 = require("../Component/Renderer");
 var Camera_1 = require("../Component/Camera");
 var Engine_1 = require("../Core/Engine");
 var Logger_1 = require("../Utils/Logger");
+var PhysicsDebugDraw_1 = require("../Physics/PhysicsDebugDraw");
+var TransfromTools_1 = require("../Math/TransfromTools");
 var DrawMode;
 (function (DrawMode) {
     DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
@@ -18322,6 +20843,7 @@ var RasterizationPipeline = /** @class */ (function () {
     RasterizationPipeline.prototype.Render = function () {
         var _a;
         this.Clear(Color_1.Color.BLACK);
+        //test(this.DrawPixel.bind(this));
         // 获取场景中的所有根游戏对象并渲染
         var rootObjects = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObjects();
         if (rootObjects) {
@@ -18361,15 +20883,15 @@ var RasterizationPipeline = /** @class */ (function () {
         this.frameBuffer[y * Engine_1.EngineConfig.canvasWidth + x] = color;
     };
     RasterizationPipeline.prototype.DrawLine = function (x1, y1, x2, y2, color1, color2) {
+        var _a, _b, _c, _d;
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
-        // const w = EngineConfig.canvasWidth;
-        // const h = EngineConfig.canvasHeight;
-        // if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h)) {
-        //     //TODO:裁剪掉超出屏幕的部分
-        //     return;
-        // }
-        var _a, _b, _c, _d;
+        var w = Engine_1.EngineConfig.canvasWidth;
+        var h = Engine_1.EngineConfig.canvasHeight;
+        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h)) {
+            //TODO:裁剪掉超出屏幕的部分
+            return;
+        }
         // 取整
         x1 = x1 | 0;
         y1 = y1 | 0;
@@ -18603,89 +21125,8 @@ var RasterizationPipeline = /** @class */ (function () {
     };
     //#endregion
     //#region 投影相关
-    // 将视口上的内容映射到实际屏幕上
-    RasterizationPipeline.prototype.ViewportToCanvas = function (point) {
-        // 假设视口宽度为1个单位
-        // 因为aspectRatio = canvasWidth / canvasHeight，
-        // 所以视口高度 = 1 / aspectRatio = canvasHeight / canvasWidth
-        var viewportWidth = 1;
-        var viewportHeight = 1 / Engine_1.EngineConfig.aspectRatio;
-        // 将投影坐标映射到Canvas像素坐标
-        // X坐标：从 [-viewportWidth/2, viewportWidth/2] 映射到 [0, canvasWidth]
-        // Y坐标：从 [-viewportHeight/2, viewportHeight/2] 映射到 [0, canvasHeight] (注意Y轴方向)
-        var canvasX = ((point.x + viewportWidth / 2) / viewportWidth) * Engine_1.EngineConfig.canvasWidth;
-        var canvasY = Engine_1.EngineConfig.canvasHeight - (((point.y + viewportHeight / 2) / viewportHeight) * Engine_1.EngineConfig.canvasHeight); // Canvas的Y轴通常是向下的
-        point.x = canvasX;
-        point.y = canvasY;
-    };
-    // 透视投影，将3D场景的坐标转换为2D屏幕坐标，投射到视口上
-    RasterizationPipeline.prototype.ProjectVertex = function (vertex) {
-        // 假设视点到近裁面（视口）的距离是d，视口的宽是1
-        // 根据三角函数有：tan(fov/2) = (0.5 / d)
-        // 所以：d = 0.5 / tan(fov/2)
-        var fovDegrees = 60;
-        var fovRadians = fovDegrees * (Math.PI / 180); // 将角度转换为弧度
-        var d = 0.5 / Math.tan(fovRadians / 2);
-        // 透视公式，假设视点位置(0,0)，视点到视口距离为d，场景里的点为P(x,y,z)，投射到视口上的点为P'(x,y)
-        // 则根据相似三角形有：z / d = x / x' = y / y'，可得到：
-        // x' = (d * x) / z
-        // y' = (d * y) / z
-        var projectionX = (d * vertex.x) / vertex.z;
-        var projectionY = (d * vertex.y) / vertex.z;
-        return new Vector2_1.Vector2(projectionX, projectionY);
-    };
     //#endregion
     //#region 变换
-    // 将模型空间坐标转换为裁剪空间坐标（Clip Space）
-    RasterizationPipeline.prototype.ObjectToClipPos = function (vertex, transform) {
-        // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
-        // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
-        var modelMatrix = transform.localToWorldMatrix;
-        var camera = Camera_1.Camera.mainCamera;
-        var viewMatrix = camera.getViewMatrix();
-        var projectionMatrix = camera.getProjectionMatrix();
-        var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
-        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
-        // const cameraForward = camera.transform.forward;
-        // const cameraUp = camera.transform.up;
-        // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
-        // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
-        return mvpMatrix.multiplyVector4(new Vector4_1.Vector4(vertex, 1));
-    };
-    // 将裁剪空间坐标最终转换为屏幕空间坐标（Screen Space）
-    RasterizationPipeline.prototype.ClipToScreenPos = function (vertex) {
-        // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
-        var w = vertex.w;
-        var ndcX = vertex.x / w;
-        var ndcY = vertex.y / w;
-        var ndcZ = vertex.z / w;
-        // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
-        // 将 NDC 转换为屏幕像素坐标：
-        // X 轴：screenX = (xNDC + 1) * 屏幕宽度 / 2
-        // Y 轴：screenY = (1 - yNDC) * 屏幕高度 / 2（注意 Y 轴翻转，因屏幕坐标系 Y 向下）
-        // 将NDC的x从[-1, 1]映射到[0, screenWidth]
-        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
-        // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-        var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-        // z分量通常用于深度测试
-        var screenZ = (ndcZ + 1) / 2;
-        return new Vector3_1.Vector3(screenX, screenY, screenZ);
-    };
-    RasterizationPipeline.prototype.ObjectToScreenPos = function (vertex, transform) {
-        var clipPos = this.ObjectToClipPos(vertex, transform);
-        return this.ClipToScreenPos(clipPos);
-    };
-    RasterizationPipeline.prototype.ObjectToWorldNormal = function (normal, transform) {
-        // 获取模型矩阵（局部到世界空间的变换矩阵）
-        var modelMatrix = transform.localToWorldMatrix;
-        // 计算模型矩阵的逆转置矩阵
-        // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
-        var inverseTransposeModel = modelMatrix.clone().invert().transpose();
-        // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
-        var worldNormal = inverseTransposeModel.multiplyVector3(normal);
-        // 归一化结果，确保法线保持单位长度
-        return worldNormal.normalize();
-    };
     /*
      * 顶点处理阶段：模型空间 →（模型矩阵阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
@@ -18698,7 +21139,7 @@ var RasterizationPipeline = /** @class */ (function () {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (var i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = this.ObjectToScreenPos(vertices[i], transform);
+            outVertices[i] = TransfromTools_1.TransfromTools.ObjectToScreenPos(vertices[i], transform);
         }
         return outVertices;
     };
@@ -18715,9 +21156,9 @@ var RasterizationPipeline = /** @class */ (function () {
             this.RotateVertex(vertice, transform);
             this.TranslateVertex(vertice, transform);
             // 再投影
-            clipSpaceVertices[i] = this.ProjectVertex(vertice);
+            clipSpaceVertices[i] = TransfromTools_1.TransfromTools.ProjectVertex(vertice);
             // 再视口映射
-            this.ViewportToCanvas(clipSpaceVertices[i]);
+            TransfromTools_1.TransfromTools.ViewportToCanvas(clipSpaceVertices[i]);
         }
         return clipSpaceVertices;
     };
@@ -18764,33 +21205,6 @@ var RasterizationPipeline = /** @class */ (function () {
     RasterizationPipeline.prototype.BackfaceCulling = function (triangles, mesh, renderer) {
         var visibleTriangles = [];
         var faceNormals = mesh.faceNormals;
-        function WorldPosToScreenPos(pos) {
-            var camera = Camera_1.Camera.mainCamera;
-            var viewMatrix = camera.getViewMatrix();
-            var projectionMatrix = camera.getProjectionMatrix();
-            var vpMatrix = projectionMatrix.multiply(viewMatrix);
-            var clipPos = vpMatrix.multiplyVector4(new Vector4_1.Vector4(pos.x, pos.y, pos.z, 1));
-            var w = clipPos.w;
-            var ndcX = clipPos.x / w;
-            var ndcY = clipPos.y / w;
-            var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
-            var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-            return { x: screenX, y: screenY };
-        }
-        function ModelPosToScreenPos(pos) {
-            var modelMatrix = renderer.transform.localToWorldMatrix;
-            var camera = Camera_1.Camera.mainCamera;
-            var viewMatrix = camera.getViewMatrix();
-            var projectionMatrix = camera.getProjectionMatrix();
-            var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
-            var clipPos = mvpMatrix.multiplyVector4(new Vector4_1.Vector4(pos.x, pos.y, pos.z, 1));
-            var w = clipPos.w;
-            var ndcX = clipPos.x / w;
-            var ndcY = clipPos.y / w;
-            var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
-            var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-            return { x: screenX, y: screenY };
-        }
         // 将法向量转换到世界空间（使用模型矩阵的逆矩阵的转置）
         //const normalMatrix = modelMatrix.invert().transpose();
         for (var i = 0; i < triangles.length; i += 3) {
@@ -18814,7 +21228,7 @@ var RasterizationPipeline = /** @class */ (function () {
             var dot = world_normal.dot(cameraToCenter);
             // const p1 = WorldPosToScreenPos(cameraPosition);
             // const p2 = WorldPosToScreenPos(world_center);
-            // //const p2 = ModelPosToScreenPos(center);
+            // //const p2 = LocalToScreenPos(center, renderer.transform);
             // this.DrawLine(p1.x, p1.y, p2.x, p2.y, dot <= 0 ? Color.GREEN : Color.RED);
             // const p3 = WorldPosToScreenPos(world_center.add(world_normal));
             // this.DrawLine(p3.x, p3.y, p2.x, p2.y, Color.YELLOW);
@@ -18921,9 +21335,9 @@ var RasterizationPipeline = /** @class */ (function () {
                 this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             }
             if (this.drawMode & DrawMode.Normal) {
-                var p1_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-                var p2_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-                var p3_normal = this.ObjectToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
+                var p1_normal = TransfromTools_1.TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+                var p2_normal = TransfromTools_1.TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+                var p3_normal = TransfromTools_1.TransfromTools.ObjectToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
                 // 将法线分量从 [-1, 1] 映射到 [0, 255]
                 var r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
                 var g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
@@ -18956,7 +21370,7 @@ var RasterizationPipeline = /** @class */ (function () {
         //     this.DrawBounds(bound, renderer.transform, Color.GRAY);
         // }
         // 绘制物理调试信息
-        // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
+        PhysicsDebugDraw_1.PhysicsDebugDraw.DrawPhysicsDebug(Engine_1.Engine.physicsEngine.world, this.DrawLine.bind(this));
     };
     //#endregion
     //#region 工具函数
@@ -18964,7 +21378,7 @@ var RasterizationPipeline = /** @class */ (function () {
         var _this = this;
         // 将所有顶点转换到屏幕空间
         var screenVertices = bounds.vertices.map(function (v) {
-            return _this.ObjectToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform);
+            return TransfromTools_1.TransfromTools.ObjectToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform);
         });
         // 绘制所有边
         bounds.edges.forEach(function (_a) {
@@ -18978,7 +21392,7 @@ var RasterizationPipeline = /** @class */ (function () {
         });
         // 绘制中心点
         var center = bounds.center;
-        var screenCenter = this.ObjectToScreenPos(center, transform);
+        var screenCenter = TransfromTools_1.TransfromTools.ObjectToScreenPos(center, transform);
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
             var size = 5;
@@ -19037,14 +21451,16 @@ var RasterizationPipeline = /** @class */ (function () {
 }());
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":3,"../Component/Renderer":8,"../Core/Engine":9,"../Math/Vector2":19,"../Math/Vector3":20,"../Math/Vector4":21,"../Utils/Color":29,"../Utils/Logger":31}],25:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Math/Color":22,"../Math/TransfromTools":25,"../Math/Vector3":27,"../Math/Vector4":28,"../Physics/PhysicsDebugDraw":29,"../Utils/Logger":38}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
+var BoxCollider_1 = require("../Component/BoxCollider");
 var Camera_1 = require("../Component/Camera");
 var CameraController_1 = require("../Component/CameraController");
 var MeshRenderer_1 = require("../Component/MeshRenderer");
-var ObjRotate_1 = require("../Component/ObjRotate");
+var RigidBody_1 = require("../Component/RigidBody");
+var SphereCollider_1 = require("../Component/SphereCollider");
 var GameObject_1 = require("../Core/GameObject");
 var Quaternion_1 = require("../Math/Quaternion");
 var Vector3_1 = require("../Math/Vector3");
@@ -19068,32 +21484,37 @@ exports.MainScene = {
         // });
         AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
             var obj = new GameObject_1.GameObject("cube");
-            obj.transform.position = new Vector3_1.Vector3(2, 2, 0);
-            //obj.transform.scale = Vector3.ONE.multiply(0.5);
-            // obj.addComponent(Rigidbody);
-            // obj.addComponent(BoxCollider);
-            obj.addComponent(ObjRotate_1.ObjRotate);
+            obj.transform.position = new Vector3_1.Vector3(0.01, 3, 0);
+            obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
+            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(0.5);
+            obj.addComponent(RigidBody_1.Rigidbody);
+            obj.addComponent(BoxCollider_1.BoxCollider);
+            //obj.addComponent(ObjRotate);
             var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-            renderer.mesh = model;
+            if (renderer)
+                renderer.mesh = model;
             scene.addGameObject(obj);
         });
-        // AssetLoader.loadModel('resources/spheres.obj').then((model) => {
-        //     const obj = new GameObject("spheres");
-        //     obj.transform.position = new Vector3(0.1, 1.5, 0);
-        //     const body = obj.addComponent(Rigidbody);
-        //     obj.addComponent(SphereCollider);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     renderer.mesh = model;
-        //     scene.addGameObject(obj);
-        // });
+        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then(function (model) {
+            var obj = new GameObject_1.GameObject("spheres");
+            obj.transform.position = new Vector3_1.Vector3(0.1, 1.5, 0);
+            var body = obj.addComponent(RigidBody_1.Rigidbody);
+            obj.addComponent(SphereCollider_1.SphereCollider);
+            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            if (renderer)
+                renderer.mesh = model;
+            scene.addGameObject(obj);
+        });
         AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then(function (model) {
             var obj = new GameObject_1.GameObject("panel");
-            //obj.transform.scale = Vector3.ONE.multiply(2);
-            // const collider = obj.addComponent(BoxCollider);
-            // const body = obj.addComponent(Rigidbody);
-            // body.isKinematic = true;
+            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(2);
+            var collider = obj.addComponent(BoxCollider_1.BoxCollider);
+            var body = obj.addComponent(RigidBody_1.Rigidbody);
+            if (body)
+                body.isKinematic = true;
             var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-            renderer.mesh = model;
+            if (renderer)
+                renderer.mesh = model;
             scene.addGameObject(obj);
         });
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
@@ -19112,7 +21533,7 @@ exports.MainScene = {
     }
 };
 
-},{"../Component/Camera":3,"../Component/CameraController":4,"../Component/MeshRenderer":6,"../Component/ObjRotate":7,"../Core/GameObject":10,"../Math/Quaternion":18,"../Math/Vector3":20,"../Utils/AssetLoader":28}],26:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/SphereCollider":12,"../Core/GameObject":15,"../Math/Quaternion":24,"../Math/Vector3":27,"../Utils/AssetLoader":36}],34:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -19154,7 +21575,7 @@ var Scene = /** @class */ (function () {
 }());
 exports.Scene = Scene;
 
-},{}],27:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -19204,7 +21625,7 @@ var SceneManager = /** @class */ (function () {
 }());
 exports.SceneManager = SceneManager;
 
-},{"./Scene":26}],28:[function(require,module,exports){
+},{"./Scene":34}],36:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -19320,40 +21741,7 @@ var AssetLoader = /** @class */ (function () {
 }());
 exports.AssetLoader = AssetLoader;
 
-},{"./Dictionary":30,"./ObjParser":32}],29:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Color = void 0;
-var Color = /** @class */ (function () {
-    function Color(r, g, b, a) {
-        if (a === void 0) { a = 255; }
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-    }
-    Color.prototype.ToUint32 = function () {
-        return (this.a << 24) | (this.b << 16) | (this.g << 8) | this.r;
-    };
-    Color.FromUint32 = function (uint32) {
-        return new Color(uint32 & 0xFF, (uint32 >> 8) & 0xFF, (uint32 >> 16) & 0xFF, (uint32 >> 24) & 0xFF);
-    };
-    Color.WHITE = new Color(255, 255, 255).ToUint32();
-    Color.BLACK = new Color(0, 0, 0).ToUint32();
-    Color.GRAY = new Color(128, 128, 128).ToUint32();
-    Color.RED = new Color(255, 0, 0).ToUint32();
-    Color.GREEN = new Color(0, 255, 0).ToUint32();
-    Color.BLUE = new Color(0, 0, 255).ToUint32();
-    Color.YELLOW = new Color(255, 255, 0).ToUint32();
-    Color.CYAN = new Color(0, 255, 255).ToUint32();
-    Color.MAGENTA = new Color(255, 0, 255).ToUint32();
-    Color.ORANGE = new Color(255, 165, 0).ToUint32();
-    Color.PURPLE = new Color(128, 0, 128).ToUint32();
-    return Color;
-}());
-exports.Color = Color;
-
-},{}],30:[function(require,module,exports){
+},{"./Dictionary":37,"./ObjParser":39}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dictionary = void 0;
@@ -19413,7 +21801,7 @@ var Dictionary = /** @class */ (function () {
 }());
 exports.Dictionary = Dictionary;
 
-},{}],31:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -19463,7 +21851,7 @@ var Logger = /** @class */ (function () {
 }());
 exports.Logger = Logger;
 
-},{"../Core/Engine":9}],32:[function(require,module,exports){
+},{"../Core/Engine":14}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -19734,7 +22122,7 @@ var OBJParser = /** @class */ (function () {
 }());
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":16,"../Math/Vector2":19,"../Math/Vector3":20,"../Math/Vector4":21,"../Renderer/Mesh":23}],33:[function(require,module,exports){
+},{"../Math/Bounds":21,"../Math/Vector2":26,"../Math/Vector3":27,"../Math/Vector4":28,"../Renderer/Mesh":31}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Engine_1 = require("./Core/Engine");
@@ -19752,6 +22140,6 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":9}]},{},[33])
+},{"./Core/Engine":14}]},{},[40])
 
 //# sourceMappingURL=bundle.js.map
