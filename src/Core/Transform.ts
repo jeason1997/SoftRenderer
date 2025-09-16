@@ -99,8 +99,8 @@ export class Transform {
         this._tempRot = q;
     }
 
-    public get worldRotation(): Vector3 {
-        return this.localToWorldMatrix.getEulerAngles();
+    public get worldRotation(): Quaternion {
+        return this.localToWorldMatrix.getRotate();
     }
 
     public get scale(): Vector3 {

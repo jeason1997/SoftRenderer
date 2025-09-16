@@ -44,9 +44,20 @@ export const MainScene = {
 
         let p_obj: GameObject;
 
+        AssetLoader.loadModel('resources/panel.obj').then((model) => {
+            const obj = new GameObject("panel");
+            obj.transform.scale = Vector3.ONE.multiply(2);
+            const collider = obj.addComponent(BoxCollider);
+            const body = obj.addComponent(Rigidbody);
+            if (body) body.isKinematic = true;
+            const renderer = obj.addComponent(MeshRenderer);
+            if (renderer) renderer.mesh = model;
+        });
+
+        for(let i = 0; i < 5; i++)
         AssetLoader.loadModel('resources/cube.obj').then((model) => {
             const obj = new GameObject("cube");
-            obj.transform.position = new Vector3(0, 2.5, 0);
+            obj.transform.position = new Vector3(1.3 - i * 0.1, 2 + i, 0);
             obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
             obj.transform.scale = Vector3.ONE.multiply(0.5);
             obj.addComponent(Rigidbody);
@@ -54,12 +65,12 @@ export const MainScene = {
             //obj.addComponent(ObjRotate);
             const renderer = obj.addComponent(MeshRenderer);
             if (renderer) renderer.mesh = model;
-            //p_obj = obj;
+            p_obj = obj;
         });
 
         AssetLoader.loadModel('resources/spheres.obj').then((model) => {
             const obj = new GameObject("spheres");
-            obj.transform.position = new Vector3(0, 1.5, 0);
+            obj.transform.position = new Vector3(0, 1.5, 1.5);
             const body = obj.addComponent(Rigidbody);
             obj.addComponent(SphereCollider);
             const renderer = obj.addComponent(MeshRenderer);
@@ -67,15 +78,7 @@ export const MainScene = {
             //obj.transform.setParent(p_obj.transform);
         });
 
-        AssetLoader.loadModel('resources/panel.obj').then((model) => {
-            const obj = new GameObject("panel");
-            obj.transform.scale = Vector3.ONE.multiply(1.5);
-            const collider = obj.addComponent(BoxCollider);
-            const body = obj.addComponent(Rigidbody);
-            if (body) body.isKinematic = true;
-            const renderer = obj.addComponent(MeshRenderer);
-            if (renderer) renderer.mesh = model;
-        });
+        
 
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");

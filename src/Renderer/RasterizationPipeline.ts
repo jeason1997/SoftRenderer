@@ -1,4 +1,4 @@
-import { Color } from "../Math/Color";
+import { BlendMode, Color } from "../Math/Color";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
 import { Transform } from "../Core/Transform";
@@ -25,10 +25,12 @@ export class RasterizationPipeline {
     private frameBuffer: Uint32Array;
     private depthBuffer: number[];
     private currentCamera: Camera;
+    private overdrawBuffer: Uint32Array;
 
     constructor(frameBuffer: Uint32Array) {
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
+        this.overdrawBuffer = new Uint32Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
     }
 
     public Render() {
@@ -62,9 +64,10 @@ export class RasterizationPipeline {
         if (clearFlags & CameraClearFlags.Depth) {
             this.depthBuffer.fill(1);
         }
+        this.overdrawBuffer.fill(0);
     }
 
-    public DrawPixel(x: number, y: number, color: number) {
+    public DrawPixel(x: number, y: number, color: number, countOverdraw: boolean = false, blendMode: BlendMode = BlendMode.replace) {
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -76,7 +79,20 @@ export class RasterizationPipeline {
             return;
         }
 
-        this.frameBuffer[y * EngineConfig.canvasWidth + x] = color;
+        const index = y * EngineConfig.canvasWidth + x;
+
+        // 颜色混合处理
+        if (blendMode !== BlendMode.replace) {
+            const existingColor = this.frameBuffer[index];
+            const blendedColor = Color.blendColors(existingColor, color, blendMode);
+            this.frameBuffer[index] = blendedColor;
+        } else {
+            // 直接替换模式
+            this.frameBuffer[index] = color;
+        }
+
+        // Overdraw计数
+        if (countOverdraw) this.overdrawBuffer[index]++
     }
 
     public DrawLine(x1: number, y1: number, x2: number, y2: number, color1: number, color2?: number) {
@@ -543,39 +559,23 @@ export class RasterizationPipeline {
                         this.depthBuffer[index] = z;
                         const color = fragment.attributes.color as Color;
                         // 渲染管线9.绘制像素到帧缓冲
-                        this.DrawPixel(x, y, color.ToUint32());
+                        this.DrawPixel(x, y, color.ToUint32(), true);
                     }
                 }
             }
         }
 
-        // 调试：绘制面法线
-        // for (let i = 0; i < mesh.faceNormals.length; i++) {
-        //     const normal = mesh.faceNormals[i];
-        //     const center = mesh.faceCenters[i];
-        //     const start = TransfromTools.ObjectToScreenPos(center, renderer.transform);
-        //     const end = TransfromTools.ObjectToScreenPos(Vector3.add(center, normal), renderer.transform);
-        //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
-        // }
-
         // 绘制包围盒
-        // for (let i = 0; i < mesh.bounds.length; i++) {
-        //     const bound = mesh.bounds[i];
-        //     this.DrawBounds(bound, renderer.transform, Color.GRAY);
-        // }
+        // this.DrawBounds(mesh, renderer);
+
+        // 调试：绘制面法线
+        // this.DrawFaceNormal(mesh, renderer);
 
         // 绘制深度纹理
-        // for (let x = 0; x < EngineConfig.canvasWidth; x++) {
-        //     for (let y = 0; y < EngineConfig.canvasHeight; y++) {
-        //         const index = y * EngineConfig.canvasWidth + x;
-        //         const currentDepth = this.depthBuffer[index];
-        //         // 将深度值(0-1)转换为灰度值(0-255)
-        //         const grayValue = Math.floor(currentDepth * 255);
-        //         // 创建灰度颜色对象
-        //         const depthColor = new Color(grayValue, grayValue, grayValue);
-        //         this.DrawPixel(x, y, depthColor.ToUint32());
-        //     }
-        // }
+        // this.DrawDepthBuffer();
+
+        // 绘制Overdarw
+        // this.DrawOverdraw();
 
         // 绘制物理调试信息
         // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
@@ -585,7 +585,53 @@ export class RasterizationPipeline {
 
     //#region 工具函数
 
-    private DrawBounds(bounds: Bounds, transform: Transform, color: number) {
+    private DrawFaceNormal(mesh: Mesh, renderer: Renderer): void {
+        for (let i = 0; i < mesh.faceNormals.length; i++) {
+            const normal = mesh.faceNormals[i];
+            const center = mesh.faceCenters[i];
+            const start = TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera);
+            const end = TransformTools.ModelToScreenPos(Vector3.add(center, normal), renderer.transform, this.currentCamera);
+            this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
+        }
+    }
+
+    private DrawDepthBuffer(): void {
+        for (let x = 0; x < EngineConfig.canvasWidth; x++) {
+            for (let y = 0; y < EngineConfig.canvasHeight; y++) {
+                const index = y * EngineConfig.canvasWidth + x;
+                const currentDepth = this.depthBuffer[index];
+                // 将深度值(0-1)转换为灰度值(0-255)
+                const grayValue = Math.floor(currentDepth * 255);
+                // 创建灰度颜色对象
+                const depthColor = new Color(grayValue, grayValue, grayValue);
+                this.DrawPixel(x, y, depthColor.ToUint32());
+            }
+        }
+    }
+
+    private DrawOverdraw(): void {
+        this.frameBuffer.fill(Color.BLACK);
+        // 使用预设的最大可视化范围来归一化 Overdraw 计数
+        const MAX_VISUALIZATION_RANGE = 8;
+        for (let x = 0; x < EngineConfig.canvasWidth; x++) {
+            for (let y = 0; y < EngineConfig.canvasHeight; y++) {
+                const index = y * EngineConfig.canvasWidth + x;
+                const overdrawCount = this.overdrawBuffer[index];
+                if (overdrawCount > 0) {
+                    // 将 Overdraw 计数限制在可视化范围内并归一化
+                    const normalizedCount = Math.min(overdrawCount, MAX_VISUALIZATION_RANGE) / MAX_VISUALIZATION_RANGE;
+                    // 计算透明度：Overdraw 越多，越不透明
+                    const alpha = Math.floor(normalizedCount * 255);
+                    // 组合颜色（ARGB格式）
+                    const color = Color.FromUint32(Color.ORANGE);
+                    color.a = alpha;
+                    this.DrawPixel(x, y, color.ToUint32(), false);
+                }
+            }
+        }
+    }
+
+    private DrawBound(bounds: Bounds, transform: Transform, color: number) {
         // 将所有顶点转换到屏幕空间
         const screenVertices = bounds.vertices.map(v =>
             TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera)

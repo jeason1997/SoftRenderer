@@ -295,17 +295,19 @@ export class GameObject extends UObject {
         clone.tag = original.tag;
         clone.layer = original.layer;
         clone.active = original.active;
+        clone.transform.position = original.transform.worldPosition;
+        clone.transform.rotation = original.transform.worldRotation;
+        clone.transform.scale = original.transform.worldScale;
 
-        // 设置位置和旋转（如果提供）
-        if (position) {
-            clone.transform.position = position;
-        }
-
-        if (rotation) {
-            clone.transform.rotation = rotation;
-        }
+        if (position) clone.transform.position = position;
+        if (rotation) clone.transform.rotation = rotation;
 
         // 复制组件（这需要一个深度复制机制）
+        const comps = original.getAllComponents();
+        for(let i = 0; i < comps.length; i++){
+            const comp = comps[i];
+            //clone.addComponent()
+        }
 
         return clone;
     }

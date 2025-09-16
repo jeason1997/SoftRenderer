@@ -18224,14 +18224,19 @@ var GameObject = /** @class */ (function (_super) {
         clone.tag = original.tag;
         clone.layer = original.layer;
         clone.active = original.active;
-        // 设置位置和旋转（如果提供）
-        if (position) {
+        clone.transform.position = original.transform.worldPosition;
+        clone.transform.rotation = original.transform.worldRotation;
+        clone.transform.scale = original.transform.worldScale;
+        if (position)
             clone.transform.position = position;
-        }
-        if (rotation) {
+        if (rotation)
             clone.transform.rotation = rotation;
-        }
         // 复制组件（这需要一个深度复制机制）
+        var comps = original.getAllComponents();
+        for (var i = 0; i < comps.length; i++) {
+            var comp = comps[i];
+            //clone.addComponent()
+        }
         return clone;
     };
     // 销毁游戏对象
@@ -18727,7 +18732,7 @@ var Transform = /** @class */ (function () {
     });
     Object.defineProperty(Transform.prototype, "worldRotation", {
         get: function () {
-            return this.localToWorldMatrix.getEulerAngles();
+            return this.localToWorldMatrix.getRotate();
         },
         enumerable: false,
         configurable: true
@@ -19035,7 +19040,16 @@ var Sphere = /** @class */ (function () {
 },{"./Vector3":28}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Color = void 0;
+exports.Color = exports.BlendMode = void 0;
+var BlendMode;
+(function (BlendMode) {
+    BlendMode[BlendMode["alpha"] = 0] = "alpha";
+    BlendMode[BlendMode["additive"] = 1] = "additive";
+    BlendMode[BlendMode["multiply"] = 2] = "multiply";
+    BlendMode[BlendMode["screen"] = 3] = "screen";
+    BlendMode[BlendMode["overlay"] = 4] = "overlay";
+    BlendMode[BlendMode["replace"] = 5] = "replace";
+})(BlendMode || (exports.BlendMode = BlendMode = {}));
 var Color = /** @class */ (function () {
     function Color(r, g, b, a) {
         if (a === void 0) { a = 255; }
@@ -19050,6 +19064,79 @@ var Color = /** @class */ (function () {
     Color.FromUint32 = function (uint32) {
         return new Color(uint32 & 0xFF, (uint32 >> 8) & 0xFF, (uint32 >> 16) & 0xFF, (uint32 >> 24) & 0xFF);
     };
+    /**
+     * 颜色混合方法
+     * 支持多种混合模式
+     */
+    Color.blendColors = function (dest, src, mode) {
+        // 提取目标颜色分量 (ARGB格式)
+        var destA = (dest >> 24) & 0xFF;
+        var destR = (dest >> 16) & 0xFF;
+        var destG = (dest >> 8) & 0xFF;
+        var destB = dest & 0xFF;
+        // 提取源颜色分量 (ARGB格式)
+        var srcA = (src >> 24) & 0xFF;
+        var srcR = (src >> 16) & 0xFF;
+        var srcG = (src >> 8) & 0xFF;
+        var srcB = src & 0xFF;
+        var resultA, resultR, resultG, resultB;
+        switch (mode) {
+            case BlendMode.alpha:
+                // Alpha 混合 (最常用的混合模式)
+                var alpha = srcA / 255;
+                var invAlpha = 1 - alpha;
+                resultA = Math.min(255, destA + srcA - (destA * srcA) / 255);
+                resultR = Math.floor(srcR * alpha + destR * invAlpha);
+                resultG = Math.floor(srcG * alpha + destG * invAlpha);
+                resultB = Math.floor(srcB * alpha + destB * invAlpha);
+                break;
+            case BlendMode.additive:
+                // 加法混合 (颜色叠加)
+                resultA = Math.min(255, destA + srcA);
+                resultR = Math.min(255, destR + srcR);
+                resultG = Math.min(255, destG + srcG);
+                resultB = Math.min(255, destB + srcB);
+                break;
+            case BlendMode.multiply:
+                // 乘法混合 (颜色相乘)
+                resultA = Math.min(255, destA);
+                resultR = Math.floor((destR * srcR) / 255);
+                resultG = Math.floor((destG * srcG) / 255);
+                resultB = Math.floor((destB * srcB) / 255);
+                break;
+            case BlendMode.screen:
+                // 屏幕混合 (颜色反相相乘后再反相)
+                resultA = Math.min(255, destA);
+                resultR = 255 - Math.floor(((255 - destR) * (255 - srcR)) / 255);
+                resultG = 255 - Math.floor(((255 - destG) * (255 - srcG)) / 255);
+                resultB = 255 - Math.floor(((255 - destB) * (255 - srcB)) / 255);
+                break;
+            case BlendMode.overlay:
+                // 叠加混合 (根据底色决定乘或屏)
+                resultA = Math.min(255, destA);
+                resultR = this.overlayBlend(destR, srcR);
+                resultG = this.overlayBlend(destG, srcG);
+                resultB = this.overlayBlend(destB, srcB);
+                break;
+            case BlendMode.replace:
+            default:
+                // 直接替换
+                return src;
+        }
+        // 组合颜色分量
+        return (resultA << 24) | (resultR << 16) | (resultG << 8) | resultB;
+    };
+    /**
+     * 叠加混合的辅助函数
+     */
+    Color.overlayBlend = function (dest, src) {
+        if (dest < 128) {
+            return Math.floor((2 * dest * src) / 255);
+        }
+        else {
+            return 255 - Math.floor((2 * (255 - dest) * (255 - src)) / 255);
+        }
+    };
     Color.WHITE = new Color(255, 255, 255).ToUint32();
     Color.BLACK = new Color(0, 0, 0).ToUint32();
     Color.GRAY = new Color(128, 128, 128).ToUint32();
@@ -19061,6 +19148,10 @@ var Color = /** @class */ (function () {
     Color.MAGENTA = new Color(255, 0, 255).ToUint32();
     Color.ORANGE = new Color(255, 165, 0).ToUint32();
     Color.PURPLE = new Color(128, 0, 128).ToUint32();
+    Color.BROWN = new Color(165, 42, 0).ToUint32();
+    Color.MAROON = new Color(128, 0, 0).ToUint32();
+    // 颜色混合查找表
+    Color.blendLUT = [];
     return Color;
 }());
 exports.Color = Color;
@@ -20823,6 +20914,7 @@ var RasterizationPipeline = /** @class */ (function () {
         this.drawMode = DrawMode.Shader;
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
+        this.overdrawBuffer = new Uint32Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
     }
     RasterizationPipeline.prototype.Render = function () {
         var _a;
@@ -20855,8 +20947,11 @@ var RasterizationPipeline = /** @class */ (function () {
         if (clearFlags & Camera_1.CameraClearFlags.Depth) {
             this.depthBuffer.fill(1);
         }
+        this.overdrawBuffer.fill(0);
     };
-    RasterizationPipeline.prototype.DrawPixel = function (x, y, color) {
+    RasterizationPipeline.prototype.DrawPixel = function (x, y, color, countOverdraw, blendMode) {
+        if (countOverdraw === void 0) { countOverdraw = false; }
+        if (blendMode === void 0) { blendMode = Color_1.BlendMode.replace; }
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -20866,7 +20961,20 @@ var RasterizationPipeline = /** @class */ (function () {
         if (x < 0 || x >= Engine_1.EngineConfig.canvasWidth || y < 0 || y >= Engine_1.EngineConfig.canvasHeight) {
             return;
         }
-        this.frameBuffer[y * Engine_1.EngineConfig.canvasWidth + x] = color;
+        var index = y * Engine_1.EngineConfig.canvasWidth + x;
+        // 颜色混合处理
+        if (blendMode !== Color_1.BlendMode.replace) {
+            var existingColor = this.frameBuffer[index];
+            var blendedColor = Color_1.Color.blendColors(existingColor, color, blendMode);
+            this.frameBuffer[index] = blendedColor;
+        }
+        else {
+            // 直接替换模式
+            this.frameBuffer[index] = color;
+        }
+        // Overdraw计数
+        if (countOverdraw)
+            this.overdrawBuffer[index]++;
     };
     RasterizationPipeline.prototype.DrawLine = function (x1, y1, x2, y2, color1, color2) {
         var _a, _b, _c, _d;
@@ -21255,42 +21363,68 @@ var RasterizationPipeline = /** @class */ (function () {
                         this.depthBuffer[index] = z;
                         var color = fragment.attributes.color;
                         // 渲染管线9.绘制像素到帧缓冲
-                        this.DrawPixel(x, y, color.ToUint32());
+                        this.DrawPixel(x, y, color.ToUint32(), true);
                     }
                 }
             }
         }
-        // 调试：绘制面法线
-        // for (let i = 0; i < mesh.faceNormals.length; i++) {
-        //     const normal = mesh.faceNormals[i];
-        //     const center = mesh.faceCenters[i];
-        //     const start = TransfromTools.ObjectToScreenPos(center, renderer.transform);
-        //     const end = TransfromTools.ObjectToScreenPos(Vector3.add(center, normal), renderer.transform);
-        //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
-        // }
         // 绘制包围盒
-        // for (let i = 0; i < mesh.bounds.length; i++) {
-        //     const bound = mesh.bounds[i];
-        //     this.DrawBounds(bound, renderer.transform, Color.GRAY);
-        // }
+        // this.DrawBounds(mesh, renderer);
+        // 调试：绘制面法线
+        // this.DrawFaceNormal(mesh, renderer);
         // 绘制深度纹理
-        // for (let x = 0; x < EngineConfig.canvasWidth; x++) {
-        //     for (let y = 0; y < EngineConfig.canvasHeight; y++) {
-        //         const index = y * EngineConfig.canvasWidth + x;
-        //         const currentDepth = this.depthBuffer[index];
-        //         // 将深度值(0-1)转换为灰度值(0-255)
-        //         const grayValue = Math.floor(currentDepth * 255);
-        //         // 创建灰度颜色对象
-        //         const depthColor = new Color(grayValue, grayValue, grayValue);
-        //         this.DrawPixel(x, y, depthColor.ToUint32());
-        //     }
-        // }
+        // this.DrawDepthBuffer();
+        // 绘制Overdarw
+        // this.DrawOverdraw();
         // 绘制物理调试信息
         // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
     };
     //#endregion
     //#region 工具函数
-    RasterizationPipeline.prototype.DrawBounds = function (bounds, transform, color) {
+    RasterizationPipeline.prototype.DrawFaceNormal = function (mesh, renderer) {
+        for (var i = 0; i < mesh.faceNormals.length; i++) {
+            var normal = mesh.faceNormals[i];
+            var center = mesh.faceCenters[i];
+            var start = TransformTools_1.TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera);
+            var end = TransformTools_1.TransformTools.ModelToScreenPos(Vector3_1.Vector3.add(center, normal), renderer.transform, this.currentCamera);
+            this.DrawLine(start.x, start.y, end.x, end.y, Color_1.Color.RED, Color_1.Color.GREEN);
+        }
+    };
+    RasterizationPipeline.prototype.DrawDepthBuffer = function () {
+        for (var x = 0; x < Engine_1.EngineConfig.canvasWidth; x++) {
+            for (var y = 0; y < Engine_1.EngineConfig.canvasHeight; y++) {
+                var index = y * Engine_1.EngineConfig.canvasWidth + x;
+                var currentDepth = this.depthBuffer[index];
+                // 将深度值(0-1)转换为灰度值(0-255)
+                var grayValue = Math.floor(currentDepth * 255);
+                // 创建灰度颜色对象
+                var depthColor = new Color_1.Color(grayValue, grayValue, grayValue);
+                this.DrawPixel(x, y, depthColor.ToUint32());
+            }
+        }
+    };
+    RasterizationPipeline.prototype.DrawOverdraw = function () {
+        this.frameBuffer.fill(Color_1.Color.BLACK);
+        // 使用预设的最大可视化范围来归一化 Overdraw 计数
+        var MAX_VISUALIZATION_RANGE = 8;
+        for (var x = 0; x < Engine_1.EngineConfig.canvasWidth; x++) {
+            for (var y = 0; y < Engine_1.EngineConfig.canvasHeight; y++) {
+                var index = y * Engine_1.EngineConfig.canvasWidth + x;
+                var overdrawCount = this.overdrawBuffer[index];
+                if (overdrawCount > 0) {
+                    // 将 Overdraw 计数限制在可视化范围内并归一化
+                    var normalizedCount = Math.min(overdrawCount, MAX_VISUALIZATION_RANGE) / MAX_VISUALIZATION_RANGE;
+                    // 计算透明度：Overdraw 越多，越不透明
+                    var alpha = Math.floor(normalizedCount * 255);
+                    // 组合颜色（ARGB格式）
+                    var color = Color_1.Color.FromUint32(Color_1.Color.ORANGE);
+                    color.a = alpha;
+                    this.DrawPixel(x, y, color.ToUint32(), false);
+                }
+            }
+        }
+    };
+    RasterizationPipeline.prototype.DrawBound = function (bounds, transform, color) {
         var _this = this;
         // 将所有顶点转换到屏幕空间
         var screenVertices = bounds.vertices.map(function (v) {
@@ -21410,32 +21544,9 @@ exports.MainScene = {
         //     scene.addGameObject(obj);
         // });
         var p_obj;
-        AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
-            var obj = new GameObject_1.GameObject("cube");
-            obj.transform.position = new Vector3_1.Vector3(0, 2.5, 0);
-            obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
-            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(0.5);
-            obj.addComponent(RigidBody_1.Rigidbody);
-            obj.addComponent(BoxCollider_1.BoxCollider);
-            //obj.addComponent(ObjRotate);
-            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-            if (renderer)
-                renderer.mesh = model;
-            //p_obj = obj;
-        });
-        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then(function (model) {
-            var obj = new GameObject_1.GameObject("spheres");
-            obj.transform.position = new Vector3_1.Vector3(0, 1.5, 0);
-            var body = obj.addComponent(RigidBody_1.Rigidbody);
-            obj.addComponent(SphereCollider_1.SphereCollider);
-            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-            if (renderer)
-                renderer.mesh = model;
-            //obj.transform.setParent(p_obj.transform);
-        });
         AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then(function (model) {
             var obj = new GameObject_1.GameObject("panel");
-            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(1.5);
+            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(2);
             var collider = obj.addComponent(BoxCollider_1.BoxCollider);
             var body = obj.addComponent(RigidBody_1.Rigidbody);
             if (body)
@@ -21443,6 +21554,34 @@ exports.MainScene = {
             var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
+        });
+        var _loop_1 = function (i) {
+            AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
+                var obj = new GameObject_1.GameObject("cube");
+                obj.transform.position = new Vector3_1.Vector3(1.3 - i * 0.1, 2 + i, 0);
+                obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
+                obj.transform.scale = Vector3_1.Vector3.ONE.multiply(0.5);
+                obj.addComponent(RigidBody_1.Rigidbody);
+                obj.addComponent(BoxCollider_1.BoxCollider);
+                //obj.addComponent(ObjRotate);
+                var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+                if (renderer)
+                    renderer.mesh = model;
+                p_obj = obj;
+            });
+        };
+        for (var i = 0; i < 5; i++) {
+            _loop_1(i);
+        }
+        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then(function (model) {
+            var obj = new GameObject_1.GameObject("spheres");
+            obj.transform.position = new Vector3_1.Vector3(0, 1.5, 1.5);
+            var body = obj.addComponent(RigidBody_1.Rigidbody);
+            obj.addComponent(SphereCollider_1.SphereCollider);
+            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            if (renderer)
+                renderer.mesh = model;
+            //obj.transform.setParent(p_obj.transform);
         });
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");
