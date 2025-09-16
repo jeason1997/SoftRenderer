@@ -11,7 +11,7 @@ import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
 import { interpolateOverTriangle } from "../Math/Lerp"
 import { TransformTools } from "../Math/TransformTools";
-import { Logger } from "../Utils/Logger";
+import { Debug } from "../Utils/Debug";
 import { Vector2 } from "../Math/Vector2";
 
 enum DrawMode {
@@ -23,13 +23,13 @@ enum DrawMode {
 export class RasterizationPipeline {
     public drawMode: DrawMode = DrawMode.Shader;
     private frameBuffer: Uint32Array;
-    private depthBuffer: number[];
+    private depthBuffer: Float32Array;
     private currentCamera: Camera;
     private overdrawBuffer: Uint32Array;
 
     constructor(frameBuffer: Uint32Array) {
         this.frameBuffer = frameBuffer;
-        this.depthBuffer = new Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
+        this.depthBuffer = new Float32Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
         this.overdrawBuffer = new Uint32Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
     }
 
@@ -48,23 +48,62 @@ export class RasterizationPipeline {
                 // 渲染管线2.视锥体剔除
                 for (const render of renders) {
                     this.DrawObject(render);
-                    Logger.log(render.gameObject.name);
+                    Debug.Log(render.gameObject.name);
                 }
             }
+            // 调试信息
+            this.DebugDraw();
         }
     }
 
     //#region 基础绘制接口
 
-    public Clear(camera: Camera) {
+    public Clear(camera: Camera): void {
         const clearFlags = camera.clearFlags;
+        const viewport = camera.viewPort;
+        const backgroundColor = camera.backGroundColor;
+
+        // 1. 计算视口在屏幕缓冲区中的像素范围
+        const viewportPixelX = Math.floor(viewport.x * EngineConfig.canvasWidth);
+        const viewportPixelY = Math.floor(viewport.y * EngineConfig.canvasHeight);
+        const viewportPixelWidth = Math.floor(viewport.z * EngineConfig.canvasWidth);
+        const viewportPixelHeight = Math.floor(viewport.w * EngineConfig.canvasHeight);
+
+        // 2. 根据清除标志，清除视口对应的区域
         if (clearFlags & CameraClearFlags.Color) {
-            this.frameBuffer.fill(camera.backGroundColor);
+            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor);
         }
+
         if (clearFlags & CameraClearFlags.Depth) {
-            this.depthBuffer.fill(1);
+            this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
         }
-        this.overdrawBuffer.fill(0);
+
+        this.clearViewportRegion(this.overdrawBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
+    }
+
+    /**
+     * 清除缓冲区中指定矩形区域的辅助方法
+     * @param buffer 目标缓冲区 (Uint32Array 或 Float32Array 等)
+     * @param x 区域起始X坐标 (像素)
+     * @param y 区域起始Y坐标 (像素)
+     * @param width 区域宽度 (像素)
+     * @param height 区域高度 (像素)
+     * @param value 要填充的值
+     */
+    private clearViewportRegion(buffer: Uint32Array | Float32Array, x: number, y: number, width: number, height: number, value: number): void {
+        // 如果是满屏幕，则快速填充
+        if (x == 0 && y == 0 && width == EngineConfig.canvasWidth && height == EngineConfig.canvasHeight) {
+            buffer.fill(value);
+            return;
+        }
+
+        const canvasWidth = EngineConfig.canvasWidth;
+        for (let row = y; row < y + height; row++) {
+            const startIndex = row * canvasWidth + x;
+            const endIndex = startIndex + width;
+            // 使用 subarray 和 fill 来填充一行中的连续区域，比逐个像素设置更快
+            buffer.subarray(startIndex, endIndex).fill(value);
+        }
     }
 
     public DrawPixel(x: number, y: number, color: number, countOverdraw: boolean = false, blendMode: BlendMode = BlendMode.replace) {
@@ -388,7 +427,8 @@ export class RasterizationPipeline {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (let i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
+            const out = TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
+            outVertices[i] = new Vector3(out.screen.x, out.screen.y, out.depth);
         }
 
         return outVertices;
@@ -480,30 +520,23 @@ export class RasterizationPipeline {
             const p2_uv = mesh.uv[triangles[i + 1]];
             const p3_uv = mesh.uv[triangles[i + 2]];
 
-            const p1_color = new Color(p1_uv.x * 255, p1_uv.y * 255, 0);
-            const p2_color = new Color(p2_uv.x * 255, p2_uv.y * 255, 0);
-            const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0);
-
-            const v1 = new Vector2(p1.x, p1.y);
-            const v2 = new Vector2(p2.x, p2.y);
-            const v3 = new Vector2(p3.x, p3.y);
+            const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+            const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+            const p3_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
 
             const attrs1 = {
-                color: p1_color,
-                texCoord: p1_uv,
-                z: p1.z
+                uv: p1_uv,
+                normal: p1_normal,
             };
 
             const attrs2 = {
-                color: p2_color,
-                texCoord: p2_uv,
-                z: p2.z
+                uv: p2_uv,
+                normal: p2_normal,
             };
 
             const attrs3 = {
-                color: p3_color,
-                texCoord: p3_uv,
-                z: p3.z
+                uv: p3_uv,
+                normal: p3_normal,
             };
 
             if (this.drawMode & DrawMode.Wireframe) {
@@ -514,34 +547,15 @@ export class RasterizationPipeline {
                 this.DrawPixel(p2.x, p2.y, Color.WHITE);
                 this.DrawPixel(p3.x, p3.y, Color.WHITE);
             }
-            // if (this.drawMode & DrawMode.Normal) {
-            //     const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-            //     const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-            //     const p3_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
-            //     // 将法线分量从 [-1, 1] 映射到 [0, 255]
-            //     let r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
-            //     let g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
-            //     let b = Math.floor((p1_normal.z + 1) * 0.5 * 255);
-            //     const p1_color = new Color(r, g, b).ToUint32();
-            //     r = Math.floor((p2_normal.x + 1) * 0.5 * 255);
-            //     g = Math.floor((p2_normal.y + 1) * 0.5 * 255);
-            //     b = Math.floor((p2_normal.z + 1) * 0.5 * 255);
-            //     const p2_color = new Color(r, g, b).ToUint32();
-            //     r = Math.floor((p3_normal.x + 1) * 0.5 * 255);
-            //     g = Math.floor((p3_normal.y + 1) * 0.5 * 255);
-            //     b = Math.floor((p3_normal.z + 1) * 0.5 * 255);
-            //     const p3_color = new Color(r, g, b).ToUint32();
-            //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
-            // }
             if (this.drawMode & DrawMode.Shader) {
                 // 渲染管线7.光栅化
-                const fragments = interpolateOverTriangle(v1, v2, v3, attrs1, attrs2, attrs3);
+                const fragments = interpolateOverTriangle(p1, p2, p3, attrs1, attrs2, attrs3);
 
                 for (let i = 0; i < fragments.length; i++) {
                     const fragment = fragments[i];
-                    const x = Math.round(fragment.x);
-                    const y = Math.round(fragment.y);
-                    const z = fragment.attributes.z as number;
+                    const x = fragment.x;
+                    const y = fragment.y;
+                    const z = fragment.z;
 
                     // 检查坐标是否在屏幕范围内
                     if (x < 0 || x >= EngineConfig.canvasWidth ||
@@ -557,14 +571,28 @@ export class RasterizationPipeline {
                     // 深度测试：只有当前像素更近（z值更小）时才绘制
                     if (z < currentDepth) {
                         this.depthBuffer[index] = z;
-                        const color = fragment.attributes.color as Color;
+
+                        // uv
+                        const uv = fragment.attributes.uv as Vector2;
+                        const color = new Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
+
+                        // nroaml
+                        // const normal = fragment.attributes.normal as Vector3;
+                        // const color = new Color(Math.floor((normal.x + 1) * 0.5 * 255), Math.floor((normal.y + 1) * 0.5 * 255), Math.floor((normal.z + 1) * 0.5 * 255)).ToUint32();
+
                         // 渲染管线9.绘制像素到帧缓冲
-                        this.DrawPixel(x, y, color.ToUint32(), true);
+                        this.DrawPixel(x, y, color, true);
                     }
                 }
             }
         }
+    }
 
+    //#endregion
+
+    //#region 工具函数
+
+    private DebugDraw(): void {
         // 绘制包围盒
         // this.DrawBounds(mesh, renderer);
 
@@ -579,18 +607,20 @@ export class RasterizationPipeline {
 
         // 绘制物理调试信息
         // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
+
+        // 绘制调试线
+        const lines = Debug.GetDebugLines();
+        lines.forEach(line => {
+            this.DrawLine(line.start.x, line.start.y, line.end.x, line.end.y, line.color);
+        });
     }
-
-    //#endregion
-
-    //#region 工具函数
 
     private DrawFaceNormal(mesh: Mesh, renderer: Renderer): void {
         for (let i = 0; i < mesh.faceNormals.length; i++) {
             const normal = mesh.faceNormals[i];
             const center = mesh.faceCenters[i];
-            const start = TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera);
-            const end = TransformTools.ModelToScreenPos(Vector3.add(center, normal), renderer.transform, this.currentCamera);
+            const start = TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
+            const end = TransformTools.ModelToScreenPos(Vector3.add(center, normal), renderer.transform, this.currentCamera).screen;
             this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
         }
     }
@@ -634,7 +664,7 @@ export class RasterizationPipeline {
     private DrawBound(bounds: Bounds, transform: Transform, color: number) {
         // 将所有顶点转换到屏幕空间
         const screenVertices = bounds.vertices.map(v =>
-            TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera)
+            TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera).screen
         );
 
         // 绘制所有边
@@ -649,7 +679,7 @@ export class RasterizationPipeline {
 
         // 绘制中心点
         const center = bounds.center;
-        const screenCenter = TransformTools.ModelToScreenPos(center, transform, this.currentCamera);
+        const screenCenter = TransformTools.ModelToScreenPos(center, transform, this.currentCamera).screen;
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
             const size = 5;

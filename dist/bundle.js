@@ -16619,7 +16619,7 @@ var BoxCollider = /** @class */ (function (_super) {
 }(Collider_1.Collider));
 exports.BoxCollider = BoxCollider;
 
-},{"../Math/Vector3":28,"./Collider":7,"./MeshRenderer":9,"cannon":2}],5:[function(require,module,exports){
+},{"../Math/Vector3":30,"./Collider":7,"./MeshRenderer":9,"cannon":2}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -16780,7 +16780,7 @@ var Camera = function () {
 }();
 exports.Camera = Camera;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Math/Color":22,"../Math/Matrix4x4":24,"../Math/Vector4":29,"./Component":8}],6:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Math/Color":23,"../Math/Matrix4x4":25,"../Math/Vector4":31,"./Component":8}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -16841,8 +16841,11 @@ var Decorators_1 = require("../Core/Decorators");
 var Engine_1 = require("../Core/Engine");
 var Input_1 = require("../Core/Input");
 var Time_1 = require("../Core/Time");
+var Color_1 = require("../Math/Color");
 var Quaternion_1 = require("../Math/Quaternion");
+var TransformTools_1 = require("../Math/TransformTools");
 var Vector3_1 = require("../Math/Vector3");
+var Debug_1 = require("../Utils/Debug");
 var Camera_1 = require("./Camera");
 var Component_1 = require("./Component");
 var CameraController = function () {
@@ -16866,6 +16869,7 @@ var CameraController = function () {
             _this._speedScale = 1;
             _this._rotateCamera = false;
             _this._rotateCenter = new Vector3_1.Vector3();
+            _this._rayList = [];
             return _this;
         }
         CameraController_1.prototype.start = function () {
@@ -16917,6 +16921,11 @@ var CameraController = function () {
                 this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
                 this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
             }
+            // 鼠标左键发射射线
+            if (Input_1.Input.GetMouseButtonDown(0) && this._camera) {
+                var ray = TransformTools_1.TransformTools.ScreenToWorldPosRaycast(Input_1.Input.mousePosition, this._camera);
+                this._rayList.push(ray);
+            }
         };
         CameraController_1.prototype.scaleAndAdd = function (a, b, scale) {
             var out = new Vector3_1.Vector3();
@@ -16936,6 +16945,9 @@ var CameraController = function () {
             var q = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this._euler.x, this._euler.y, this._euler.z));
             q = Quaternion_1.Quaternion.slerp(this.transform.rotation, q, Time_1.Time.deltaTime / this.damp);
             this.transform.rotation = q;
+            this._rayList.forEach(function (ray) {
+                Debug_1.Debug.DrawLine3D(ray.origin, ray.at(1), Color_1.Color.RED);
+            });
         };
         return CameraController_1;
     }(_classSuper));
@@ -16952,7 +16964,7 @@ var CameraController = function () {
 }();
 exports.CameraController = CameraController;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Input":16,"../Core/Time":17,"../Math/Quaternion":25,"../Math/Vector3":28,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Input":16,"../Core/Time":17,"../Math/Color":23,"../Math/Quaternion":26,"../Math/TransformTools":28,"../Math/Vector3":30,"../Utils/Debug":39,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17368,7 +17380,7 @@ var Renderer = function () {
 }();
 exports.Renderer = Renderer;
 
-},{"../Core/Decorators":13,"../Math/Bounds":21,"./Component":8}],11:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Math/Bounds":22,"./Component":8}],11:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17682,7 +17694,7 @@ var Rigidbody = function () {
 }();
 exports.Rigidbody = Rigidbody;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Core/UObject":20,"../Math/Quaternion":25,"../Math/Vector3":28,"./Collider":7,"./Component":8,"cannon":2}],12:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Core/UObject":20,"../Math/Quaternion":26,"../Math/Vector3":30,"./Collider":7,"./Component":8,"cannon":2}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17797,7 +17809,7 @@ var SphereCollider = /** @class */ (function (_super) {
 }(Collider_1.Collider));
 exports.SphereCollider = SphereCollider;
 
-},{"../Math/Vector3":28,"./Collider":7,"cannon":2}],13:[function(require,module,exports){
+},{"../Math/Vector3":30,"./Collider":7,"cannon":2}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DISALLOW_COMPONENTS_KEY = exports.DISALLOW_MULTIPLE_COMPONENT_KEY = exports.REQUIRED_COMPONENTS_KEY = void 0;
@@ -17853,7 +17865,7 @@ var Input_1 = require("./Input");
 var RasterizationPipeline_1 = require("../Renderer/RasterizationPipeline");
 var MainScene_1 = require("../Scene/MainScene");
 var SceneManager_1 = require("../Scene/SceneManager");
-var Logger_1 = require("../Utils/Logger");
+var Debug_1 = require("../Utils/Debug");
 var Time_1 = require("./Time");
 var TweenManager_1 = require("./TweenManager");
 var PhysicsEngine_1 = require("../Physics/PhysicsEngine");
@@ -17884,7 +17896,7 @@ var Engine = /** @class */ (function () {
         Input_1.Input.initialize();
     };
     Engine.Loop = function (time) {
-        Logger_1.Logger.log(Math.floor(1 / Time_1.Time.deltaTime).toString());
+        Debug_1.Debug.Log(Math.floor(1 / Time_1.Time.deltaTime).toString());
         // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）
         var shouldExecuteFrame = Time_1.Time.updateFrame();
         // if (!shouldExecuteFrame) {
@@ -17901,7 +17913,7 @@ var Engine = /** @class */ (function () {
         // 5. 渲染
         Engine.Render();
         // 6. 屏幕输出日志
-        Logger_1.Logger.printLogs();
+        Debug_1.Debug.PrintLogs();
     };
     Engine.Update = function () {
         var _a;
@@ -17935,7 +17947,7 @@ var EngineConfig = /** @class */ (function () {
 }());
 exports.EngineConfig = EngineConfig;
 
-},{"../Physics/PhysicsEngine":30,"../Renderer/RasterizationPipeline":32,"../Scene/MainScene":33,"../Scene/SceneManager":35,"../Utils/Logger":38,"./Input":16,"./Time":17,"./TweenManager":19}],15:[function(require,module,exports){
+},{"../Physics/PhysicsEngine":32,"../Renderer/RasterizationPipeline":34,"../Scene/MainScene":35,"../Scene/SceneManager":37,"../Utils/Debug":39,"./Input":16,"./Time":17,"./TweenManager":19}],15:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -18486,7 +18498,7 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":27}],17:[function(require,module,exports){
+},{"../Math/Vector2":29}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Time = void 0;
@@ -18862,7 +18874,7 @@ var Transform = /** @class */ (function () {
 }());
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":24,"../Math/Quaternion":25,"../Math/Vector3":28,"../Math/Vector4":29}],19:[function(require,module,exports){
+},{"../Math/Matrix4x4":25,"../Math/Quaternion":26,"../Math/Vector3":30,"../Math/Vector4":31}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TweenManager = void 0;
@@ -18917,6 +18929,194 @@ exports.UObject = UObject;
 },{}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BVHTree = void 0;
+var Vector3_1 = require("../Math/Vector3");
+var Bounds_1 = require("./Bounds");
+// BVH节点类
+var BVHNode = /** @class */ (function () {
+    function BVHNode(bounds) {
+        this.gameObject = null;
+        this.left = null;
+        this.right = null;
+        this.isLeaf = false;
+        this.bounds = bounds;
+    }
+    return BVHNode;
+}());
+// BVH树类
+var BVHTree = /** @class */ (function () {
+    function BVHTree() {
+        this.root = null;
+        this.maxObjectsPerNode = 8; // 每个节点最大对象数量
+        this.maxDepth = 16; // 最大深度
+    }
+    /**
+     * 构建BVH树
+     */
+    BVHTree.prototype.build = function (sceneObjects) {
+        if (sceneObjects.length === 0) {
+            this.root = null;
+            return;
+        }
+        // 计算所有对象的包围盒
+        var boundsList = [];
+        for (var _i = 0, sceneObjects_1 = sceneObjects; _i < sceneObjects_1.length; _i++) {
+            var obj = sceneObjects_1[_i];
+            var bounds = this.calculateObjectBounds(obj);
+            if (bounds) {
+                boundsList.push(bounds);
+            }
+        }
+        // 构建BVH树
+        this.root = this.buildRecursive(boundsList, sceneObjects, 0);
+    };
+    /**
+     * 递归构建BVH节点
+     */
+    BVHTree.prototype.buildRecursive = function (boundsList, objects, depth) {
+        // 终止条件：对象数量少或达到最大深度
+        if (objects.length <= this.maxObjectsPerNode || depth >= this.maxDepth) {
+            var node_1 = new BVHNode(this.calculateCombinedBounds(boundsList));
+            node_1.gameObject = objects.length === 1 ? objects[0] : null;
+            node_1.isLeaf = true;
+            return node_1;
+        }
+        // 选择分割轴（选择方差最大的轴）
+        var axis = this.selectSplitAxis(boundsList);
+        // 按选中轴排序对象
+        var sorted = this.sortObjectsByAxis(objects, boundsList, axis);
+        // 分割点（中位数分割）
+        var mid = Math.floor(objects.length / 2);
+        var leftBounds = boundsList.slice(0, mid);
+        var rightBounds = boundsList.slice(mid);
+        var leftObjects = objects.slice(0, mid);
+        var rightObjects = objects.slice(mid);
+        // 创建内部节点
+        var node = new BVHNode(this.calculateCombinedBounds(boundsList));
+        node.left = this.buildRecursive(leftBounds, leftObjects, depth + 1);
+        node.right = this.buildRecursive(rightBounds, rightObjects, depth + 1);
+        node.isLeaf = false;
+        return node;
+    };
+    /**
+     * 射线检测 - 找到所有相交对象
+     */
+    BVHTree.prototype.raycast = function (rayOrigin, rayDirection, maxDistance) {
+        if (maxDistance === void 0) { maxDistance = Infinity; }
+        var results = [];
+        if (this.root) {
+            this.raycastRecursive(this.root, rayOrigin, rayDirection, maxDistance, results);
+        }
+        return results;
+    };
+    /**
+     * 递归射线检测
+     */
+    BVHTree.prototype.raycastRecursive = function (node, rayOrigin, rayDirection, maxDistance, results) {
+        if (!node.bounds.intersectsRay(rayOrigin, rayDirection, maxDistance)) {
+            return;
+        }
+        if (node.isLeaf) {
+            if (node.gameObject) {
+                results.push(node.gameObject);
+            }
+            return;
+        }
+        if (node.left) {
+            this.raycastRecursive(node.left, rayOrigin, rayDirection, maxDistance, results);
+        }
+        if (node.right) {
+            this.raycastRecursive(node.right, rayOrigin, rayDirection, maxDistance, results);
+        }
+    };
+    /**
+     * 计算对象包围盒
+     */
+    BVHTree.prototype.calculateObjectBounds = function (obj) {
+        // 这里需要实现具体的包围盒计算逻辑
+        // 可以根据对象的变换和渲染组件来计算实际包围盒
+        var transform = obj.transform;
+        if (!transform)
+            return null;
+        var position = transform.worldPosition;
+        var scale = transform.worldScale;
+        // 简单实现：假设每个对象都是单位立方体，根据变换缩放和平移
+        var halfSize = new Vector3_1.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z);
+        return new Bounds_1.Bounds(position.subtract(halfSize), position.add(halfSize));
+    };
+    /**
+     * 计算多个包围盒的合并包围盒
+     */
+    BVHTree.prototype.calculateCombinedBounds = function (boundsList) {
+        if (boundsList.length === 0) {
+            return new Bounds_1.Bounds(new Vector3_1.Vector3(0, 0, 0), new Vector3_1.Vector3(0, 0, 0));
+        }
+        var min = boundsList[0].min.clone();
+        var max = boundsList[0].max.clone();
+        for (var i = 1; i < boundsList.length; i++) {
+            min = Vector3_1.Vector3.min(min, boundsList[i].min);
+            max = Vector3_1.Vector3.max(max, boundsList[i].max);
+        }
+        return new Bounds_1.Bounds(min, max);
+    };
+    /**
+     * 选择最佳分割轴
+     */
+    BVHTree.prototype.selectSplitAxis = function (boundsList) {
+        // 计算每个轴的方差，选择方差最大的轴
+        var variances = this.calculateAxisVariances(boundsList);
+        var bestAxis = 0;
+        var maxVariance = variances[0];
+        for (var i = 1; i < 3; i++) {
+            if (variances[i] > maxVariance) {
+                maxVariance = variances[i];
+                bestAxis = i;
+            }
+        }
+        return bestAxis;
+    };
+    /**
+     * 计算各轴方差
+     */
+    BVHTree.prototype.calculateAxisVariances = function (boundsList) {
+        var centers = [];
+        for (var _i = 0, boundsList_1 = boundsList; _i < boundsList_1.length; _i++) {
+            var bounds = boundsList_1[_i];
+            centers.push(bounds.center);
+        }
+        var variances = [0, 0, 0];
+        var _loop_1 = function (axis) {
+            var mean = centers.reduce(function (sum, center) { return sum + center.getComponent(axis); }, 0) / centers.length;
+            variances[axis] = centers.reduce(function (sum, center) {
+                var diff = center.getComponent(axis) - mean;
+                return sum + diff * diff;
+            }, 0) / centers.length;
+        };
+        for (var axis = 0; axis < 3; axis++) {
+            _loop_1(axis);
+        }
+        return variances;
+    };
+    /**
+     * 按指定轴排序对象
+     */
+    BVHTree.prototype.sortObjectsByAxis = function (objects, boundsList, axis) {
+        var sortedIndices = boundsList
+            .map(function (bounds, index) { return ({
+            index: index,
+            center: bounds.center.getComponent(axis)
+        }); })
+            .sort(function (a, b) { return a.center - b.center; })
+            .map(function (item) { return item.index; });
+        return sortedIndices.map(function (index) { return objects[index]; });
+    };
+    return BVHTree;
+}());
+exports.BVHTree = BVHTree;
+
+},{"../Math/Vector3":30,"./Bounds":22}],22:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
 var Vector3_1 = require("./Vector3");
 /**
@@ -18956,6 +19156,38 @@ var Bounds = /** @class */ (function () {
         this.vertices[6] = new Vector3_1.Vector3(this.max.x, this.max.y, this.max.z); // 右上前
         this.vertices[7] = new Vector3_1.Vector3(this.min.x, this.max.y, this.max.z); // 左上前
     }
+    /**
+     * 射线与包围盒相交检测
+     */
+    Bounds.prototype.intersectsRay = function (rayOrigin, rayDirection, maxDistance) {
+        var _a;
+        // 使用slab方法进行射线与AABB相交检测
+        var tmin = 0;
+        var tmax = maxDistance;
+        for (var i = 0; i < 3; i++) {
+            var invD = 1.0 / rayDirection.getComponent(i);
+            var t0 = (this.min.getComponent(i) - rayOrigin.getComponent(i)) * invD;
+            var t1 = (this.max.getComponent(i) - rayOrigin.getComponent(i)) * invD;
+            if (invD < 0) {
+                _a = [t1, t0], t0 = _a[0], t1 = _a[1];
+            }
+            tmin = Math.max(tmin, t0);
+            tmax = Math.min(tmax, t1);
+            if (tmax <= tmin) {
+                return false;
+            }
+        }
+        return true;
+    };
+    /**
+     * 计算射线与包围盒的相交距离
+     */
+    Bounds.prototype.rayIntersectDistance = function (rayOrigin, rayDirection) {
+        // 简化的相交距离计算
+        var center = this.center;
+        var toCenter = center.subtract(rayOrigin);
+        return toCenter.dot(rayDirection);
+    };
     Bounds.fromPoints = function (points) {
         if (points.length === 0)
             return new Bounds();
@@ -19037,7 +19269,7 @@ var Sphere = /** @class */ (function () {
     return Sphere;
 }());
 
-},{"./Vector3":28}],22:[function(require,module,exports){
+},{"./Vector3":30}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = exports.BlendMode = void 0;
@@ -19156,11 +19388,10 @@ var Color = /** @class */ (function () {
 }());
 exports.Color = Color;
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.interpolateOverTriangle = interpolateOverTriangle;
-exports.test = test;
 var Color_1 = require("./Color");
 var Vector2_1 = require("./Vector2");
 var Vector3_1 = require("./Vector3");
@@ -19223,10 +19454,13 @@ function interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2) {
                 // 例如，如果 T 是 number: interpolatedValue = alpha * v0.attr + beta * v1.attr + gamma * v2.attr;
                 // 如果 T 是数组，需要每个分量分别计算。
                 var interpolatedAttrs = interpolateAttributes(attrs0, attrs1, attrs2, alpha, beta, gamma);
+                // 6. 深度值，需要单独额外插值计算
+                var z = interpolateNumber(v0.z, v1.z, v2.z, alpha, beta, gamma);
                 // 添加到片段列表
                 fragments.push({
                     x: x,
                     y: y,
+                    z: z,
                     attributes: interpolatedAttrs
                 });
             }
@@ -19348,45 +19582,8 @@ function interpolateMatrix4x4(a, b, c, w, u, v) {
     }
     return result;
 }
-function test(DrawPixel) {
-    // 定义三个顶点的屏幕坐标
-    var v0 = new Vector2_1.Vector2(100, 100);
-    var v1 = new Vector2_1.Vector2(200, 150);
-    var v2 = new Vector2_1.Vector2(150, 200);
-    // 每个顶点可以有多个不同类型的属性
-    var attrs0 = {
-        color: new Color_1.Color(255, 0, 0),
-        texCoord: new Vector2_1.Vector2(0, 0),
-        intensity: 1.0,
-        transform: Matrix4x4_1.Matrix4x4.identity
-    };
-    var attrs1 = {
-        color: new Color_1.Color(0, 255, 0),
-        texCoord: new Vector2_1.Vector2(1, 0),
-        intensity: 0.5,
-        transform: new Matrix4x4_1.Matrix4x4().translate(new Vector3_1.Vector3(1, 0, 0))
-    };
-    var attrs2 = {
-        color: new Color_1.Color(0, 0, 255),
-        texCoord: new Vector2_1.Vector2(0, 1),
-        intensity: 0.0,
-        transform: new Matrix4x4_1.Matrix4x4().translate(new Vector3_1.Vector3(0, 1, 0))
-    };
-    // 栅格化三角形
-    var fragments = interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2);
-    // 输出部分结果
-    console.log("\u5171\u8BA1\u7B97\u4E86 ".concat(fragments.length, " \u4E2A\u50CF\u7D20\u70B9\u7684\u63D2\u503C\u989C\u8272\u3002"));
-    for (var i = 0; i < fragments.length; i++) {
-        var pixel = [fragments[i].x, fragments[i].y];
-        var color = fragments[i].attributes.color;
-        color.r *= fragments[i].attributes.intensity;
-        color.g *= fragments[i].attributes.intensity;
-        color.b *= fragments[i].attributes.intensity;
-        DrawPixel(pixel[0], pixel[1], color.ToUint32());
-    }
-}
 
-},{"./Color":22,"./Matrix4x4":24,"./Vector2":27,"./Vector3":28,"./Vector4":29}],24:[function(require,module,exports){
+},{"./Color":23,"./Matrix4x4":25,"./Vector2":29,"./Vector3":30,"./Vector4":31}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -19931,7 +20128,7 @@ var Matrix4x4 = /** @class */ (function () {
 }());
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":25,"./Vector3":28,"./Vector4":29}],25:[function(require,module,exports){
+},{"./Quaternion":26,"./Vector3":30,"./Vector4":31}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
@@ -20068,30 +20265,153 @@ var Quaternion = /** @class */ (function () {
 }());
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":24,"./Vector3":28}],26:[function(require,module,exports){
+},{"./Matrix4x4":25,"./Vector3":30}],27:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Ray = void 0;
+var Vector3_1 = require("./Vector3"); // 假设的向量类
+var Ray = /** @class */ (function () {
+    /**
+     * 构造一条射线
+     * @param origin 射线起点
+     * @param direction 射线方向（通常应是归一化的单位向量）
+     */
+    function Ray(origin, direction) {
+        this.origin = origin.clone(); // 使用克隆避免引用问题
+        this.direction = direction.clone().normalize(); // 确保方向是单位向量
+    }
+    /**
+     * 获取射线上某一点的位置
+     * @param t 沿射线方向的参数距离
+     * @returns 射线上对应点的Vector3坐标
+     */
+    Ray.prototype.at = function (t) {
+        // 公式: point = origin + t * direction
+        return Vector3_1.Vector3.add(this.origin, Vector3_1.Vector3.multiply(this.direction, t));
+    };
+    /**
+     * 克隆当前射线
+     * @returns 一条新的Ray实例
+     */
+    Ray.prototype.clone = function () {
+        return new Ray(this.origin.clone(), this.direction.clone());
+    };
+    return Ray;
+}());
+exports.Ray = Ray;
+
+},{"./Vector3":30}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransformTools = void 0;
 var Engine_1 = require("../Core/Engine");
+var Ray_1 = require("./Ray");
+var Vector2_1 = require("./Vector2");
 var Vector3_1 = require("./Vector3");
 var Vector4_1 = require("./Vector4");
 var TransformTools = /** @class */ (function () {
     function TransformTools() {
     }
-    // 世界坐标转为屏幕坐标
-    TransformTools.WorldToScreenPos = function (pos, camera) {
+    TransformTools.ClipToNdcPos = function (clipPos) {
+        // 透视除法得到NDC坐标 (范围[-1, 1])
+        var w = clipPos.w;
+        // 避免除以0
+        if (w === 0) {
+            return Vector3_1.Vector3.ZERO;
+        }
+        var ndcX = clipPos.x / w;
+        var ndcY = clipPos.y / w;
+        var ndcZ = clipPos.z / w;
+        return new Vector3_1.Vector3(ndcX, ndcY, ndcZ);
+    };
+    TransformTools.NdcToViewportPos = function (ndcPos, viewport) {
+        var startX = viewport.x;
+        var startY = viewport.y;
+        var width = viewport.z;
+        var height = viewport.w;
+        var viewPortX = startX + (ndcPos.x + 1) * 0.5 * width;
+        // 注意：屏幕坐标系原点通常在左上角，Y轴向下
+        var viewPortY = startY + (1 - ndcPos.y) * 0.5 * height;
+        return new Vector2_1.Vector2(viewPortX, viewPortY);
+    };
+    TransformTools.ViewportToScreenPos = function (vp) {
+        var screenX = vp.x * Engine_1.EngineConfig.canvasWidth;
+        var screenY = vp.y * Engine_1.EngineConfig.canvasHeight;
+        return new Vector2_1.Vector2(screenX, screenY);
+    };
+    TransformTools.WorldToClipPos = function (pos, camera) {
         var viewMatrix = camera.getViewMatrix();
         var projectionMatrix = camera.getProjectionMatrix();
         var vpMatrix = projectionMatrix.multiply(viewMatrix);
         var clipPos = vpMatrix.multiplyVector4(new Vector4_1.Vector4(pos, 1));
-        var w = clipPos.w;
-        var ndcX = clipPos.x / w;
-        var ndcY = clipPos.y / w;
-        var ndcZ = clipPos.z / w;
-        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
-        var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-        var screenZ = (ndcZ + 1) / 2;
-        return { x: screenX, y: screenY, z: screenZ };
+        return clipPos;
+    };
+    // 世界坐标转为屏幕坐标
+    TransformTools.WorldToScreenPos = function (pos, camera) {
+        var clipPos = this.WorldToClipPos(pos, camera);
+        var ndc = this.ClipToNdcPos(clipPos);
+        var vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        var screen = this.ViewportToScreenPos(vp);
+        // 深度值：将NDC的z从[-1, 1]映射到[0, 1]的范围，常用于深度缓冲
+        var depth = (ndc.z + 1) / 2;
+        return { screen: screen, depth: depth };
+    };
+    // 世界坐标到视口坐标
+    TransformTools.WorldToViewportPos = function (worldPos, camera) {
+        var clipPos = this.WorldToClipPos(worldPos, camera);
+        var ndc = this.ClipToNdcPos(clipPos);
+        var vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        return vp;
+    };
+    // 视口坐标转换
+    TransformTools.ScreenToViewportPos = function (screenPos) {
+        return new Vector2_1.Vector2(screenPos.x / Engine_1.EngineConfig.canvasWidth, screenPos.y / Engine_1.EngineConfig.canvasHeight);
+    };
+    // 屏幕坐标转为世界坐标
+    TransformTools.ScreenToWorldPos = function (screenPos, camera, depth) {
+        if (depth === void 0) { depth = 1.0; }
+        // 1. 将屏幕坐标转换为NDC坐标（-1到1范围）
+        var ndcX = (screenPos.x / Engine_1.EngineConfig.canvasWidth) * 2 - 1;
+        var ndcY = 1 - (screenPos.y / Engine_1.EngineConfig.canvasHeight) * 2; // Y轴需要翻转
+        // 2. 创建齐次裁剪空间坐标
+        var clipPos = new Vector4_1.Vector4(ndcX, ndcY, depth, 1.0);
+        // 3. 获取视图投影矩阵的逆矩阵
+        var viewMatrix = camera.getViewMatrix();
+        var projectionMatrix = camera.getProjectionMatrix();
+        var vpMatrix = projectionMatrix.multiply(viewMatrix);
+        var inverseVPMatrix = vpMatrix.invert();
+        // 4. 将裁剪空间坐标转换到世界空间
+        var worldPos = inverseVPMatrix.multiplyVector4(clipPos);
+        // 5. 进行透视除法（齐次坐标归一化）
+        var w = worldPos.w;
+        if (w !== 0) {
+            return new Vector3_1.Vector3(worldPos.x / w, worldPos.y / w, worldPos.z / w);
+        }
+        return new Vector3_1.Vector3(worldPos.x, worldPos.y, worldPos.z);
+    };
+    // 使用射线法进行精确的屏幕到世界坐标转换（推荐用于3D拾取）
+    TransformTools.ScreenToWorldPosRaycast = function (screenPos, camera) {
+        // 1. 将屏幕坐标转换为NDC坐标
+        var ndcX = (screenPos.x / Engine_1.EngineConfig.canvasWidth) * 2 - 1;
+        var ndcY = 1 - (screenPos.y / Engine_1.EngineConfig.canvasHeight) * 2;
+        // 2. 创建近平面和远平面的点
+        var nearPoint = new Vector4_1.Vector4(ndcX, ndcY, -1, 1);
+        var farPoint = new Vector4_1.Vector4(ndcX, ndcY, 1, 1);
+        // 3. 获取视图投影矩阵的逆矩阵
+        var viewMatrix = camera.getViewMatrix();
+        var projectionMatrix = camera.getProjectionMatrix();
+        var vpMatrix = projectionMatrix.multiply(viewMatrix);
+        var inverseVPMatrix = vpMatrix.invert();
+        // 4. 转换到世界空间
+        var worldNear = inverseVPMatrix.multiplyVector4(nearPoint);
+        var worldFar = inverseVPMatrix.multiplyVector4(farPoint);
+        // 5. 进行透视除法
+        var nearWorld = new Vector3_1.Vector3(worldNear.x / worldNear.w, worldNear.y / worldNear.w, worldNear.z / worldNear.w);
+        var farWorld = new Vector3_1.Vector3(worldFar.x / worldFar.w, worldFar.y / worldFar.w, worldFar.z / worldFar.w);
+        // 6. 创建射线
+        var rayDirection = farWorld.subtract(nearWorld).normalize();
+        var rayOrigin = nearWorld;
+        return new Ray_1.Ray(rayOrigin, rayDirection);
     };
     // 模型坐标转为裁剪坐标
     TransformTools.ModelToClipPos = function (vertex, transform, camera) {
@@ -20109,39 +20429,14 @@ var TransformTools = /** @class */ (function () {
         // 要把Vec3转为齐次坐标点，即w=1
         return mvpMatrix.multiplyVector4(new Vector4_1.Vector4(vertex, 1));
     };
-    // 裁剪坐标转为屏幕坐标
-    TransformTools.ClipToScreenPos = function (vertex) {
-        // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
-        var w = vertex.w;
-        var ndcX = vertex.x / w;
-        var ndcY = vertex.y / w;
-        var ndcZ = vertex.z / w;
-        // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
-        // 将 NDC 转换为屏幕像素坐标：
-        // X 轴：screenX = (xNDC + 1) * 屏幕宽度 / 2
-        // Y 轴：screenY = (1 - yNDC) * 屏幕高度 / 2（注意 Y 轴翻转，因屏幕坐标系 Y 向下）
-        // 将NDC的x从[-1, 1]映射到[0, screenWidth]
-        var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
-        // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-        var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-        // 将NDC的z从[-1, 1]映射到[0, 1]的深度值
-        // 方法1: 保留透视校正的深度
-        var screenZ = (ndcZ + 1) / 2;
-        // 方法2: 转换为线性深度（与实际距离成正比）
-        /*
-            在透视投影中，NDC 的 z 值与实际深度（到相机的距离）是非线性关系：
-            近处物体的 z 值变化非常快（精度高）
-            远处物体的 z 值变化缓慢（精度低，容易出现深度冲突）
-            这是因为透视投影矩阵会将深度值进行非线性压缩，导致远处的深度精度不足。
-        */
-        // const linearDepth = (2 * near * far) / (far + near - ndcZ * (far - near));
-        // const screenZ = linearDepth / far; // 归一化到 [0, 1]
-        return new Vector3_1.Vector3(screenX, screenY, screenZ);
-    };
     // 模型坐标转为屏幕坐标
     TransformTools.ModelToScreenPos = function (vertex, transform, camera) {
         var clipPos = this.ModelToClipPos(vertex, transform, camera);
-        return this.ClipToScreenPos(clipPos);
+        var ndc = this.ClipToNdcPos(clipPos);
+        var vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        var screen = this.ViewportToScreenPos(vp);
+        var depth = (ndc.z + 1) / 2;
+        return { screen: screen, depth: depth };
     };
     // 模型法线转为世界法线
     TransformTools.ModelToWorldNormal = function (normal, transform) {
@@ -20186,7 +20481,7 @@ var TransformTools = /** @class */ (function () {
 }());
 exports.TransformTools = TransformTools;
 
-},{"../Core/Engine":14,"./Vector3":28,"./Vector4":29}],27:[function(require,module,exports){
+},{"../Core/Engine":14,"./Ray":27,"./Vector2":29,"./Vector3":30,"./Vector4":31}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -20210,6 +20505,16 @@ var Vector2 = /** @class */ (function () {
             this.x = this.y = 0;
         }
     }
+    Object.defineProperty(Vector2.prototype, "u", {
+        get: function () { return this.x; },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Vector2.prototype, "v", {
+        get: function () { return this.y; },
+        enumerable: false,
+        configurable: true
+    });
     Object.defineProperty(Vector2.prototype, "width", {
         get: function () { return this.x; },
         enumerable: false,
@@ -20367,7 +20672,7 @@ var Vector2 = /** @class */ (function () {
 }());
 exports.Vector2 = Vector2;
 
-},{"./Vector3":28,"./Vector4":29}],28:[function(require,module,exports){
+},{"./Vector3":30,"./Vector4":31}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
@@ -20467,6 +20772,40 @@ var Vector3 = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    /**
+     * 获取向量的指定分量
+     * @param index 分量索引 (0=x, 1=y, 2=z)
+     * @returns 对应分量的值
+     */
+    Vector3.prototype.getComponent = function (index) {
+        switch (index) {
+            case 0: return this.x;
+            case 1: return this.y;
+            case 2: return this.z;
+            default:
+                throw new Error("Invalid component index: ".concat(index, ". Must be 0, 1, or 2."));
+        }
+    };
+    /**
+     * 设置向量的指定分量
+     * @param index 分量索引 (0=x, 1=y, 2=z)
+     * @param value 要设置的值
+     */
+    Vector3.prototype.setComponent = function (index, value) {
+        switch (index) {
+            case 0:
+                this.x = value;
+                break;
+            case 1:
+                this.y = value;
+                break;
+            case 2:
+                this.z = value;
+                break;
+            default:
+                throw new Error("Invalid component index: ".concat(index, ". Must be 0, 1, or 2."));
+        }
+    };
     /*
      ADDITIONAL FUNCTIONS
      */
@@ -20522,6 +20861,24 @@ var Vector3 = /** @class */ (function () {
     };
     Vector3.angle = function (v1, v2) {
         return Math.acos(Vector3.dot(v1, v2) / (v1.magnitude * v2.magnitude));
+    };
+    /**
+     * 返回两个向量中每对分量的较小值组成的新向量[1,2](@ref)
+     * @param a 第一个向量
+     * @param b 第二个向量
+     * @returns 由各分量较小值组成的新向量
+     */
+    Vector3.min = function (a, b) {
+        return new Vector3(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.min(a.z, b.z));
+    };
+    /**
+     * 返回两个向量中每对分量的较大值组成的新向量[3,4](@ref)
+     * @param a 第一个向量
+     * @param b 第二个向量
+     * @returns 由各分量较大值组成的新向量
+     */
+    Vector3.max = function (a, b) {
+        return new Vector3(Math.max(a.x, b.x), Math.max(a.y, b.y), Math.max(a.z, b.z));
     };
     Object.defineProperty(Vector3, "ZERO", {
         /*
@@ -20586,7 +20943,7 @@ var Vector3 = /** @class */ (function () {
 }());
 exports.Vector3 = Vector3;
 
-},{"./Vector2":27,"./Vector4":29}],29:[function(require,module,exports){
+},{"./Vector2":29,"./Vector4":31}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
@@ -20764,7 +21121,7 @@ var Vector4 = /** @class */ (function () {
 }());
 exports.Vector4 = Vector4;
 
-},{"./Vector2":27,"./Vector3":28}],30:[function(require,module,exports){
+},{"./Vector2":29,"./Vector3":30}],32:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -20833,7 +21190,7 @@ var PhysicsEngine = /** @class */ (function () {
 }());
 exports.PhysicsEngine = PhysicsEngine;
 
-},{"../Core/Time":17,"cannon":2}],31:[function(require,module,exports){
+},{"../Core/Time":17,"cannon":2}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Line = exports.SubMesh = exports.Mesh = void 0;
@@ -20889,7 +21246,7 @@ var Line = /** @class */ (function () {
 }());
 exports.Line = Line;
 
-},{"../Math/Bounds":21}],32:[function(require,module,exports){
+},{"../Math/Bounds":22}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -20901,8 +21258,7 @@ var Camera_1 = require("../Component/Camera");
 var Engine_1 = require("../Core/Engine");
 var Lerp_1 = require("../Math/Lerp");
 var TransformTools_1 = require("../Math/TransformTools");
-var Logger_1 = require("../Utils/Logger");
-var Vector2_1 = require("../Math/Vector2");
+var Debug_1 = require("../Utils/Debug");
 var DrawMode;
 (function (DrawMode) {
     DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
@@ -20913,7 +21269,7 @@ var RasterizationPipeline = /** @class */ (function () {
     function RasterizationPipeline(frameBuffer) {
         this.drawMode = DrawMode.Shader;
         this.frameBuffer = frameBuffer;
-        this.depthBuffer = new Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
+        this.depthBuffer = new Float32Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
         this.overdrawBuffer = new Uint32Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
     }
     RasterizationPipeline.prototype.Render = function () {
@@ -20933,21 +21289,54 @@ var RasterizationPipeline = /** @class */ (function () {
                 for (var _i = 0, renders_1 = renders; _i < renders_1.length; _i++) {
                     var render = renders_1[_i];
                     this.DrawObject(render);
-                    Logger_1.Logger.log(render.gameObject.name);
+                    Debug_1.Debug.Log(render.gameObject.name);
                 }
             }
+            // 调试信息
+            this.DebugDraw();
         }
     };
     //#region 基础绘制接口
     RasterizationPipeline.prototype.Clear = function (camera) {
         var clearFlags = camera.clearFlags;
+        var viewport = camera.viewPort;
+        var backgroundColor = camera.backGroundColor;
+        // 1. 计算视口在屏幕缓冲区中的像素范围
+        var viewportPixelX = Math.floor(viewport.x * Engine_1.EngineConfig.canvasWidth);
+        var viewportPixelY = Math.floor(viewport.y * Engine_1.EngineConfig.canvasHeight);
+        var viewportPixelWidth = Math.floor(viewport.z * Engine_1.EngineConfig.canvasWidth);
+        var viewportPixelHeight = Math.floor(viewport.w * Engine_1.EngineConfig.canvasHeight);
+        // 2. 根据清除标志，清除视口对应的区域
         if (clearFlags & Camera_1.CameraClearFlags.Color) {
-            this.frameBuffer.fill(camera.backGroundColor);
+            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor);
         }
         if (clearFlags & Camera_1.CameraClearFlags.Depth) {
-            this.depthBuffer.fill(1);
+            this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
         }
-        this.overdrawBuffer.fill(0);
+        this.clearViewportRegion(this.overdrawBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
+    };
+    /**
+     * 清除缓冲区中指定矩形区域的辅助方法
+     * @param buffer 目标缓冲区 (Uint32Array 或 Float32Array 等)
+     * @param x 区域起始X坐标 (像素)
+     * @param y 区域起始Y坐标 (像素)
+     * @param width 区域宽度 (像素)
+     * @param height 区域高度 (像素)
+     * @param value 要填充的值
+     */
+    RasterizationPipeline.prototype.clearViewportRegion = function (buffer, x, y, width, height, value) {
+        // 如果是满屏幕，则快速填充
+        if (x == 0 && y == 0 && width == Engine_1.EngineConfig.canvasWidth && height == Engine_1.EngineConfig.canvasHeight) {
+            buffer.fill(value);
+            return;
+        }
+        var canvasWidth = Engine_1.EngineConfig.canvasWidth;
+        for (var row = y; row < y + height; row++) {
+            var startIndex = row * canvasWidth + x;
+            var endIndex = startIndex + width;
+            // 使用 subarray 和 fill 来填充一行中的连续区域，比逐个像素设置更快
+            buffer.subarray(startIndex, endIndex).fill(value);
+        }
     };
     RasterizationPipeline.prototype.DrawPixel = function (x, y, color, countOverdraw, blendMode) {
         if (countOverdraw === void 0) { countOverdraw = false; }
@@ -21231,7 +21620,8 @@ var RasterizationPipeline = /** @class */ (function () {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (var i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = TransformTools_1.TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
+            var out = TransformTools_1.TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
+            outVertices[i] = new Vector3_1.Vector3(out.screen.x, out.screen.y, out.depth);
         }
         return outVertices;
     };
@@ -21293,26 +21683,20 @@ var RasterizationPipeline = /** @class */ (function () {
             var p1_uv = mesh.uv[triangles[i]];
             var p2_uv = mesh.uv[triangles[i + 1]];
             var p3_uv = mesh.uv[triangles[i + 2]];
-            var p1_color = new Color_1.Color(p1_uv.x * 255, p1_uv.y * 255, 0);
-            var p2_color = new Color_1.Color(p2_uv.x * 255, p2_uv.y * 255, 0);
-            var p3_color = new Color_1.Color(p3_uv.x * 255, p3_uv.y * 255, 0);
-            var v1 = new Vector2_1.Vector2(p1.x, p1.y);
-            var v2 = new Vector2_1.Vector2(p2.x, p2.y);
-            var v3 = new Vector2_1.Vector2(p3.x, p3.y);
+            var p1_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+            var p2_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+            var p3_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
             var attrs1 = {
-                color: p1_color,
-                texCoord: p1_uv,
-                z: p1.z
+                uv: p1_uv,
+                normal: p1_normal,
             };
             var attrs2 = {
-                color: p2_color,
-                texCoord: p2_uv,
-                z: p2.z
+                uv: p2_uv,
+                normal: p2_normal,
             };
             var attrs3 = {
-                color: p3_color,
-                texCoord: p3_uv,
-                z: p3.z
+                uv: p3_uv,
+                normal: p3_normal,
             };
             if (this.drawMode & DrawMode.Wireframe) {
                 this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
@@ -21322,33 +21706,14 @@ var RasterizationPipeline = /** @class */ (function () {
                 this.DrawPixel(p2.x, p2.y, Color_1.Color.WHITE);
                 this.DrawPixel(p3.x, p3.y, Color_1.Color.WHITE);
             }
-            // if (this.drawMode & DrawMode.Normal) {
-            //     const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-            //     const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-            //     const p3_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
-            //     // 将法线分量从 [-1, 1] 映射到 [0, 255]
-            //     let r = Math.floor((p1_normal.x + 1) * 0.5 * 255);
-            //     let g = Math.floor((p1_normal.y + 1) * 0.5 * 255);
-            //     let b = Math.floor((p1_normal.z + 1) * 0.5 * 255);
-            //     const p1_color = new Color(r, g, b).ToUint32();
-            //     r = Math.floor((p2_normal.x + 1) * 0.5 * 255);
-            //     g = Math.floor((p2_normal.y + 1) * 0.5 * 255);
-            //     b = Math.floor((p2_normal.z + 1) * 0.5 * 255);
-            //     const p2_color = new Color(r, g, b).ToUint32();
-            //     r = Math.floor((p3_normal.x + 1) * 0.5 * 255);
-            //     g = Math.floor((p3_normal.y + 1) * 0.5 * 255);
-            //     b = Math.floor((p3_normal.z + 1) * 0.5 * 255);
-            //     const p3_color = new Color(r, g, b).ToUint32();
-            //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
-            // }
             if (this.drawMode & DrawMode.Shader) {
                 // 渲染管线7.光栅化
-                var fragments = (0, Lerp_1.interpolateOverTriangle)(v1, v2, v3, attrs1, attrs2, attrs3);
+                var fragments = (0, Lerp_1.interpolateOverTriangle)(p1, p2, p3, attrs1, attrs2, attrs3);
                 for (var i_1 = 0; i_1 < fragments.length; i_1++) {
                     var fragment = fragments[i_1];
-                    var x = Math.round(fragment.x);
-                    var y = Math.round(fragment.y);
-                    var z = fragment.attributes.z;
+                    var x = fragment.x;
+                    var y = fragment.y;
+                    var z = fragment.z;
                     // 检查坐标是否在屏幕范围内
                     if (x < 0 || x >= Engine_1.EngineConfig.canvasWidth ||
                         y < 0 || y >= Engine_1.EngineConfig.canvasHeight) {
@@ -21361,15 +21726,25 @@ var RasterizationPipeline = /** @class */ (function () {
                     // 深度测试：只有当前像素更近（z值更小）时才绘制
                     if (z < currentDepth) {
                         this.depthBuffer[index] = z;
-                        var color = fragment.attributes.color;
+                        // uv
+                        var uv = fragment.attributes.uv;
+                        var color = new Color_1.Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
+                        // nroaml
+                        // const normal = fragment.attributes.normal as Vector3;
+                        // const color = new Color(Math.floor((normal.x + 1) * 0.5 * 255), Math.floor((normal.y + 1) * 0.5 * 255), Math.floor((normal.z + 1) * 0.5 * 255)).ToUint32();
                         // 渲染管线9.绘制像素到帧缓冲
-                        this.DrawPixel(x, y, color.ToUint32(), true);
+                        this.DrawPixel(x, y, color, true);
                     }
                 }
             }
         }
+    };
+    //#endregion
+    //#region 工具函数
+    RasterizationPipeline.prototype.DebugDraw = function () {
         // 绘制包围盒
         // this.DrawBounds(mesh, renderer);
+        var _this = this;
         // 调试：绘制面法线
         // this.DrawFaceNormal(mesh, renderer);
         // 绘制深度纹理
@@ -21378,15 +21753,18 @@ var RasterizationPipeline = /** @class */ (function () {
         // this.DrawOverdraw();
         // 绘制物理调试信息
         // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
+        // 绘制调试线
+        var lines = Debug_1.Debug.GetDebugLines();
+        lines.forEach(function (line) {
+            _this.DrawLine(line.start.x, line.start.y, line.end.x, line.end.y, line.color);
+        });
     };
-    //#endregion
-    //#region 工具函数
     RasterizationPipeline.prototype.DrawFaceNormal = function (mesh, renderer) {
         for (var i = 0; i < mesh.faceNormals.length; i++) {
             var normal = mesh.faceNormals[i];
             var center = mesh.faceCenters[i];
-            var start = TransformTools_1.TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera);
-            var end = TransformTools_1.TransformTools.ModelToScreenPos(Vector3_1.Vector3.add(center, normal), renderer.transform, this.currentCamera);
+            var start = TransformTools_1.TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
+            var end = TransformTools_1.TransformTools.ModelToScreenPos(Vector3_1.Vector3.add(center, normal), renderer.transform, this.currentCamera).screen;
             this.DrawLine(start.x, start.y, end.x, end.y, Color_1.Color.RED, Color_1.Color.GREEN);
         }
     };
@@ -21428,7 +21806,7 @@ var RasterizationPipeline = /** @class */ (function () {
         var _this = this;
         // 将所有顶点转换到屏幕空间
         var screenVertices = bounds.vertices.map(function (v) {
-            return TransformTools_1.TransformTools.ModelToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform, _this.currentCamera);
+            return TransformTools_1.TransformTools.ModelToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform, _this.currentCamera).screen;
         });
         // 绘制所有边
         bounds.edges.forEach(function (_a) {
@@ -21442,7 +21820,7 @@ var RasterizationPipeline = /** @class */ (function () {
         });
         // 绘制中心点
         var center = bounds.center;
-        var screenCenter = TransformTools_1.TransformTools.ModelToScreenPos(center, transform, this.currentCamera);
+        var screenCenter = TransformTools_1.TransformTools.ModelToScreenPos(center, transform, this.currentCamera).screen;
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
             var size = 5;
@@ -21501,7 +21879,7 @@ var RasterizationPipeline = /** @class */ (function () {
 }());
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Math/Color":22,"../Math/Lerp":23,"../Math/TransformTools":26,"../Math/Vector2":27,"../Math/Vector3":28,"../Math/Vector4":29,"../Utils/Logger":38}],33:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Math/Color":23,"../Math/Lerp":24,"../Math/TransformTools":28,"../Math/Vector3":30,"../Math/Vector4":31,"../Utils/Debug":39}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
@@ -21533,8 +21911,10 @@ exports.MainScene = {
         // camera2.transform.position = new Vector3(0, 0, 5);
         // const cam2 = camera2.addComponent(Camera);
         // if (cam2) {
-        //     cam2.clearFlags = CameraClearFlags.NONE;
+        //     cam2.backGroundColor = Color.BLACK;
+        //     cam2.clearFlags = CameraClearFlags.ALL;
         //     cam2.depth = 1;
+        //     cam2.viewPort = new Vector4(0, 0, 0.3, 0.3);
         // }
         // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
         //     const obj = new GameObject("female02");
@@ -21544,35 +21924,19 @@ exports.MainScene = {
         //     scene.addGameObject(obj);
         // });
         var p_obj;
-        AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then(function (model) {
-            var obj = new GameObject_1.GameObject("panel");
-            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(2);
-            var collider = obj.addComponent(BoxCollider_1.BoxCollider);
-            var body = obj.addComponent(RigidBody_1.Rigidbody);
-            if (body)
-                body.isKinematic = true;
+        AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
+            var obj = new GameObject_1.GameObject("cube");
+            obj.transform.position = new Vector3_1.Vector3(1.3, 2, 0);
+            obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
+            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(0.5);
+            obj.addComponent(RigidBody_1.Rigidbody);
+            obj.addComponent(BoxCollider_1.BoxCollider);
+            //obj.addComponent(ObjRotate);
             var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
+            p_obj = obj;
         });
-        var _loop_1 = function (i) {
-            AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
-                var obj = new GameObject_1.GameObject("cube");
-                obj.transform.position = new Vector3_1.Vector3(1.3 - i * 0.1, 2 + i, 0);
-                obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
-                obj.transform.scale = Vector3_1.Vector3.ONE.multiply(0.5);
-                obj.addComponent(RigidBody_1.Rigidbody);
-                obj.addComponent(BoxCollider_1.BoxCollider);
-                //obj.addComponent(ObjRotate);
-                var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-                if (renderer)
-                    renderer.mesh = model;
-                p_obj = obj;
-            });
-        };
-        for (var i = 0; i < 5; i++) {
-            _loop_1(i);
-        }
         AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then(function (model) {
             var obj = new GameObject_1.GameObject("spheres");
             obj.transform.position = new Vector3_1.Vector3(0, 1.5, 1.5);
@@ -21582,6 +21946,17 @@ exports.MainScene = {
             if (renderer)
                 renderer.mesh = model;
             //obj.transform.setParent(p_obj.transform);
+        });
+        AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then(function (model) {
+            var obj = new GameObject_1.GameObject("panel");
+            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(1.5);
+            var collider = obj.addComponent(BoxCollider_1.BoxCollider);
+            var body = obj.addComponent(RigidBody_1.Rigidbody);
+            if (body)
+                body.isKinematic = true;
+            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            if (renderer)
+                renderer.mesh = model;
         });
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");
@@ -21599,15 +21974,21 @@ exports.MainScene = {
     }
 };
 
-},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/SphereCollider":12,"../Core/GameObject":15,"../Math/Quaternion":25,"../Math/Vector3":28,"../Utils/AssetLoader":36}],34:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/SphereCollider":12,"../Core/GameObject":15,"../Math/Quaternion":26,"../Math/Vector3":30,"../Utils/AssetLoader":38}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
+var Renderer_1 = require("../Component/Renderer");
 var GameObject_1 = require("../Core/GameObject");
+var BVHTree_1 = require("../Math/BVHTree");
+var TransformTools_1 = require("../Math/TransformTools");
+var Vector2_1 = require("../Math/Vector2");
 var Scene = /** @class */ (function () {
     function Scene(name) {
+        this.needsRebuild = true;
         this.name = name;
         this.rootGameObject = new GameObject_1.GameObject("root");
+        this.bvhTree = new BVHTree_1.BVHTree();
     }
     Scene.prototype.getRootGameObject = function () {
         return this.rootGameObject;
@@ -21617,12 +21998,94 @@ var Scene = /** @class */ (function () {
             this.rootGameObject.startComponents();
             this.rootGameObject.updateComponents();
         }
+        // 需要时重建BVH
+        if (this.needsRebuild) {
+            this.rebuildBVH();
+            this.needsRebuild = false;
+        }
+    };
+    /**
+     * 标记需要重建BVH
+     */
+    Scene.prototype.markDirty = function () {
+        this.needsRebuild = true;
+    };
+    /**
+     * 重建BVH树
+     */
+    Scene.prototype.rebuildBVH = function () {
+        var allObjects = this.collectAllObjects(this.rootGameObject);
+        this.bvhTree.build(allObjects);
+    };
+    /**
+     * 收集场景中所有对象
+     */
+    Scene.prototype.collectAllObjects = function (root) {
+        var objects = [];
+        this.traverseGameObjects(root, objects);
+        return objects;
+    };
+    /**
+     * 遍历游戏对象树
+     */
+    Scene.prototype.traverseGameObjects = function (node, collection) {
+        if (node.getComponent(Renderer_1.Renderer)) {
+            collection.push(node);
+        }
+        var children = node.transform.children;
+        for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
+            var child = children_1[_i];
+            this.traverseGameObjects(child.gameObject, collection);
+        }
+    };
+    /**
+     * 射线检测接口
+     */
+    Scene.prototype.raycast = function (rayOrigin, rayDirection, maxDistance) {
+        if (maxDistance === void 0) { maxDistance = Infinity; }
+        return this.bvhTree.raycast(rayOrigin, rayDirection, maxDistance);
+    };
+    /**
+     * 点击屏幕选取最前面对象
+     */
+    Scene.prototype.pickObject = function (screenX, screenY, camera) {
+        // 将屏幕坐标转换为世界空间射线
+        var ray = TransformTools_1.TransformTools.ScreenToWorldPosRaycast(new Vector2_1.Vector2(screenX, screenY), camera);
+        // 进行射线检测
+        var hitObjects = this.raycast(ray.origin, ray.direction);
+        if (hitObjects.length === 0) {
+            return null;
+        }
+        // 找到距离最近的对象
+        var closestObject = null;
+        var closestDistance = Infinity;
+        for (var _i = 0, hitObjects_1 = hitObjects; _i < hitObjects_1.length; _i++) {
+            var obj = hitObjects_1[_i];
+            var distance = this.calculateHitDistance(obj, ray.origin, ray.direction);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestObject = obj;
+            }
+        }
+        return closestObject;
+    };
+    /**
+     * 计算命中距离（需要根据具体对象形状实现）
+     */
+    Scene.prototype.calculateHitDistance = function (obj, rayOrigin, rayDirection) {
+        // 这里需要实现具体的射线与对象相交检测
+        // 可以使用对象的包围盒或更精确的网格相交检测
+        var bounds = this.bvhTree.calculateObjectBounds(obj);
+        if (bounds) {
+            return bounds.rayIntersectDistance(rayOrigin, rayDirection);
+        }
+        return Infinity;
     };
     return Scene;
 }());
 exports.Scene = Scene;
 
-},{"../Core/GameObject":15}],35:[function(require,module,exports){
+},{"../Component/Renderer":10,"../Core/GameObject":15,"../Math/BVHTree":21,"../Math/TransformTools":28,"../Math/Vector2":29}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -21672,7 +22135,7 @@ var SceneManager = /** @class */ (function () {
 }());
 exports.SceneManager = SceneManager;
 
-},{"./Scene":34}],36:[function(require,module,exports){
+},{"./Scene":36}],38:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -21788,7 +22251,79 @@ var AssetLoader = /** @class */ (function () {
 }());
 exports.AssetLoader = AssetLoader;
 
-},{"./Dictionary":37,"./ObjParser":39}],37:[function(require,module,exports){
+},{"./Dictionary":40,"./ObjParser":41}],39:[function(require,module,exports){
+"use strict";
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Debug = void 0;
+var Camera_1 = require("../Component/Camera");
+var Engine_1 = require("../Core/Engine");
+var TransformTools_1 = require("../Math/TransformTools");
+var LogType;
+(function (LogType) {
+    LogType[LogType["Info"] = 0] = "Info";
+    LogType[LogType["Warning"] = 1] = "Warning";
+    LogType[LogType["Error"] = 2] = "Error";
+})(LogType || (LogType = {}));
+var Debug = /** @class */ (function () {
+    function Debug() {
+    }
+    Debug.PrintLogs = function () {
+        for (var i = 0; i < this.logs.length; i++) {
+            var log = this.logs[i];
+            Engine_1.Engine.context.fillStyle = Debug.logColors[log.type];
+            Engine_1.Engine.context.fillText(log.message, 10, 20 + i * 15);
+        }
+        this.logs = [];
+    };
+    Debug.GetDebugLines = function () {
+        var lines = this.lines;
+        this.lines = [];
+        return lines;
+    };
+    Debug.Log = function (message, duration) {
+        this.push(message, LogType.Info, duration);
+    };
+    Debug.LogWarning = function (message, duration) {
+        this.push(message, LogType.Warning, duration);
+    };
+    Debug.LogError = function (message, duration) {
+        this.push(message, LogType.Error, duration);
+    };
+    Debug.DrawLine = function (start, end, color, duration) {
+        var line = {
+            start: start,
+            end: end,
+            color: color,
+            duration: duration !== null && duration !== void 0 ? duration : 0,
+        };
+        this.lines.push(line);
+    };
+    Debug.DrawLine3D = function (start, end, color, duration) {
+        var a = TransformTools_1.TransformTools.WorldToScreenPos(start, Camera_1.Camera.mainCamera).screen;
+        var b = TransformTools_1.TransformTools.WorldToScreenPos(end, Camera_1.Camera.mainCamera).screen;
+        this.DrawLine(a, b, color, duration);
+    };
+    Debug.push = function (message, type, duration) {
+        var log = {
+            message: message,
+            type: type,
+            duration: duration !== null && duration !== void 0 ? duration : 0,
+        };
+        this.logs.push(log);
+    };
+    Debug.logs = [];
+    Debug.lines = [];
+    Debug.logColors = (_a = {},
+        _a[LogType.Info] = 'white',
+        _a[LogType.Warning] = 'orange',
+        _a[LogType.Error] = 'red',
+        _a);
+    return Debug;
+}());
+exports.Debug = Debug;
+
+},{"../Component/Camera":5,"../Core/Engine":14,"../Math/TransformTools":28}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dictionary = void 0;
@@ -21848,57 +22383,7 @@ var Dictionary = /** @class */ (function () {
 }());
 exports.Dictionary = Dictionary;
 
-},{}],38:[function(require,module,exports){
-"use strict";
-var _a;
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Logger = void 0;
-var Engine_1 = require("../Core/Engine");
-var LogType;
-(function (LogType) {
-    LogType[LogType["Info"] = 0] = "Info";
-    LogType[LogType["Warning"] = 1] = "Warning";
-    LogType[LogType["Error"] = 2] = "Error";
-})(LogType || (LogType = {}));
-var Logger = /** @class */ (function () {
-    function Logger() {
-    }
-    Logger.printLogs = function () {
-        for (var i = 0; i < this.logs.length; i++) {
-            var log = this.logs[i];
-            Engine_1.Engine.context.fillStyle = Logger.logColors[log.type];
-            Engine_1.Engine.context.fillText(log.message, 10, 20 + i * 15);
-        }
-        this.logs = [];
-    };
-    Logger.log = function (message, duration) {
-        this.push(message, LogType.Info, duration);
-    };
-    Logger.warning = function (message, duration) {
-        this.push(message, LogType.Warning, duration);
-    };
-    Logger.error = function (message, duration) {
-        this.push(message, LogType.Error, duration);
-    };
-    Logger.push = function (message, type, duration) {
-        var log = {
-            message: message,
-            type: type,
-            duration: duration !== null && duration !== void 0 ? duration : 0,
-        };
-        this.logs.push(log);
-    };
-    Logger.logs = [];
-    Logger.logColors = (_a = {},
-        _a[LogType.Info] = 'white',
-        _a[LogType.Warning] = 'orange',
-        _a[LogType.Error] = 'red',
-        _a);
-    return Logger;
-}());
-exports.Logger = Logger;
-
-},{"../Core/Engine":14}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -22172,7 +22657,7 @@ var OBJParser = /** @class */ (function () {
 }());
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":21,"../Math/Vector2":27,"../Math/Vector3":28,"../Math/Vector4":29,"../Renderer/Mesh":31}],40:[function(require,module,exports){
+},{"../Math/Bounds":22,"../Math/Vector2":29,"../Math/Vector3":30,"../Math/Vector4":31,"../Renderer/Mesh":33}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Engine_1 = require("./Core/Engine");
@@ -22190,6 +22675,6 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":14}]},{},[40])
+},{"./Core/Engine":14}]},{},[42])
 
 //# sourceMappingURL=bundle.js.map

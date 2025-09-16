@@ -6,6 +6,9 @@ export class Vector2 {
     public x: number;
     public y: number;
 
+    public get u(): number { return this.x; }
+    public get v(): number { return this.y; }
+
     public get width(): number { return this.x; }
     public get height(): number { return this.y; }
 

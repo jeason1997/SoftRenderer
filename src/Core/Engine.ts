@@ -2,7 +2,7 @@ import { Input } from "./Input";
 import { RasterizationPipeline } from "../Renderer/RasterizationPipeline";
 import { MainScene } from "../Scene/MainScene";
 import { SceneManager } from "../Scene/SceneManager";
-import { Logger } from "../Utils/Logger";
+import { Debug } from "../Utils/Debug";
 import { Time } from "./Time";
 import { TweenManager } from "./TweenManager";
 import { PhysicsEngine } from "../Physics/PhysicsEngine";
@@ -42,7 +42,7 @@ export class Engine {
     }
 
     public static Loop(time: number) {
-        Logger.log(Math.floor(1 / Time.deltaTime).toString());
+        Debug.Log(Math.floor(1 / Time.deltaTime).toString());
 
         // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）
         const shouldExecuteFrame = Time.updateFrame();
@@ -65,7 +65,7 @@ export class Engine {
         Engine.Render();
 
         // 6. 屏幕输出日志
-        Logger.printLogs();
+        Debug.PrintLogs();
     }
 
     private static Update() {

@@ -116,6 +116,36 @@ export class Vector3 {
         return Vector3.dot(this, this);
     }
 
+    /**
+     * 获取向量的指定分量
+     * @param index 分量索引 (0=x, 1=y, 2=z)
+     * @returns 对应分量的值
+     */
+    public getComponent(index: number): number {
+        switch (index) {
+            case 0: return this.x;
+            case 1: return this.y;
+            case 2: return this.z;
+            default:
+                throw new Error(`Invalid component index: ${index}. Must be 0, 1, or 2.`);
+        }
+    }
+
+    /**
+     * 设置向量的指定分量
+     * @param index 分量索引 (0=x, 1=y, 2=z)
+     * @param value 要设置的值
+     */
+    public setComponent(index: number, value: number): void {
+        switch (index) {
+            case 0: this.x = value; break;
+            case 1: this.y = value; break;
+            case 2: this.z = value; break;
+            default:
+                throw new Error(`Invalid component index: ${index}. Must be 0, 1, or 2.`);
+        }
+    }
+
     /*
      ADDITIONAL FUNCTIONS
      */
@@ -146,7 +176,7 @@ export class Vector3 {
 
     public static multiply(v: Vector3, s: number): Vector3 {
         return new Vector3(v.x * s, v.y * s, v.z * s);
-    } 
+    }
 
     public static add(v1: Vector3, v2: Vector3): Vector3 {
         return new Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
@@ -186,6 +216,34 @@ export class Vector3 {
 
     public static angle(v1: Vector3, v2: Vector3): number {
         return Math.acos(Vector3.dot(v1, v2) / (v1.magnitude * v2.magnitude));
+    }
+
+    /**
+     * 返回两个向量中每对分量的较小值组成的新向量[1,2](@ref)
+     * @param a 第一个向量
+     * @param b 第二个向量
+     * @returns 由各分量较小值组成的新向量
+     */
+    public static min(a: Vector3, b: Vector3): Vector3 {
+        return new Vector3(
+            Math.min(a.x, b.x),
+            Math.min(a.y, b.y),
+            Math.min(a.z, b.z)
+        );
+    }
+
+    /**
+     * 返回两个向量中每对分量的较大值组成的新向量[3,4](@ref)
+     * @param a 第一个向量
+     * @param b 第二个向量
+     * @returns 由各分量较大值组成的新向量
+     */
+    public static max(a: Vector3, b: Vector3): Vector3 {
+        return new Vector3(
+            Math.max(a.x, b.x),
+            Math.max(a.y, b.y),
+            Math.max(a.z, b.z)
+        );
     }
 
     /*

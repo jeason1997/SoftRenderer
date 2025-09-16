@@ -46,6 +46,44 @@ export class Bounds {
         this.vertices[7] = new Vector3(this.min.x, this.max.y, this.max.z); // 左上前
     }
 
+    /**
+     * 射线与包围盒相交检测
+     */
+    public intersectsRay(rayOrigin: Vector3, rayDirection: Vector3, maxDistance: number): boolean {
+        // 使用slab方法进行射线与AABB相交检测
+        let tmin = 0;
+        let tmax = maxDistance;
+
+        for (let i = 0; i < 3; i++) {
+            const invD = 1.0 / rayDirection.getComponent(i);
+            let t0 = (this.min.getComponent(i) - rayOrigin.getComponent(i)) * invD;
+            let t1 = (this.max.getComponent(i) - rayOrigin.getComponent(i)) * invD;
+
+            if (invD < 0) {
+                [t0, t1] = [t1, t0];
+            }
+
+            tmin = Math.max(tmin, t0);
+            tmax = Math.min(tmax, t1);
+
+            if (tmax <= tmin) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 计算射线与包围盒的相交距离
+     */
+    public rayIntersectDistance(rayOrigin: Vector3, rayDirection: Vector3): number {
+        // 简化的相交距离计算
+        const center = this.center;
+        const toCenter = center.subtract(rayOrigin);
+        return toCenter.dot(rayDirection);
+    }
+
     static fromPoints(points: Vector3[]): Bounds {
         if (points.length === 0) return new Bounds();
 

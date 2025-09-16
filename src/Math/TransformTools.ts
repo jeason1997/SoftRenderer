@@ -2,28 +2,151 @@ import { Camera } from "../Component/Camera";
 import { EngineConfig } from "../Core/Engine";
 import { Transform } from "../Core/Transform";
 import { Quaternion } from "./Quaternion";
+import { Ray } from "./Ray";
+import { Vector2 } from "./Vector2";
 import { Vector3 } from "./Vector3";
 import { Vector4 } from "./Vector4";
 
 export class TransformTools {
 
-    // 世界坐标转为屏幕坐标
-    public static WorldToScreenPos(pos: Vector3, camera: Camera): { x: number, y: number, z: number } {
+    public static ClipToNdcPos(clipPos: Vector4): Vector3 {
+        // 透视除法得到NDC坐标 (范围[-1, 1])
+        const w = clipPos.w;
+        // 避免除以0
+        if (w === 0) {
+            return Vector3.ZERO;
+        }
+        const ndcX = clipPos.x / w;
+        const ndcY = clipPos.y / w;
+        const ndcZ = clipPos.z / w;
+        return new Vector3(ndcX, ndcY, ndcZ);
+    }
+
+    public static NdcToViewportPos(ndcPos: Vector3, viewport: Vector4): Vector2 {
+        const startX = viewport.x;
+        const startY = viewport.y;
+        const width = viewport.z;
+        const height = viewport.w;
+
+        const viewPortX = startX + (ndcPos.x + 1) * 0.5 * width;
+        // 注意：屏幕坐标系原点通常在左上角，Y轴向下
+        const viewPortY = startY + (1 - ndcPos.y) * 0.5 * height;
+
+        return new Vector2(viewPortX, viewPortY);
+    }
+
+    public static ViewportToScreenPos(vp: Vector2): Vector2 {
+        const screenX = vp.x * EngineConfig.canvasWidth;
+        const screenY = vp.y * EngineConfig.canvasHeight;
+        return new Vector2(screenX, screenY);
+    }
+
+    public static WorldToClipPos(pos: Vector3, camera: Camera): Vector4 {
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
         const vpMatrix = projectionMatrix.multiply(viewMatrix);
         const clipPos = vpMatrix.multiplyVector4(new Vector4(pos, 1));
+        return clipPos;
+    }
 
-        const w = clipPos.w;
-        const ndcX = clipPos.x / w;
-        const ndcY = clipPos.y / w;
-        const ndcZ = clipPos.z / w;
+    // 世界坐标转为屏幕坐标
+    public static WorldToScreenPos(pos: Vector3, camera: Camera): { screen: Vector2; depth: number } {
+        const clipPos = this.WorldToClipPos(pos, camera);
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        const screen = this.ViewportToScreenPos(vp);
 
-        const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
-        const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
-        const screenZ = (ndcZ + 1) / 2;
+        // 深度值：将NDC的z从[-1, 1]映射到[0, 1]的范围，常用于深度缓冲
+        const depth = (ndc.z + 1) / 2;
 
-        return { x: screenX, y: screenY, z: screenZ };
+        return { screen, depth };
+    }
+
+    // 世界坐标到视口坐标
+    public static WorldToViewportPos(worldPos: Vector3, camera: Camera): Vector2 {
+        const clipPos = this.WorldToClipPos(worldPos, camera);
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        return vp;
+    }
+
+    // 视口坐标转换
+    public static ScreenToViewportPos(screenPos: Vector2): Vector2 {
+        return new Vector2(
+            screenPos.x / EngineConfig.canvasWidth,
+            screenPos.y / EngineConfig.canvasHeight
+        );
+    }
+
+    // 屏幕坐标转为世界坐标
+    public static ScreenToWorldPos(screenPos: Vector2, camera: Camera, depth: number = 1.0): Vector3 {
+        // 1. 将屏幕坐标转换为NDC坐标（-1到1范围）
+        const ndcX = (screenPos.x / EngineConfig.canvasWidth) * 2 - 1;
+        const ndcY = 1 - (screenPos.y / EngineConfig.canvasHeight) * 2; // Y轴需要翻转
+
+        // 2. 创建齐次裁剪空间坐标
+        const clipPos = new Vector4(ndcX, ndcY, depth, 1.0);
+
+        // 3. 获取视图投影矩阵的逆矩阵
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        const vpMatrix = projectionMatrix.multiply(viewMatrix);
+        const inverseVPMatrix = vpMatrix.invert();
+
+        // 4. 将裁剪空间坐标转换到世界空间
+        const worldPos = inverseVPMatrix.multiplyVector4(clipPos);
+
+        // 5. 进行透视除法（齐次坐标归一化）
+        const w = worldPos.w;
+        if (w !== 0) {
+            return new Vector3(
+                worldPos.x / w,
+                worldPos.y / w,
+                worldPos.z / w
+            );
+        }
+
+        return new Vector3(worldPos.x, worldPos.y, worldPos.z);
+    }
+
+    // 使用射线法进行精确的屏幕到世界坐标转换（推荐用于3D拾取）
+    public static ScreenToWorldPosRaycast(screenPos: Vector2, camera: Camera): Ray {
+        // 1. 将屏幕坐标转换为NDC坐标
+        const ndcX = (screenPos.x / EngineConfig.canvasWidth) * 2 - 1;
+        const ndcY = 1 - (screenPos.y / EngineConfig.canvasHeight) * 2;
+
+        // 2. 创建近平面和远平面的点
+        const nearPoint = new Vector4(ndcX, ndcY, -1, 1);
+        const farPoint = new Vector4(ndcX, ndcY, 1, 1);
+
+        // 3. 获取视图投影矩阵的逆矩阵
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        const vpMatrix = projectionMatrix.multiply(viewMatrix);
+        const inverseVPMatrix = vpMatrix.invert();
+
+        // 4. 转换到世界空间
+        const worldNear = inverseVPMatrix.multiplyVector4(nearPoint);
+        const worldFar = inverseVPMatrix.multiplyVector4(farPoint);
+
+        // 5. 进行透视除法
+        const nearWorld = new Vector3(
+            worldNear.x / worldNear.w,
+            worldNear.y / worldNear.w,
+            worldNear.z / worldNear.w
+        );
+
+        const farWorld = new Vector3(
+            worldFar.x / worldFar.w,
+            worldFar.y / worldFar.w,
+            worldFar.z / worldFar.w
+        );
+
+        // 6. 创建射线
+        const rayDirection = farWorld.subtract(nearWorld).normalize();
+        const rayOrigin = nearWorld;
+
+        return new Ray(rayOrigin, rayDirection);
     }
 
     // 模型坐标转为裁剪坐标
@@ -44,45 +167,14 @@ export class TransformTools {
         return mvpMatrix.multiplyVector4(new Vector4(vertex, 1));
     }
 
-    // 裁剪坐标转为屏幕坐标
-    public static ClipToScreenPos(vertex: Vector4): Vector3 {
-        // 执行透视除法：(x/w, y/w, z/w)，得到归一化设备坐标（NDC，范围 [-1, 1]）。
-        const w = vertex.w;
-        const ndcX = vertex.x / w;
-        const ndcY = vertex.y / w;
-        const ndcZ = vertex.z / w;
-
-        // 经过透视除法后，坐标位于标准设备坐标（NDC）空间，通常x, y, z范围在[-1, 1]（OpenGL风格）或[0, 1]（DirectX风格）之间。
-        // 将 NDC 转换为屏幕像素坐标：
-        // X 轴：screenX = (xNDC + 1) * 屏幕宽度 / 2
-        // Y 轴：screenY = (1 - yNDC) * 屏幕高度 / 2（注意 Y 轴翻转，因屏幕坐标系 Y 向下）
-
-        // 将NDC的x从[-1, 1]映射到[0, screenWidth]
-        const screenX = ((ndcX + 1) / 2) * EngineConfig.canvasWidth;
-        // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
-        const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
-
-        // 将NDC的z从[-1, 1]映射到[0, 1]的深度值
-        // 方法1: 保留透视校正的深度
-        const screenZ = (ndcZ + 1) / 2;
-
-        // 方法2: 转换为线性深度（与实际距离成正比）
-        /*
-            在透视投影中，NDC 的 z 值与实际深度（到相机的距离）是非线性关系：
-            近处物体的 z 值变化非常快（精度高）
-            远处物体的 z 值变化缓慢（精度低，容易出现深度冲突）
-            这是因为透视投影矩阵会将深度值进行非线性压缩，导致远处的深度精度不足。
-        */
-        // const linearDepth = (2 * near * far) / (far + near - ndcZ * (far - near));
-        // const screenZ = linearDepth / far; // 归一化到 [0, 1]
-
-        return new Vector3(screenX, screenY, screenZ);
-    }
-
     // 模型坐标转为屏幕坐标
-    public static ModelToScreenPos(vertex: Vector3, transform: Transform, camera: Camera): Vector3 {
+    public static ModelToScreenPos(vertex: Vector3, transform: Transform, camera: Camera): { screen: Vector2; depth: number } {
         const clipPos = this.ModelToClipPos(vertex, transform, camera);
-        return this.ClipToScreenPos(clipPos);
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        const screen = this.ViewportToScreenPos(vp);
+        const depth = (ndc.z + 1) / 2;
+        return { screen, depth };
     }
 
     // 模型法线转为世界法线

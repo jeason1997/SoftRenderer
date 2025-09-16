@@ -16,6 +16,7 @@ interface VertexAttributes {
 interface Fragment {
     x: number;
     y: number;
+    z: number;
     attributes: VertexAttributes;
 }
 
@@ -29,9 +30,9 @@ interface Fragment {
  */
 function computeBarycentricCoords(
     p: [number, number],
-    v0: Vector2,
-    v1: Vector2,
-    v2: Vector2
+    v0: Vector3,
+    v1: Vector3,
+    v2: Vector3
 ): [number, number, number] {
     const [x, y] = p;
 
@@ -65,9 +66,9 @@ function computeBarycentricCoords(
  * @returns 所有像素及其插值后的属性
  */
 export function interpolateOverTriangle(
-    v0: Vector2,
-    v1: Vector2,
-    v2: Vector2,
+    v0: Vector3,
+    v1: Vector3,
+    v2: Vector3,
     attrs0: VertexAttributes,
     attrs1: VertexAttributes,
     attrs2: VertexAttributes
@@ -103,9 +104,12 @@ export function interpolateOverTriangle(
                     attrs0, attrs1, attrs2, alpha, beta, gamma
                 );
 
+                // 6. 深度值，需要单独额外插值计算
+                const z = interpolateNumber(v0.z, v1.z, v2.z, alpha, beta, gamma);
+
                 // 添加到片段列表
                 fragments.push({
-                    x, y,
+                    x, y, z,
                     attributes: interpolatedAttrs
                 });
             }
@@ -283,47 +287,4 @@ function interpolateMatrix4x4(a: Matrix4x4, b: Matrix4x4, c: Matrix4x4, w: numbe
         }
     }
     return result;
-}
-
-export function test(DrawPixel: Function) {
-    // 定义三个顶点的屏幕坐标
-    const v0 = new Vector2(100, 100);
-    const v1 = new Vector2(200, 150);
-    const v2 = new Vector2(150, 200);
-
-    // 每个顶点可以有多个不同类型的属性
-    const attrs0 = {
-        color: new Color(255, 0, 0),
-        texCoord: new Vector2(0, 0),
-        intensity: 1.0,
-        transform: Matrix4x4.identity
-    };
-
-    const attrs1 = {
-        color: new Color(0, 255, 0),
-        texCoord: new Vector2(1, 0),
-        intensity: 0.5,
-        transform: new Matrix4x4().translate(new Vector3(1, 0, 0))
-    };
-
-    const attrs2 = {
-        color: new Color(0, 0, 255),
-        texCoord: new Vector2(0, 1),
-        intensity: 0.0,
-        transform: new Matrix4x4().translate(new Vector3(0, 1, 0))
-    };
-
-    // 栅格化三角形
-    const fragments = interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2);
-
-    // 输出部分结果
-    console.log(`共计算了 ${fragments.length} 个像素点的插值颜色。`);
-    for (let i = 0; i < fragments.length; i++) {
-        const pixel = [fragments[i].x, fragments[i].y];
-        const color = fragments[i].attributes.color as Color;
-        color.r *= fragments[i].attributes.intensity as number;
-        color.g *= fragments[i].attributes.intensity as number;
-        color.b *= fragments[i].attributes.intensity as number;
-        DrawPixel(pixel[0], pixel[1], color.ToUint32());
-    }
 }

@@ -2,8 +2,12 @@ import { RequireComponent } from "../Core/Decorators";
 import { Engine } from "../Core/Engine";
 import { Input, InputAxis } from "../Core/Input";
 import { Time } from "../Core/Time";
+import { Color } from "../Math/Color";
 import { Quaternion } from "../Math/Quaternion";
+import { Ray } from "../Math/Ray";
+import { TransformTools } from "../Math/TransformTools";
 import { Vector3 } from "../Math/Vector3";
+import { Debug } from "../Utils/Debug";
 import { Camera } from "./Camera";
 import { Component } from "./Component";
 
@@ -22,6 +26,8 @@ export class CameraController extends Component {
     private _speedScale = 1;
     private _rotateCamera = false;
     private _rotateCenter = new Vector3();
+
+    private _rayList: Ray[] = [];
 
     public start(): void {
         this._camera = this.gameObject.getComponent(Camera);
@@ -75,6 +81,12 @@ export class CameraController extends Component {
             this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
             this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
         }
+
+        // 鼠标左键发射射线
+        if (Input.GetMouseButtonDown(0) && this._camera) {
+            const ray = TransformTools.ScreenToWorldPosRaycast(Input.mousePosition, this._camera);
+            this._rayList.push(ray);
+        }
     }
 
     private scaleAndAdd(a: Vector3, b: Vector3, scale: number): Vector3 {
@@ -98,5 +110,9 @@ export class CameraController extends Component {
         var q = new Quaternion(new Vector3(this._euler.x, this._euler.y, this._euler.z));
         q = Quaternion.slerp(this.transform.rotation, q, Time.deltaTime / this.damp);
         this.transform.rotation = q;
+
+        this._rayList.forEach(ray => {
+            Debug.DrawLine3D(ray.origin, ray.at(1), Color.RED);
+        });
     }
 }
