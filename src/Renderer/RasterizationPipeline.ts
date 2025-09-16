@@ -30,17 +30,10 @@ export class RasterizationPipeline {
     constructor(frameBuffer: Uint32Array) {
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
-        // 深度缓冲区初始化为最大值（表示最远）
-        this.depthBuffer.fill(1.0);
     }
 
     public Render() {
         this.Clear(Color.BLACK);
-
-        // const v = TransformTools.WorldToScreenPos(new Vector3(0, 0, 128+5));
-        // console.log(v);
-        // test(this.DrawPixel.bind(this));
-        // this.DrawTriangle(100, 100, 200, 150, 150, 200, Color.WHITE);
 
         // 获取场景中的所有根游戏对象并渲染
         const rootObjects = Engine.sceneManager.getActiveScene()?.getRootGameObjects();
@@ -59,14 +52,8 @@ export class RasterizationPipeline {
     //#region 基础绘制接口
 
     public Clear(color: number) {
-        // 使用 fill 方法替代循环，性能更好
         this.frameBuffer.fill(color);
-        // 或者使用循环，但性能较差
-        // for (let x = 0; x < this.canvasWidth; x++) {
-        //     for (let y = 0; y < this.canvasHeight; y++) {
-        //         this.SetPixel(x, y, color);
-        //     }
-        // }
+        this.depthBuffer.fill(1);
     }
 
     public DrawPixel(x: number, y: number, color: number) {
@@ -579,8 +566,21 @@ export class RasterizationPipeline {
         //     this.DrawBounds(bound, renderer.transform, Color.GRAY);
         // }
 
+        // 绘制深度纹理
+        // for (let x = 0; x < EngineConfig.canvasWidth; x++) {
+        //     for (let y = 0; y < EngineConfig.canvasHeight; y++) {
+        //         const index = y * EngineConfig.canvasWidth + x;
+        //         const currentDepth = this.depthBuffer[index];
+        //         // 将深度值(0-1)转换为灰度值(0-255)
+        //         const grayValue = Math.floor(currentDepth * 255);
+        //         // 创建灰度颜色对象
+        //         const depthColor = new Color(grayValue, grayValue, grayValue);
+        //         this.DrawPixel(x, y, depthColor.ToUint32());
+        //     }
+        // }
+
         // 绘制物理调试信息
-        PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
+        // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
     }
 
     //#endregion

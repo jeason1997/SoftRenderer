@@ -582,27 +582,15 @@ export class Matrix4x4 {
         return result;
     }
 
-    // public static perspective(fov: number, aspect: number, near: number, far: number): Matrix4x4 {
-    //     const fovRad = fov / 180 * Math.PI;
-    //     const tanHalfFov = Math.tan(fovRad / 2);
-    //     const mat = new Matrix4x4(
-    //         new Vector4(1 / (aspect * tanHalfFov), 0, 0, 0),
-    //         new Vector4(0, -1 / tanHalfFov, 0, 0),
-    //         new Vector4(0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near)),
-    //         new Vector4(0, 0, -1, 0)
-    //     );
-    //     return mat;
-    // }
-
     public static perspective(fov: number, aspect: number, near: number, far: number): Matrix4x4 {
         const fovRad = fov / 180 * Math.PI;
         const tanHalfFov = Math.tan(fovRad / 2);
         const mat = new Matrix4x4(
             new Vector4(1 / (aspect * tanHalfFov), 0, 0, 0),
-            new Vector4(0, 1 / tanHalfFov, 0, 0), // Y轴缩放，通常为正
-            // 修正深度计算符号：对于看向+Z的相机，近裁剪面在 z = near, 远裁剪面在 z = far
+            new Vector4(0, 1 / tanHalfFov, 0, 0),
+            // 深度计算符号：对于看向+Z的相机，近裁剪面在 z = near, 远裁剪面在 z = far
             new Vector4(0, 0, (far + near) / (far - near), -2 * far * near / (far - near)),
-            new Vector4(0, 0, 1, 0) // 将最后的-1改为1，以匹配看向+Z的相机空间深度计算
+            new Vector4(0, 0, 1, 0)
         );
         return mat;
     }
@@ -615,7 +603,7 @@ export class Matrix4x4 {
         var mat = new Matrix4x4(
             new Vector4(2 / rl, 0, 0, -(left + right) / rl),  // X轴缩放与平移
             new Vector4(0, 2 / tb, 0, -(top + bottom) / tb),  // Y轴缩放与平移
-            new Vector4(0, 0, -2 / fn, -(far + near) / fn),   // Z轴缩放与平移
+            new Vector4(0, 0, 2 / fn, -(far + near) / fn),    // Z轴缩放与平移
             new Vector4(0, 0, 0, 1)                           // 齐次分量
         );
         return mat;

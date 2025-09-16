@@ -16,8 +16,8 @@ export const MainScene = {
     initfun: (scene: Scene) => {
         // 相机
         const camera = new GameObject("camera");
-        //camera.transform.rotation = new Quaternion(new Vector3(0, 180, 0));
-        camera.transform.position = new Vector3(0, 0, 5);
+        camera.transform.rotation = new Quaternion(new Vector3(30, 0, 0));
+        camera.transform.position = new Vector3(0, 3, -5);
         scene.addGameObject(camera);
         camera.addComponent(Camera);
         camera.addComponent(CameraController);
@@ -32,7 +32,7 @@ export const MainScene = {
 
         AssetLoader.loadModel('resources/cube.obj').then((model) => {
             const obj = new GameObject("cube");
-            obj.transform.position = new Vector3(0.01, 2.5, 0);
+            obj.transform.position = new Vector3(0, 2.5, 0);
             obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
             obj.transform.scale = Vector3.ONE.multiply(0.5);
             obj.addComponent(Rigidbody);
@@ -43,15 +43,15 @@ export const MainScene = {
             scene.addGameObject(obj);
         });
 
-        // AssetLoader.loadModel('resources/spheres.obj').then((model) => {
-        //     const obj = new GameObject("spheres");
-        //     obj.transform.position = new Vector3(0.1, 1.5, 0);
-        //     const body = obj.addComponent(Rigidbody);
-        //     obj.addComponent(SphereCollider);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) renderer.mesh = model;
-        //     scene.addGameObject(obj);
-        // });
+        AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+            const obj = new GameObject("spheres");
+            obj.transform.position = new Vector3(0.1, 1.5, 0);
+            const body = obj.addComponent(Rigidbody);
+            obj.addComponent(SphereCollider);
+            const renderer = obj.addComponent(MeshRenderer);
+            if (renderer) renderer.mesh = model;
+            scene.addGameObject(obj);
+        });
 
         AssetLoader.loadModel('resources/panel.obj').then((model) => {
             const obj = new GameObject("panel");

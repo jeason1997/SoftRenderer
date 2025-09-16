@@ -31,7 +31,7 @@ export class CameraController extends Component {
 
     private updateInput(): void {
         // WSADQE+SHIFT相机移动以及加速
-        this._velocity.x = -Input.GetAxis(InputAxis.Horizontal);
+        this._velocity.x = Input.GetAxis(InputAxis.Horizontal);
         this._velocity.z = Input.GetAxis(InputAxis.Vertical);
         this._velocity.y = Input.GetKey(Input.KeyCode.Q) ? -1 : Input.GetKey(Input.KeyCode.E) ? 1 : 0;
         this._speedScale = Input.GetKey(Input.KeyCode.Shift) ? this.moveSpeedShiftScale : 1;
@@ -40,7 +40,7 @@ export class CameraController extends Component {
         if (Input.GetMouseButton(1)) {
             const moveDelta = Input.mouseDelta;
             //TODO:这里应该是托多少就移动多少，而不是乘一个系数
-            this._velocity.x += moveDelta.x * this.dragSpeed;
+            this._velocity.x -= moveDelta.x * this.dragSpeed;
             this._velocity.y += moveDelta.y * this.dragSpeed;
         }
 

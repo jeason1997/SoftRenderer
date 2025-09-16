@@ -27,7 +27,7 @@ export class Camera extends Component {
     public depth: number = 0;
     public viewPort: Vector4 = new Vector4(0, 0, 1, 1);
     public orthographic: boolean = false;
-    public orthographicSize: number = 1;
+    public orthographicSize: number = 5;
 
     public get aspect(): number {
         var v = this.viewPort;
