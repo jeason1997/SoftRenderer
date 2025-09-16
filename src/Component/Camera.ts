@@ -16,11 +16,12 @@ export enum CameraClearFlags {
 @DisallowMultipleComponent
 export class Camera extends Component {
     public static mainCamera: Camera;
-    private static cameras: Array<Camera> = new Array<Camera>();
+    public static cameras: Array<Camera> = new Array<Camera>();
 
-    public backGroundColor: Color = new Color(0.27, 0.27, 0.27, 1.0);
+    public targetTexture: null;
+    public backGroundColor: number = Color.GRAY;
     public fogColor: Color = new Color(0.27, 0.27, 0.27, 1.0);
-    public clearFlags: CameraClearFlags = CameraClearFlags.Color | CameraClearFlags.Depth;
+    public clearFlags: CameraClearFlags = CameraClearFlags.ALL;
     public nearClip: number = 1;
     public farClip: number = 128;
     public fov: number = 60;

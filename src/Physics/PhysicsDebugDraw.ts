@@ -289,7 +289,7 @@ export class PhysicsDebugDraw {
 
     // 将3D世界坐标转换为2D屏幕坐标
     private static WorldToScreenPos(pos: CANNON.Vec3): { x: number, y: number } | null {
-        return TransformTools.WorldToScreenPos(new Vector3(pos.x, pos.y, pos.z));
+        return TransformTools.WorldToScreenPos(new Vector3(pos.x, pos.y, pos.z), Camera.mainCamera);
     }
 
     // 用四元数旋转向量（不依赖内置方法）

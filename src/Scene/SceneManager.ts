@@ -39,10 +39,9 @@ export class SceneManager {
         if (!data.name || !data.initfun) {
             return;
         }
-
         // 初始化场景
         const mainScene = this.createScene(data.name);
-        data.initfun(mainScene);
         this.setActiveScene(mainScene);
+        data.initfun(mainScene);
     }
 }

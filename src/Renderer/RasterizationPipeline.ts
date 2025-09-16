@@ -4,7 +4,7 @@ import { Vector4 } from "../Math/Vector4";
 import { Transform } from "../Core/Transform";
 import { Renderer } from "../Component/Renderer";
 import { MeshRenderer } from "../Component/MeshRenderer";
-import { Camera } from "../Component/Camera";
+import { Camera, CameraClearFlags } from "../Component/Camera";
 import { Engine, EngineConfig } from "../Core/Engine";
 import { Mesh } from "./Mesh";
 import { Bounds } from "../Math/Bounds";
@@ -17,15 +17,14 @@ import { Vector2 } from "../Math/Vector2";
 enum DrawMode {
     Wireframe = 1,
     Point = 2,
-    UV = 4,
-    Normal = 8,
-    Shader = 16
+    Shader = 4,
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.Wireframe;
+    public drawMode: DrawMode = DrawMode.Shader;
     private frameBuffer: Uint32Array;
     private depthBuffer: number[];
+    private currentCamera: Camera;
 
     constructor(frameBuffer: Uint32Array) {
         this.frameBuffer = frameBuffer;
@@ -33,14 +32,18 @@ export class RasterizationPipeline {
     }
 
     public Render() {
-        this.Clear(Color.BLACK);
-
-        // 获取场景中的所有根游戏对象并渲染
-        const rootObjects = Engine.sceneManager.getActiveScene()?.getRootGameObjects();
-        if (rootObjects) {
-            for (const gameObject of rootObjects) {
-                // 显式指定类型参数
-                const renders = gameObject.getComponentsInChildren(Renderer);
+        const rootObject = Engine.sceneManager.getActiveScene()?.getRootGameObject();
+        if (rootObject) {
+            const cameras = Camera.cameras;
+            // depth越低越早渲染
+            cameras.sort((a, b) => a.depth - b.depth);
+            // 每个相机渲染一遍
+            for (let i = 0, len = cameras.length; i < len; i++) {
+                this.currentCamera = cameras[i];
+                this.Clear(this.currentCamera);
+                const renders = rootObject.getComponentsInChildren(Renderer);
+                // 渲染管线1.排序场景物体，按照相机空间进行Z轴排序，先绘制近的
+                // 渲染管线2.视锥体剔除
                 for (const render of renders) {
                     this.DrawObject(render);
                     Logger.log(render.gameObject.name);
@@ -51,9 +54,14 @@ export class RasterizationPipeline {
 
     //#region 基础绘制接口
 
-    public Clear(color: number) {
-        this.frameBuffer.fill(color);
-        this.depthBuffer.fill(1);
+    public Clear(camera: Camera) {
+        const clearFlags = camera.clearFlags;
+        if (clearFlags & CameraClearFlags.Color) {
+            this.frameBuffer.fill(camera.backGroundColor);
+        }
+        if (clearFlags & CameraClearFlags.Depth) {
+            this.depthBuffer.fill(1);
+        }
     }
 
     public DrawPixel(x: number, y: number, color: number) {
@@ -364,7 +372,7 @@ export class RasterizationPipeline {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (let i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = TransformTools.ModelToScreenPos(vertices[i], transform);
+            outVertices[i] = TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
         }
 
         return outVertices;
@@ -384,7 +392,7 @@ export class RasterizationPipeline {
         const visibleTriangles: number[] = [];
         const faceNormals = mesh.faceNormals;
         const faceCenters = mesh.faceCenters;
-        const cameraPosition = Camera.mainCamera.transform.position;
+        const cameraPosition = this.currentCamera.transform.position;
 
         // 获取模型矩阵（模型本地空间到世界空间的变换矩阵）
         const modelMatrix = renderer.transform.localToWorldMatrix;
@@ -437,18 +445,16 @@ export class RasterizationPipeline {
 
         let triangles = mesh.triangles;
 
-        // 1.剔除
-        this.FrustumCulling();
+        // 渲染管线3.背面剔除
         triangles = this.BackfaceCulling(triangles, mesh, renderer);
+        // 渲染管线4.遮挡剔除
         this.OcclusionCulling();
 
-        // 2.MVP变换
+        // 渲染管线5.MVP变换
         const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
 
-        // 3.裁剪
+        // 渲染管线6.裁剪
 
-        // 4.光栅化与像素绘画
-        // 最后绘制三角形到屏幕上
         for (let i = 0; i < triangles.length; i += 3) {
             const p1 = screenVertices[triangles[i]];
             const p2 = screenVertices[triangles[i + 1]];
@@ -484,49 +490,14 @@ export class RasterizationPipeline {
                 z: p3.z
             };
 
-            // 栅格化三角形
-            const fragments = interpolateOverTriangle(v1, v2, v3, attrs1, attrs2, attrs3);
-
-            fragments.forEach(fragment => {
-                const x = Math.round(fragment.x);
-                const y = Math.round(fragment.y);
-                const z = fragment.attributes.z as number;
-
-                // 检查坐标是否在屏幕范围内
-                if (x < 0 || x >= EngineConfig.canvasWidth ||
-                    y < 0 || y >= EngineConfig.canvasHeight) {
-                    return;
-                }
-
-                // 计算深度缓冲区索引
-                const index = y * EngineConfig.canvasWidth + x;
-                const currentDepth = this.depthBuffer[index];
-
-                // 深度测试：只有当前像素更近（z值更小）时才绘制
-                if (z < currentDepth) {
-                    this.depthBuffer[index] = z;
-                    const color = fragment.attributes.color as Color;
-                    this.DrawPixel(x, y, color.ToUint32());
-                }
-            });
-
-            // if (this.drawMode & DrawMode.Wireframe) {
-            //     this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
-            // }
-            // if (this.drawMode & DrawMode.Point) {
-            //     this.DrawPixel(p1.x, p1.y, Color.WHITE);
-            //     this.DrawPixel(p2.x, p2.y, Color.WHITE);
-            //     this.DrawPixel(p3.x, p3.y, Color.WHITE);
-            // }
-            // if (this.drawMode & DrawMode.UV) {
-            //     const p1_uv = mesh.uv[triangles[i]];
-            //     const p2_uv = mesh.uv[triangles[i + 1]];
-            //     const p3_uv = mesh.uv[triangles[i + 2]];
-            //     const p1_color = new Color(p1_uv.x * 255, p1_uv.y * 255, 0).ToUint32();
-            //     const p2_color = new Color(p2_uv.x * 255, p2_uv.y * 255, 0).ToUint32();
-            //     const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0).ToUint32();
-            //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
-            // }
+            if (this.drawMode & DrawMode.Wireframe) {
+                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
+            }
+            if (this.drawMode & DrawMode.Point) {
+                this.DrawPixel(p1.x, p1.y, Color.WHITE);
+                this.DrawPixel(p2.x, p2.y, Color.WHITE);
+                this.DrawPixel(p3.x, p3.y, Color.WHITE);
+            }
             // if (this.drawMode & DrawMode.Normal) {
             //     const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
             //     const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
@@ -546,9 +517,36 @@ export class RasterizationPipeline {
             //     const p3_color = new Color(r, g, b).ToUint32();
             //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             // }
-            // if (this.drawMode & DrawMode.Shader) {
-            //     this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
-            // }
+            if (this.drawMode & DrawMode.Shader) {
+                // 渲染管线7.光栅化
+                const fragments = interpolateOverTriangle(v1, v2, v3, attrs1, attrs2, attrs3);
+
+                for (let i = 0; i < fragments.length; i++) {
+                    const fragment = fragments[i];
+                    const x = Math.round(fragment.x);
+                    const y = Math.round(fragment.y);
+                    const z = fragment.attributes.z as number;
+
+                    // 检查坐标是否在屏幕范围内
+                    if (x < 0 || x >= EngineConfig.canvasWidth ||
+                        y < 0 || y >= EngineConfig.canvasHeight) {
+                        return;
+                    }
+
+                    // 计算深度缓冲区索引
+                    const index = y * EngineConfig.canvasWidth + x;
+                    const currentDepth = this.depthBuffer[index];
+
+                    // 渲染管线8.早期深度测试
+                    // 深度测试：只有当前像素更近（z值更小）时才绘制
+                    if (z < currentDepth) {
+                        this.depthBuffer[index] = z;
+                        const color = fragment.attributes.color as Color;
+                        // 渲染管线9.绘制像素到帧缓冲
+                        this.DrawPixel(x, y, color.ToUint32());
+                    }
+                }
+            }
         }
 
         // 调试：绘制面法线
@@ -590,7 +588,7 @@ export class RasterizationPipeline {
     private DrawBounds(bounds: Bounds, transform: Transform, color: number) {
         // 将所有顶点转换到屏幕空间
         const screenVertices = bounds.vertices.map(v =>
-            TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform)
+            TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera)
         );
 
         // 绘制所有边
@@ -605,7 +603,7 @@ export class RasterizationPipeline {
 
         // 绘制中心点
         const center = bounds.center;
-        const screenCenter = TransformTools.ModelToScreenPos(center, transform);
+        const screenCenter = TransformTools.ModelToScreenPos(center, transform, this.currentCamera);
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
             const size = 5;

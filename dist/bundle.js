@@ -16700,9 +16700,9 @@ var Camera = function () {
         __extends(Camera_1, _super);
         function Camera_1() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.backGroundColor = new Color_1.Color(0.27, 0.27, 0.27, 1.0);
+            _this.backGroundColor = Color_1.Color.GRAY;
             _this.fogColor = new Color_1.Color(0.27, 0.27, 0.27, 1.0);
-            _this.clearFlags = CameraClearFlags.Color | CameraClearFlags.Depth;
+            _this.clearFlags = CameraClearFlags.ALL;
             _this.nearClip = 1;
             _this.farClip = 128;
             _this.fov = 60;
@@ -17957,17 +17957,28 @@ exports.GameObject = void 0;
 var Transform_1 = require("./Transform");
 var UObject_1 = require("./UObject");
 var Decorators_1 = require("./Decorators");
+var Engine_1 = require("./Engine");
 var GameObject = /** @class */ (function (_super) {
     __extends(GameObject, _super);
-    function GameObject(name) {
+    function GameObject(name, parent) {
+        var _a;
         var _this = _super.call(this) || this;
-        _this.tag = "Untagged"; // 添加标签属性
-        _this.layer = 0; // 默认层
+        _this.tag = "Untagged";
+        _this.layer = 0;
         _this.components = [];
         _this.startedComponents = new Set();
         _this._active = true;
         _this.name = name;
         _this.transform = new Transform_1.Transform(_this);
+        if (parent) {
+            _this.transform.setParent(parent.transform);
+        }
+        else {
+            var p = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObject();
+            if (p) {
+                _this.transform.setParent(p.transform);
+            }
+        }
         return _this;
     }
     Object.defineProperty(GameObject.prototype, "active", {
@@ -18236,7 +18247,7 @@ var GameObject = /** @class */ (function (_super) {
 }(UObject_1.UObject));
 exports.GameObject = GameObject;
 
-},{"./Decorators":13,"./Transform":18,"./UObject":20}],16:[function(require,module,exports){
+},{"./Decorators":13,"./Engine":14,"./Transform":18,"./UObject":20}],16:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -19970,7 +19981,6 @@ exports.Quaternion = Quaternion;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransformTools = void 0;
-var Camera_1 = require("../Component/Camera");
 var Engine_1 = require("../Core/Engine");
 var Vector3_1 = require("./Vector3");
 var Vector4_1 = require("./Vector4");
@@ -19978,8 +19988,7 @@ var TransformTools = /** @class */ (function () {
     function TransformTools() {
     }
     // 世界坐标转为屏幕坐标
-    TransformTools.WorldToScreenPos = function (pos) {
-        var camera = Camera_1.Camera.mainCamera;
+    TransformTools.WorldToScreenPos = function (pos, camera) {
         var viewMatrix = camera.getViewMatrix();
         var projectionMatrix = camera.getProjectionMatrix();
         var vpMatrix = projectionMatrix.multiply(viewMatrix);
@@ -19994,11 +20003,10 @@ var TransformTools = /** @class */ (function () {
         return { x: screenX, y: screenY, z: screenZ };
     };
     // 模型坐标转为裁剪坐标
-    TransformTools.ModelToClipPos = function (vertex, transform) {
+    TransformTools.ModelToClipPos = function (vertex, transform, camera) {
         // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
         // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
         var modelMatrix = transform.localToWorldMatrix;
-        var camera = Camera_1.Camera.mainCamera;
         var viewMatrix = camera.getViewMatrix();
         var projectionMatrix = camera.getProjectionMatrix();
         var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
@@ -20025,7 +20033,8 @@ var TransformTools = /** @class */ (function () {
         var screenX = ((ndcX + 1) / 2) * Engine_1.EngineConfig.canvasWidth;
         // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
         var screenY = ((1 - ndcY) / 2) * Engine_1.EngineConfig.canvasHeight;
-        // 方法1: 保留透视校正的深度（原逻辑）
+        // 将NDC的z从[-1, 1]映射到[0, 1]的深度值
+        // 方法1: 保留透视校正的深度
         var screenZ = (ndcZ + 1) / 2;
         // 方法2: 转换为线性深度（与实际距离成正比）
         /*
@@ -20039,8 +20048,8 @@ var TransformTools = /** @class */ (function () {
         return new Vector3_1.Vector3(screenX, screenY, screenZ);
     };
     // 模型坐标转为屏幕坐标
-    TransformTools.ModelToScreenPos = function (vertex, transform) {
-        var clipPos = this.ModelToClipPos(vertex, transform);
+    TransformTools.ModelToScreenPos = function (vertex, transform, camera) {
+        var clipPos = this.ModelToClipPos(vertex, transform, camera);
         return this.ClipToScreenPos(clipPos);
     };
     // 模型法线转为世界法线
@@ -20086,7 +20095,7 @@ var TransformTools = /** @class */ (function () {
 }());
 exports.TransformTools = TransformTools;
 
-},{"../Component/Camera":5,"../Core/Engine":14,"./Vector3":28,"./Vector4":29}],27:[function(require,module,exports){
+},{"../Core/Engine":14,"./Vector3":28,"./Vector4":29}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -20807,28 +20816,30 @@ var DrawMode;
 (function (DrawMode) {
     DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
     DrawMode[DrawMode["Point"] = 2] = "Point";
-    DrawMode[DrawMode["UV"] = 4] = "UV";
-    DrawMode[DrawMode["Normal"] = 8] = "Normal";
-    DrawMode[DrawMode["Shader"] = 16] = "Shader";
+    DrawMode[DrawMode["Shader"] = 4] = "Shader";
 })(DrawMode || (DrawMode = {}));
 var RasterizationPipeline = /** @class */ (function () {
     function RasterizationPipeline(frameBuffer) {
-        this.drawMode = DrawMode.Wireframe;
+        this.drawMode = DrawMode.Shader;
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
     }
     RasterizationPipeline.prototype.Render = function () {
         var _a;
-        this.Clear(Color_1.Color.BLACK);
-        // 获取场景中的所有根游戏对象并渲染
-        var rootObjects = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObjects();
-        if (rootObjects) {
-            for (var _i = 0, rootObjects_1 = rootObjects; _i < rootObjects_1.length; _i++) {
-                var gameObject = rootObjects_1[_i];
-                // 显式指定类型参数
-                var renders = gameObject.getComponentsInChildren(Renderer_1.Renderer);
-                for (var _b = 0, renders_1 = renders; _b < renders_1.length; _b++) {
-                    var render = renders_1[_b];
+        var rootObject = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObject();
+        if (rootObject) {
+            var cameras = Camera_1.Camera.cameras;
+            // depth越低越早渲染
+            cameras.sort(function (a, b) { return a.depth - b.depth; });
+            // 每个相机渲染一遍
+            for (var i = 0, len = cameras.length; i < len; i++) {
+                this.currentCamera = cameras[i];
+                this.Clear(this.currentCamera);
+                var renders = rootObject.getComponentsInChildren(Renderer_1.Renderer);
+                // 渲染管线1.排序场景物体，按照相机空间进行Z轴排序，先绘制近的
+                // 渲染管线2.视锥体剔除
+                for (var _i = 0, renders_1 = renders; _i < renders_1.length; _i++) {
+                    var render = renders_1[_i];
                     this.DrawObject(render);
                     Logger_1.Logger.log(render.gameObject.name);
                 }
@@ -20836,9 +20847,14 @@ var RasterizationPipeline = /** @class */ (function () {
         }
     };
     //#region 基础绘制接口
-    RasterizationPipeline.prototype.Clear = function (color) {
-        this.frameBuffer.fill(color);
-        this.depthBuffer.fill(1);
+    RasterizationPipeline.prototype.Clear = function (camera) {
+        var clearFlags = camera.clearFlags;
+        if (clearFlags & Camera_1.CameraClearFlags.Color) {
+            this.frameBuffer.fill(camera.backGroundColor);
+        }
+        if (clearFlags & Camera_1.CameraClearFlags.Depth) {
+            this.depthBuffer.fill(1);
+        }
     };
     RasterizationPipeline.prototype.DrawPixel = function (x, y, color) {
         // 绘制到屏幕上的像素应该是整数的
@@ -21107,7 +21123,7 @@ var RasterizationPipeline = /** @class */ (function () {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (var i = 0; i < vertices.length; i += 1) {
-            outVertices[i] = TransformTools_1.TransformTools.ModelToScreenPos(vertices[i], transform);
+            outVertices[i] = TransformTools_1.TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
         }
         return outVertices;
     };
@@ -21121,7 +21137,7 @@ var RasterizationPipeline = /** @class */ (function () {
         var visibleTriangles = [];
         var faceNormals = mesh.faceNormals;
         var faceCenters = mesh.faceCenters;
-        var cameraPosition = Camera_1.Camera.mainCamera.transform.position;
+        var cameraPosition = this.currentCamera.transform.position;
         // 获取模型矩阵（模型本地空间到世界空间的变换矩阵）
         var modelMatrix = renderer.transform.localToWorldMatrix;
         // 计算法线矩阵：模型矩阵的逆矩阵的转置
@@ -21150,21 +21166,18 @@ var RasterizationPipeline = /** @class */ (function () {
     //#endregion
     //#region 绘制物体
     RasterizationPipeline.prototype.DrawObject = function (renderer) {
-        var _this = this;
         var mesh = renderer.mesh;
         if (!mesh) {
             return;
         }
         var triangles = mesh.triangles;
-        // 1.剔除
-        this.FrustumCulling();
+        // 渲染管线3.背面剔除
         triangles = this.BackfaceCulling(triangles, mesh, renderer);
+        // 渲染管线4.遮挡剔除
         this.OcclusionCulling();
-        // 2.MVP变换
+        // 渲染管线5.MVP变换
         var screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
-        // 3.裁剪
-        // 4.光栅化与像素绘画
-        // 最后绘制三角形到屏幕上
+        // 渲染管线6.裁剪
         for (var i = 0; i < triangles.length; i += 3) {
             var p1 = screenVertices[triangles[i]];
             var p2 = screenVertices[triangles[i + 1]];
@@ -21193,44 +21206,14 @@ var RasterizationPipeline = /** @class */ (function () {
                 texCoord: p3_uv,
                 z: p3.z
             };
-            // 栅格化三角形
-            var fragments = (0, Lerp_1.interpolateOverTriangle)(v1, v2, v3, attrs1, attrs2, attrs3);
-            fragments.forEach(function (fragment) {
-                var x = Math.round(fragment.x);
-                var y = Math.round(fragment.y);
-                var z = fragment.attributes.z;
-                // 检查坐标是否在屏幕范围内
-                if (x < 0 || x >= Engine_1.EngineConfig.canvasWidth ||
-                    y < 0 || y >= Engine_1.EngineConfig.canvasHeight) {
-                    return;
-                }
-                // 计算深度缓冲区索引
-                var index = y * Engine_1.EngineConfig.canvasWidth + x;
-                var currentDepth = _this.depthBuffer[index];
-                // 深度测试：只有当前像素更近（z值更小）时才绘制
-                if (z < currentDepth) {
-                    _this.depthBuffer[index] = z;
-                    var color = fragment.attributes.color;
-                    _this.DrawPixel(x, y, color.ToUint32());
-                }
-            });
-            // if (this.drawMode & DrawMode.Wireframe) {
-            //     this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
-            // }
-            // if (this.drawMode & DrawMode.Point) {
-            //     this.DrawPixel(p1.x, p1.y, Color.WHITE);
-            //     this.DrawPixel(p2.x, p2.y, Color.WHITE);
-            //     this.DrawPixel(p3.x, p3.y, Color.WHITE);
-            // }
-            // if (this.drawMode & DrawMode.UV) {
-            //     const p1_uv = mesh.uv[triangles[i]];
-            //     const p2_uv = mesh.uv[triangles[i + 1]];
-            //     const p3_uv = mesh.uv[triangles[i + 2]];
-            //     const p1_color = new Color(p1_uv.x * 255, p1_uv.y * 255, 0).ToUint32();
-            //     const p2_color = new Color(p2_uv.x * 255, p2_uv.y * 255, 0).ToUint32();
-            //     const p3_color = new Color(p3_uv.x * 255, p3_uv.y * 255, 0).ToUint32();
-            //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
-            // }
+            if (this.drawMode & DrawMode.Wireframe) {
+                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
+            }
+            if (this.drawMode & DrawMode.Point) {
+                this.DrawPixel(p1.x, p1.y, Color_1.Color.WHITE);
+                this.DrawPixel(p2.x, p2.y, Color_1.Color.WHITE);
+                this.DrawPixel(p3.x, p3.y, Color_1.Color.WHITE);
+            }
             // if (this.drawMode & DrawMode.Normal) {
             //     const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
             //     const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
@@ -21250,9 +21233,32 @@ var RasterizationPipeline = /** @class */ (function () {
             //     const p3_color = new Color(r, g, b).ToUint32();
             //     this.DrawTriangleFilledWithVertexColor(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1_color, p2_color, p3_color);
             // }
-            // if (this.drawMode & DrawMode.Shader) {
-            //     this.DrawTriangleFilled(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
-            // }
+            if (this.drawMode & DrawMode.Shader) {
+                // 渲染管线7.光栅化
+                var fragments = (0, Lerp_1.interpolateOverTriangle)(v1, v2, v3, attrs1, attrs2, attrs3);
+                for (var i_1 = 0; i_1 < fragments.length; i_1++) {
+                    var fragment = fragments[i_1];
+                    var x = Math.round(fragment.x);
+                    var y = Math.round(fragment.y);
+                    var z = fragment.attributes.z;
+                    // 检查坐标是否在屏幕范围内
+                    if (x < 0 || x >= Engine_1.EngineConfig.canvasWidth ||
+                        y < 0 || y >= Engine_1.EngineConfig.canvasHeight) {
+                        return;
+                    }
+                    // 计算深度缓冲区索引
+                    var index = y * Engine_1.EngineConfig.canvasWidth + x;
+                    var currentDepth = this.depthBuffer[index];
+                    // 渲染管线8.早期深度测试
+                    // 深度测试：只有当前像素更近（z值更小）时才绘制
+                    if (z < currentDepth) {
+                        this.depthBuffer[index] = z;
+                        var color = fragment.attributes.color;
+                        // 渲染管线9.绘制像素到帧缓冲
+                        this.DrawPixel(x, y, color.ToUint32());
+                    }
+                }
+            }
         }
         // 调试：绘制面法线
         // for (let i = 0; i < mesh.faceNormals.length; i++) {
@@ -21288,7 +21294,7 @@ var RasterizationPipeline = /** @class */ (function () {
         var _this = this;
         // 将所有顶点转换到屏幕空间
         var screenVertices = bounds.vertices.map(function (v) {
-            return TransformTools_1.TransformTools.ModelToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform);
+            return TransformTools_1.TransformTools.ModelToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform, _this.currentCamera);
         });
         // 绘制所有边
         bounds.edges.forEach(function (_a) {
@@ -21302,7 +21308,7 @@ var RasterizationPipeline = /** @class */ (function () {
         });
         // 绘制中心点
         var center = bounds.center;
-        var screenCenter = TransformTools_1.TransformTools.ModelToScreenPos(center, transform);
+        var screenCenter = TransformTools_1.TransformTools.ModelToScreenPos(center, transform, this.currentCamera);
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
             var size = 5;
@@ -21379,12 +21385,23 @@ exports.MainScene = {
     name: "MainScene",
     initfun: function (scene) {
         // 相机
-        var camera = new GameObject_1.GameObject("camera");
-        camera.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(30, 0, 0));
-        camera.transform.position = new Vector3_1.Vector3(0, 3, -5);
-        scene.addGameObject(camera);
-        camera.addComponent(Camera_1.Camera);
-        camera.addComponent(CameraController_1.CameraController);
+        var camera1 = new GameObject_1.GameObject("camera");
+        camera1.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(30, 0, 0));
+        camera1.transform.position = new Vector3_1.Vector3(0, 3, -5);
+        var cma1 = camera1.addComponent(Camera_1.Camera);
+        camera1.addComponent(CameraController_1.CameraController);
+        if (cma1) {
+            cma1.clearFlags = Camera_1.CameraClearFlags.ALL;
+            cma1.depth = 0;
+        }
+        // const camera2 = new GameObject("camera");
+        // camera2.transform.rotation = new Quaternion(new Vector3(0, 180, 0));
+        // camera2.transform.position = new Vector3(0, 0, 5);
+        // const cam2 = camera2.addComponent(Camera);
+        // if (cam2) {
+        //     cam2.clearFlags = CameraClearFlags.NONE;
+        //     cam2.depth = 1;
+        // }
         // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
         //     const obj = new GameObject("female02");
         //     const renderer = obj.addComponent(MeshRenderer);
@@ -21392,6 +21409,7 @@ exports.MainScene = {
         //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
+        var p_obj;
         AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
             var obj = new GameObject_1.GameObject("cube");
             obj.transform.position = new Vector3_1.Vector3(0, 2.5, 0);
@@ -21399,21 +21417,21 @@ exports.MainScene = {
             obj.transform.scale = Vector3_1.Vector3.ONE.multiply(0.5);
             obj.addComponent(RigidBody_1.Rigidbody);
             obj.addComponent(BoxCollider_1.BoxCollider);
-            // obj.addComponent(ObjRotate);
+            //obj.addComponent(ObjRotate);
             var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
-            scene.addGameObject(obj);
+            //p_obj = obj;
         });
         AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then(function (model) {
             var obj = new GameObject_1.GameObject("spheres");
-            obj.transform.position = new Vector3_1.Vector3(0.1, 1.5, 0);
+            obj.transform.position = new Vector3_1.Vector3(0, 1.5, 0);
             var body = obj.addComponent(RigidBody_1.Rigidbody);
             obj.addComponent(SphereCollider_1.SphereCollider);
             var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
-            scene.addGameObject(obj);
+            //obj.transform.setParent(p_obj.transform);
         });
         AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then(function (model) {
             var obj = new GameObject_1.GameObject("panel");
@@ -21425,7 +21443,6 @@ exports.MainScene = {
             var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
-            scene.addGameObject(obj);
         });
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");
@@ -21433,61 +21450,40 @@ exports.MainScene = {
         //     const renderer = obj.addComponent(MeshRenderer);
         //     if (renderer) renderer.mesh = model;
         //     obj.addComponent(ObjRotate);
-        //     scene.addGameObject(obj);
         // });
         // AssetLoader.loadModel('resources/assets/meshes/lee.obj').then((model) => {
         //     const obj = new GameObject("lee");
         //     const renderer = obj.addComponent(MeshRenderer);
         //     if (renderer) renderer.mesh = model;
         //     obj.addComponent(ObjRotate);
-        //     scene.addGameObject(obj);
         // });
     }
 };
 
 },{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/SphereCollider":12,"../Core/GameObject":15,"../Math/Quaternion":25,"../Math/Vector3":28,"../Utils/AssetLoader":36}],34:[function(require,module,exports){
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
+var GameObject_1 = require("../Core/GameObject");
 var Scene = /** @class */ (function () {
     function Scene(name) {
-        this.rootGameObjects = [];
         this.name = name;
+        this.rootGameObject = new GameObject_1.GameObject("root");
     }
-    Scene.prototype.addGameObject = function (gameObject) {
-        this.rootGameObjects.push(gameObject);
-    };
-    Scene.prototype.removeGameObject = function (gameObject) {
-        var index = this.rootGameObjects.indexOf(gameObject);
-        if (index !== -1) {
-            this.rootGameObjects.splice(index, 1);
-        }
-    };
-    Scene.prototype.getRootGameObjects = function () {
-        return __spreadArray([], this.rootGameObjects, true);
+    Scene.prototype.getRootGameObject = function () {
+        return this.rootGameObject;
     };
     Scene.prototype.update = function () {
-        // 更新所有根游戏对象及其子对象
-        for (var _i = 0, _a = this.rootGameObjects; _i < _a.length; _i++) {
-            var gameObject = _a[_i];
-            gameObject.startComponents();
-            gameObject.updateComponents();
+        if (this.rootGameObject) {
+            this.rootGameObject.startComponents();
+            this.rootGameObject.updateComponents();
         }
     };
     return Scene;
 }());
 exports.Scene = Scene;
 
-},{}],35:[function(require,module,exports){
+},{"../Core/GameObject":15}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -21530,8 +21526,8 @@ var SceneManager = /** @class */ (function () {
         }
         // 初始化场景
         var mainScene = this.createScene(data.name);
-        data.initfun(mainScene);
         this.setActiveScene(mainScene);
+        data.initfun(mainScene);
     };
     return SceneManager;
 }());

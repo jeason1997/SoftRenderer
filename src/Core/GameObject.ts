@@ -4,20 +4,31 @@ import { Vector3 } from "../Math/Vector3";
 import { Quaternion } from "../Math/Quaternion";
 import { UObject } from "./UObject";
 import { DISALLOW_COMPONENTS_KEY, DISALLOW_MULTIPLE_COMPONENT_KEY } from "./Decorators";
+import { Engine } from "./Engine";
 
 export class GameObject extends UObject {
     public name: string;
     public transform: Transform;
-    public tag: string = "Untagged"; // 添加标签属性
-    public layer: number = 0; // 默认层
+    public tag: string = "Untagged";
+    public layer: number = 0;
 
     private components: Component[] = [];
     private startedComponents: Set<Component> = new Set<Component>();
 
-    constructor(name: string) {
+    constructor(name: string, parent?: GameObject) {
         super();
         this.name = name;
         this.transform = new Transform(this);
+
+        if (parent) {
+            this.transform.setParent(parent.transform);
+        }
+        else {
+            const p = Engine.sceneManager.getActiveScene()?.getRootGameObject();
+            if (p) {
+                this.transform.setParent(p.transform);
+            }
+        }
     }
 
     private _active: boolean = true;

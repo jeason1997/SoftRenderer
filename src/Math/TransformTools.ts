@@ -8,8 +8,7 @@ import { Vector4 } from "./Vector4";
 export class TransformTools {
 
     // 世界坐标转为屏幕坐标
-    public static WorldToScreenPos(pos: Vector3): { x: number, y: number, z: number } {
-        const camera = Camera.mainCamera;
+    public static WorldToScreenPos(pos: Vector3, camera: Camera): { x: number, y: number, z: number } {
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
         const vpMatrix = projectionMatrix.multiply(viewMatrix);
@@ -28,11 +27,10 @@ export class TransformTools {
     }
 
     // 模型坐标转为裁剪坐标
-    public static ModelToClipPos(vertex: Vector3, transform: Transform): Vector4 {
+    public static ModelToClipPos(vertex: Vector3, transform: Transform, camera: Camera): Vector4 {
         // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
         // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
         const modelMatrix = transform.localToWorldMatrix;
-        const camera = Camera.mainCamera;
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
         const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
@@ -64,7 +62,8 @@ export class TransformTools {
         // 将NDC的y从[-1, 1]映射到[0, screenHeight]。注意屏幕坐标通常y向下为正，而NDC的y向上为正，所以需要翻转
         const screenY = ((1 - ndcY) / 2) * EngineConfig.canvasHeight;
 
-        // 方法1: 保留透视校正的深度（原逻辑）
+        // 将NDC的z从[-1, 1]映射到[0, 1]的深度值
+        // 方法1: 保留透视校正的深度
         const screenZ = (ndcZ + 1) / 2;
 
         // 方法2: 转换为线性深度（与实际距离成正比）
@@ -81,8 +80,8 @@ export class TransformTools {
     }
 
     // 模型坐标转为屏幕坐标
-    public static ModelToScreenPos(vertex: Vector3, transform: Transform): Vector3 {
-        const clipPos = this.ModelToClipPos(vertex, transform);
+    public static ModelToScreenPos(vertex: Vector3, transform: Transform, camera: Camera): Vector3 {
+        const clipPos = this.ModelToClipPos(vertex, transform, camera);
         return this.ClipToScreenPos(clipPos);
     }
 
