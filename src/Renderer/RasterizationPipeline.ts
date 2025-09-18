@@ -5,7 +5,8 @@ import { Transform } from "../Core/Transform";
 import { Renderer } from "../Component/Renderer";
 import { MeshRenderer } from "../Component/MeshRenderer";
 import { Camera, CameraClearFlags } from "../Component/Camera";
-import { Engine, EngineConfig } from "../Core/Engine";
+import { Engine } from "../Core/Engine";
+import { EngineConfig } from "../Core/Setting";
 import { Mesh } from "./Mesh";
 import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
@@ -59,6 +60,7 @@ export class RasterizationPipeline {
     //#region 基础绘制接口
 
     public Clear(camera: Camera): void {
+
         const clearFlags = camera.clearFlags;
         const viewport = camera.viewPort;
         const backgroundColor = camera.backGroundColor;
@@ -70,11 +72,14 @@ export class RasterizationPipeline {
         const viewportPixelHeight = Math.floor(viewport.w * EngineConfig.canvasHeight);
 
         // 2. 根据清除标志，清除视口对应的区域
-        if (clearFlags & CameraClearFlags.Color) {
+        if (camera.clearFlags == CameraClearFlags.Skybox) {
+            // 绘制天空盒
+        }
+        else if (clearFlags == CameraClearFlags.Color) {
             this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor);
         }
 
-        if (clearFlags & CameraClearFlags.Depth) {
+        if (clearFlags != CameraClearFlags.None) {
             this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
         }
 

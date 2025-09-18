@@ -16619,7 +16619,7 @@ var BoxCollider = /** @class */ (function (_super) {
 }(Collider_1.Collider));
 exports.BoxCollider = BoxCollider;
 
-},{"../Math/Vector3":30,"./Collider":7,"./MeshRenderer":9,"cannon":2}],5:[function(require,module,exports){
+},{"../Math/Vector3":31,"./Collider":7,"./MeshRenderer":9,"cannon":2}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -16675,21 +16675,32 @@ var __setFunctionName = (this && this.__setFunctionName) || function (f, name, p
     return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Camera = exports.CameraClearFlags = void 0;
+exports.Camera = exports.RenderingPath = exports.Projection = exports.CameraClearFlags = void 0;
 var Color_1 = require("../Math/Color");
-var Engine_1 = require("../Core/Engine");
 var Vector4_1 = require("../Math/Vector4");
 var Component_1 = require("./Component");
 var Matrix4x4_1 = require("../Math/Matrix4x4");
 var Time_1 = require("../Core/Time");
 var Decorators_1 = require("../Core/Decorators");
+var Setting_1 = require("../Core/Setting");
 var CameraClearFlags;
 (function (CameraClearFlags) {
-    CameraClearFlags[CameraClearFlags["NONE"] = 0] = "NONE";
-    CameraClearFlags[CameraClearFlags["ALL"] = 16640] = "ALL";
-    CameraClearFlags[CameraClearFlags["Color"] = 16384] = "Color";
-    CameraClearFlags[CameraClearFlags["Depth"] = 256] = "Depth";
+    CameraClearFlags[CameraClearFlags["None"] = 0] = "None";
+    CameraClearFlags[CameraClearFlags["Skybox"] = 1] = "Skybox";
+    CameraClearFlags[CameraClearFlags["Color"] = 2] = "Color";
+    CameraClearFlags[CameraClearFlags["DepthOnly"] = 3] = "DepthOnly";
 })(CameraClearFlags || (exports.CameraClearFlags = CameraClearFlags = {}));
+var Projection;
+(function (Projection) {
+    Projection[Projection["Perspective"] = 0] = "Perspective";
+    Projection[Projection["Orthographic"] = 1] = "Orthographic";
+})(Projection || (exports.Projection = Projection = {}));
+var RenderingPath;
+(function (RenderingPath) {
+    RenderingPath[RenderingPath["VertexLit"] = 0] = "VertexLit";
+    RenderingPath[RenderingPath["Forward"] = 1] = "Forward";
+    RenderingPath[RenderingPath["Deferred"] = 2] = "Deferred";
+})(RenderingPath || (exports.RenderingPath = RenderingPath = {}));
 var Camera = function () {
     var _classDecorators = [Decorators_1.DisallowMultipleComponent];
     var _classDescriptor;
@@ -16701,15 +16712,16 @@ var Camera = function () {
         function Camera_1() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.backGroundColor = Color_1.Color.GRAY;
-            _this.fogColor = new Color_1.Color(0.27, 0.27, 0.27, 1.0);
-            _this.clearFlags = CameraClearFlags.ALL;
+            _this.clearFlags = CameraClearFlags.Color;
             _this.nearClip = 1;
             _this.farClip = 128;
             _this.fov = 60;
-            _this.depth = 0;
+            _this.depth = -1;
             _this.viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
-            _this.orthographic = false;
+            _this.projection = Projection.Perspective;
             _this.orthographicSize = 5;
+            _this.renderingPath = RenderingPath.Forward;
+            _this.occlusionCulling = false;
             _this.timer = 0;
             _this.counter = 0;
             return _this;
@@ -16717,7 +16729,7 @@ var Camera = function () {
         Object.defineProperty(Camera_1.prototype, "aspect", {
             get: function () {
                 var v = this.viewPort;
-                return (v.z * Engine_1.EngineConfig.canvasWidth) / (v.w * Engine_1.EngineConfig.canvasHeight);
+                return (v.z * Setting_1.EngineConfig.canvasWidth) / (v.w * Setting_1.EngineConfig.canvasHeight);
             },
             enumerable: false,
             configurable: true
@@ -16755,7 +16767,7 @@ var Camera = function () {
             return viewMatrix;
         };
         Camera_1.prototype.getProjectionMatrix = function () {
-            if (this.orthographic) {
+            if (this.projection == Projection.Orthographic) {
                 return Matrix4x4_1.Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
             }
             else {
@@ -16780,7 +16792,7 @@ var Camera = function () {
 }();
 exports.Camera = Camera;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Math/Color":23,"../Math/Matrix4x4":25,"../Math/Vector4":31,"./Component":8}],6:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/Setting":17,"../Core/Time":18,"../Math/Color":24,"../Math/Matrix4x4":26,"../Math/Vector4":32,"./Component":8}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -16797,6 +16809,22 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
     var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
@@ -16831,6 +16859,23 @@ var __runInitializers = (this && this.__runInitializers) || function (thisArg, i
     }
     return useValue ? value : void 0;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __setFunctionName = (this && this.__setFunctionName) || function (f, name, prefix) {
     if (typeof name === "symbol") name = name.description ? "[".concat(name.description, "]") : "";
     return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
@@ -16848,6 +16893,7 @@ var Vector3_1 = require("../Math/Vector3");
 var Debug_1 = require("../Utils/Debug");
 var Camera_1 = require("./Camera");
 var Component_1 = require("./Component");
+var CANNON = __importStar(require("cannon"));
 var CameraController = function () {
     var _classDecorators = [(0, Decorators_1.RequireComponent)(Camera_1.Camera)];
     var _classDescriptor;
@@ -16869,7 +16915,7 @@ var CameraController = function () {
             _this._speedScale = 1;
             _this._rotateCamera = false;
             _this._rotateCenter = new Vector3_1.Vector3();
-            _this._rayList = [];
+            _this._ray = [];
             return _this;
         }
         CameraController_1.prototype.start = function () {
@@ -16893,7 +16939,7 @@ var CameraController = function () {
             }
             // 鼠标滚轮相机缩放
             var scrollDelta = Input_1.Input.mouseScrollDelta.y * this.moveSpeed;
-            if ((_a = this._camera) === null || _a === void 0 ? void 0 : _a.orthographic) {
+            if (((_a = this._camera) === null || _a === void 0 ? void 0 : _a.projection) == Camera_1.Projection.Orthographic) {
                 this._camera.orthographicSize += scrollDelta * 0.01;
             }
             else {
@@ -16924,7 +16970,7 @@ var CameraController = function () {
             // 鼠标左键发射射线
             if (Input_1.Input.GetMouseButtonDown(0) && this._camera) {
                 var ray = TransformTools_1.TransformTools.ScreenToWorldPosRaycast(Input_1.Input.mousePosition, this._camera);
-                this._rayList.push(ray);
+                this._ray.push(ray);
             }
         };
         CameraController_1.prototype.scaleAndAdd = function (a, b, scale) {
@@ -16945,8 +16991,14 @@ var CameraController = function () {
             var q = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this._euler.x, this._euler.y, this._euler.z));
             q = Quaternion_1.Quaternion.slerp(this.transform.rotation, q, Time_1.Time.deltaTime / this.damp);
             this.transform.rotation = q;
-            this._rayList.forEach(function (ray) {
-                Debug_1.Debug.DrawLine3D(ray.origin, ray.at(1), Color_1.Color.RED);
+            this._ray.forEach(function (ray2) {
+                var lengt = 20;
+                Debug_1.Debug.DrawLine3D(ray2.origin, ray2.at(lengt), Color_1.Color.RED);
+                var result = new CANNON.RaycastResult();
+                Engine_1.Engine.physicsEngine.world.rayTest(ray2.origin.toVec3(), ray2.at(lengt).toVec3(), result);
+                if (result.hasHit) {
+                    Debug_1.Debug.DrawLine3D(new Vector3_1.Vector3(result.hitPointWorld.x, result.hitPointWorld.y, result.hitPointWorld.z), new Vector3_1.Vector3(result.hitPointWorld.x + result.hitNormalWorld.x * 0.5, result.hitPointWorld.y + result.hitNormalWorld.y * 0.5, result.hitPointWorld.z + result.hitNormalWorld.z * 0.5), Color_1.Color.GREEN);
+                }
             });
         };
         return CameraController_1;
@@ -16964,7 +17016,7 @@ var CameraController = function () {
 }();
 exports.CameraController = CameraController;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Input":16,"../Core/Time":17,"../Math/Color":23,"../Math/Quaternion":26,"../Math/TransformTools":28,"../Math/Vector3":30,"../Utils/Debug":39,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Input":16,"../Core/Time":18,"../Math/Color":24,"../Math/Quaternion":27,"../Math/TransformTools":29,"../Math/Vector3":31,"../Utils/Debug":40,"./Camera":5,"./Component":8,"cannon":2}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17182,7 +17234,7 @@ var Component = /** @class */ (function (_super) {
 }(UObject_1.UObject));
 exports.Component = Component;
 
-},{"../Core/Decorators":13,"../Core/UObject":20}],9:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/UObject":21}],9:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17380,7 +17432,7 @@ var Renderer = function () {
 }();
 exports.Renderer = Renderer;
 
-},{"../Core/Decorators":13,"../Math/Bounds":22,"./Component":8}],11:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Math/Bounds":23,"./Component":8}],11:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17694,7 +17746,7 @@ var Rigidbody = function () {
 }();
 exports.Rigidbody = Rigidbody;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":17,"../Core/UObject":20,"../Math/Quaternion":26,"../Math/Vector3":30,"./Collider":7,"./Component":8,"cannon":2}],12:[function(require,module,exports){
+},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":18,"../Core/UObject":21,"../Math/Quaternion":27,"../Math/Vector3":31,"./Collider":7,"./Component":8,"cannon":2}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17809,7 +17861,7 @@ var SphereCollider = /** @class */ (function (_super) {
 }(Collider_1.Collider));
 exports.SphereCollider = SphereCollider;
 
-},{"../Math/Vector3":30,"./Collider":7,"cannon":2}],13:[function(require,module,exports){
+},{"../Math/Vector3":31,"./Collider":7,"cannon":2}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DISALLOW_COMPONENTS_KEY = exports.DISALLOW_MULTIPLE_COMPONENT_KEY = exports.REQUIRED_COMPONENTS_KEY = void 0;
@@ -17860,7 +17912,7 @@ function DisallowMultipleComponent(target) {
 },{"reflect-metadata":3}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EngineConfig = exports.Engine = void 0;
+exports.Engine = void 0;
 var Input_1 = require("./Input");
 var RasterizationPipeline_1 = require("../Renderer/RasterizationPipeline");
 var MainScene_1 = require("../Scene/MainScene");
@@ -17869,6 +17921,7 @@ var Debug_1 = require("../Utils/Debug");
 var Time_1 = require("./Time");
 var TweenManager_1 = require("./TweenManager");
 var PhysicsEngine_1 = require("../Physics/PhysicsEngine");
+var Setting_1 = require("./Setting");
 var Engine = /** @class */ (function () {
     function Engine() {
     }
@@ -17877,13 +17930,13 @@ var Engine = /** @class */ (function () {
         this.canvas = document.getElementById('canvas');
         this.context = this.canvas.getContext('2d');
         // 设置canvas尺寸
-        this.canvas.width = EngineConfig.canvasWidth;
-        this.canvas.height = EngineConfig.canvasHeight;
+        this.canvas.width = Setting_1.EngineConfig.canvasWidth;
+        this.canvas.height = Setting_1.EngineConfig.canvasHeight;
         // 设置文本样式
         this.context.font = 'Arial';
         this.context.textAlign = 'left';
         // 创建图像数据对象
-        this.imageData = Engine.context.createImageData(EngineConfig.canvasWidth, EngineConfig.canvasHeight);
+        this.imageData = Engine.context.createImageData(Setting_1.EngineConfig.canvasWidth, Setting_1.EngineConfig.canvasHeight);
         // 创建32位无符号整型数组视图，用于直接操作像素数据
         var uint32View = new Uint32Array(this.imageData.data.buffer);
         // 创建渲染器实例
@@ -17935,19 +17988,8 @@ var Engine = /** @class */ (function () {
     return Engine;
 }());
 exports.Engine = Engine;
-var EngineConfig = /** @class */ (function () {
-    function EngineConfig() {
-    }
-    EngineConfig.canvasWidth = 400;
-    EngineConfig.canvasHeight = 400;
-    EngineConfig.halfCanvasWidth = EngineConfig.canvasWidth >> 1;
-    EngineConfig.halfCanvasHeight = EngineConfig.canvasHeight >> 1;
-    EngineConfig.aspectRatio = EngineConfig.canvasWidth / EngineConfig.canvasHeight;
-    return EngineConfig;
-}());
-exports.EngineConfig = EngineConfig;
 
-},{"../Physics/PhysicsEngine":32,"../Renderer/RasterizationPipeline":34,"../Scene/MainScene":35,"../Scene/SceneManager":37,"../Utils/Debug":39,"./Input":16,"./Time":17,"./TweenManager":19}],15:[function(require,module,exports){
+},{"../Physics/PhysicsEngine":33,"../Renderer/RasterizationPipeline":35,"../Scene/MainScene":36,"../Scene/SceneManager":38,"../Utils/Debug":40,"./Input":16,"./Setting":17,"./Time":18,"./TweenManager":20}],15:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -18264,7 +18306,7 @@ var GameObject = /** @class */ (function (_super) {
 }(UObject_1.UObject));
 exports.GameObject = GameObject;
 
-},{"./Decorators":13,"./Engine":14,"./Transform":18,"./UObject":20}],16:[function(require,module,exports){
+},{"./Decorators":13,"./Engine":14,"./Transform":19,"./UObject":21}],16:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -18498,7 +18540,64 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":29}],17:[function(require,module,exports){
+},{"../Math/Vector2":30}],17:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RenderSettings = exports.PhysicsSettings = exports.TimeSettings = exports.EngineConfig = exports.Layers = exports.FogMode = void 0;
+var Color_1 = require("../Math/Color");
+var Vector3_1 = require("../Math/Vector3");
+var FogMode;
+(function (FogMode) {
+    FogMode[FogMode["Linear"] = 0] = "Linear";
+    FogMode[FogMode["Exponential"] = 1] = "Exponential";
+    FogMode[FogMode["Exp2"] = 2] = "Exp2";
+})(FogMode || (exports.FogMode = FogMode = {}));
+exports.Layers = [
+    "Default",
+    "TransparentFX",
+    "Ignore Raycast",
+    "Water",
+];
+var EngineConfig = /** @class */ (function () {
+    function EngineConfig() {
+    }
+    EngineConfig.canvasWidth = 400;
+    EngineConfig.canvasHeight = 400;
+    EngineConfig.halfCanvasWidth = EngineConfig.canvasWidth >> 1;
+    EngineConfig.halfCanvasHeight = EngineConfig.canvasHeight >> 1;
+    EngineConfig.aspectRatio = EngineConfig.canvasWidth / EngineConfig.canvasHeight;
+    return EngineConfig;
+}());
+exports.EngineConfig = EngineConfig;
+var TimeSettings = /** @class */ (function () {
+    function TimeSettings() {
+    }
+    return TimeSettings;
+}());
+exports.TimeSettings = TimeSettings;
+var PhysicsSettings = /** @class */ (function () {
+    function PhysicsSettings() {
+    }
+    PhysicsSettings.gravity = new Vector3_1.Vector3(0, -9.8, 0);
+    PhysicsSettings.layerCollisionMatrix = [];
+    return PhysicsSettings;
+}());
+exports.PhysicsSettings = PhysicsSettings;
+var RenderSettings = /** @class */ (function () {
+    function RenderSettings() {
+    }
+    RenderSettings.fog = false;
+    RenderSettings.fogColor = new Color_1.Color(0, 0, 0, 1);
+    RenderSettings.fogMode = FogMode.Exp2;
+    RenderSettings.fogDensity = 0.01;
+    RenderSettings.linearFogStart = 0;
+    RenderSettings.linearFogEnd = 300;
+    RenderSettings.ambientLight = new Color_1.Color(0.1, 0.1, 0.1, 1);
+    return RenderSettings;
+}());
+exports.RenderSettings = RenderSettings;
+
+},{"../Math/Color":24,"../Math/Vector3":31}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Time = void 0;
@@ -18616,7 +18715,7 @@ var Time = /** @class */ (function () {
 }());
 exports.Time = Time;
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transform = void 0;
@@ -18874,7 +18973,7 @@ var Transform = /** @class */ (function () {
 }());
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":25,"../Math/Quaternion":26,"../Math/Vector3":30,"../Math/Vector4":31}],19:[function(require,module,exports){
+},{"../Math/Matrix4x4":26,"../Math/Quaternion":27,"../Math/Vector3":31,"../Math/Vector4":32}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TweenManager = void 0;
@@ -18909,7 +19008,7 @@ var TweenManager = /** @class */ (function () {
 }());
 exports.TweenManager = TweenManager;
 
-},{"@tweenjs/tween.js":1}],20:[function(require,module,exports){
+},{"@tweenjs/tween.js":1}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UObject = void 0;
@@ -18926,7 +19025,7 @@ var UObject = /** @class */ (function () {
 }());
 exports.UObject = UObject;
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BVHTree = void 0;
@@ -19114,7 +19213,7 @@ var BVHTree = /** @class */ (function () {
 }());
 exports.BVHTree = BVHTree;
 
-},{"../Math/Vector3":30,"./Bounds":22}],22:[function(require,module,exports){
+},{"../Math/Vector3":31,"./Bounds":23}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
@@ -19269,7 +19368,7 @@ var Sphere = /** @class */ (function () {
     return Sphere;
 }());
 
-},{"./Vector3":30}],23:[function(require,module,exports){
+},{"./Vector3":31}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = exports.BlendMode = void 0;
@@ -19388,7 +19487,7 @@ var Color = /** @class */ (function () {
 }());
 exports.Color = Color;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.interpolateOverTriangle = interpolateOverTriangle;
@@ -19583,7 +19682,7 @@ function interpolateMatrix4x4(a, b, c, w, u, v) {
     return result;
 }
 
-},{"./Color":23,"./Matrix4x4":25,"./Vector2":29,"./Vector3":30,"./Vector4":31}],25:[function(require,module,exports){
+},{"./Color":24,"./Matrix4x4":26,"./Vector2":30,"./Vector3":31,"./Vector4":32}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -20128,7 +20227,7 @@ var Matrix4x4 = /** @class */ (function () {
 }());
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":26,"./Vector3":30,"./Vector4":31}],26:[function(require,module,exports){
+},{"./Quaternion":27,"./Vector3":31,"./Vector4":32}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
@@ -20265,7 +20364,7 @@ var Quaternion = /** @class */ (function () {
 }());
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":25,"./Vector3":30}],27:[function(require,module,exports){
+},{"./Matrix4x4":26,"./Vector3":31}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ray = void 0;
@@ -20300,11 +20399,11 @@ var Ray = /** @class */ (function () {
 }());
 exports.Ray = Ray;
 
-},{"./Vector3":30}],28:[function(require,module,exports){
+},{"./Vector3":31}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransformTools = void 0;
-var Engine_1 = require("../Core/Engine");
+var Setting_1 = require("../Core/Setting");
 var Ray_1 = require("./Ray");
 var Vector2_1 = require("./Vector2");
 var Vector3_1 = require("./Vector3");
@@ -20335,8 +20434,8 @@ var TransformTools = /** @class */ (function () {
         return new Vector2_1.Vector2(viewPortX, viewPortY);
     };
     TransformTools.ViewportToScreenPos = function (vp) {
-        var screenX = vp.x * Engine_1.EngineConfig.canvasWidth;
-        var screenY = vp.y * Engine_1.EngineConfig.canvasHeight;
+        var screenX = vp.x * Setting_1.EngineConfig.canvasWidth;
+        var screenY = vp.y * Setting_1.EngineConfig.canvasHeight;
         return new Vector2_1.Vector2(screenX, screenY);
     };
     TransformTools.WorldToClipPos = function (pos, camera) {
@@ -20365,14 +20464,14 @@ var TransformTools = /** @class */ (function () {
     };
     // 视口坐标转换
     TransformTools.ScreenToViewportPos = function (screenPos) {
-        return new Vector2_1.Vector2(screenPos.x / Engine_1.EngineConfig.canvasWidth, screenPos.y / Engine_1.EngineConfig.canvasHeight);
+        return new Vector2_1.Vector2(screenPos.x / Setting_1.EngineConfig.canvasWidth, screenPos.y / Setting_1.EngineConfig.canvasHeight);
     };
     // 屏幕坐标转为世界坐标
     TransformTools.ScreenToWorldPos = function (screenPos, camera, depth) {
         if (depth === void 0) { depth = 1.0; }
         // 1. 将屏幕坐标转换为NDC坐标（-1到1范围）
-        var ndcX = (screenPos.x / Engine_1.EngineConfig.canvasWidth) * 2 - 1;
-        var ndcY = 1 - (screenPos.y / Engine_1.EngineConfig.canvasHeight) * 2; // Y轴需要翻转
+        var ndcX = (screenPos.x / Setting_1.EngineConfig.canvasWidth) * 2 - 1;
+        var ndcY = 1 - (screenPos.y / Setting_1.EngineConfig.canvasHeight) * 2; // Y轴需要翻转
         // 2. 创建齐次裁剪空间坐标
         var clipPos = new Vector4_1.Vector4(ndcX, ndcY, depth, 1.0);
         // 3. 获取视图投影矩阵的逆矩阵
@@ -20392,8 +20491,8 @@ var TransformTools = /** @class */ (function () {
     // 使用射线法进行精确的屏幕到世界坐标转换（推荐用于3D拾取）
     TransformTools.ScreenToWorldPosRaycast = function (screenPos, camera) {
         // 1. 将屏幕坐标转换为NDC坐标
-        var ndcX = (screenPos.x / Engine_1.EngineConfig.canvasWidth) * 2 - 1;
-        var ndcY = 1 - (screenPos.y / Engine_1.EngineConfig.canvasHeight) * 2;
+        var ndcX = (screenPos.x / Setting_1.EngineConfig.canvasWidth) * 2 - 1;
+        var ndcY = 1 - (screenPos.y / Setting_1.EngineConfig.canvasHeight) * 2;
         // 2. 创建近平面和远平面的点
         var nearPoint = new Vector4_1.Vector4(ndcX, ndcY, -1, 1);
         var farPoint = new Vector4_1.Vector4(ndcX, ndcY, 1, 1);
@@ -20481,7 +20580,7 @@ var TransformTools = /** @class */ (function () {
 }());
 exports.TransformTools = TransformTools;
 
-},{"../Core/Engine":14,"./Ray":27,"./Vector2":29,"./Vector3":30,"./Vector4":31}],29:[function(require,module,exports){
+},{"../Core/Setting":17,"./Ray":28,"./Vector2":30,"./Vector3":31,"./Vector4":32}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -20672,18 +20771,57 @@ var Vector2 = /** @class */ (function () {
 }());
 exports.Vector2 = Vector2;
 
-},{"./Vector3":30,"./Vector4":31}],30:[function(require,module,exports){
+},{"./Vector3":31,"./Vector4":32}],31:[function(require,module,exports){
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
 var Vector2_1 = require("./Vector2");
 var Vector4_1 = require("./Vector4");
+var CANNON = __importStar(require("cannon"));
 var Vector3 = /** @class */ (function () {
     function Vector3() {
         if (arguments[0] instanceof Vector2_1.Vector2) {
             this.x = arguments[0].x;
             this.y = arguments[0].y;
             this.z = 0;
+        }
+        else if (arguments[0] instanceof CANNON.Vec3) {
+            this.x = arguments[0].x;
+            this.y = arguments[0].y;
+            this.z = arguments[0].z;
         }
         else if (arguments[0] instanceof Vector4_1.Vector4) {
             this.x = arguments[0].x;
@@ -20818,6 +20956,9 @@ var Vector3 = /** @class */ (function () {
     Vector3.prototype.toString = function () {
         return "[" + this.x + ", " + this.y + ", " + this.z + "]";
     };
+    Vector3.prototype.toVec3 = function () {
+        return new CANNON.Vec3(this.x, this.y, this.z);
+    };
     /*
      STATIC FUNCTIONS
      */
@@ -20943,7 +21084,7 @@ var Vector3 = /** @class */ (function () {
 }());
 exports.Vector3 = Vector3;
 
-},{"./Vector2":29,"./Vector4":31}],31:[function(require,module,exports){
+},{"./Vector2":30,"./Vector4":32,"cannon":2}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
@@ -21121,7 +21262,7 @@ var Vector4 = /** @class */ (function () {
 }());
 exports.Vector4 = Vector4;
 
-},{"./Vector2":29,"./Vector3":30}],32:[function(require,module,exports){
+},{"./Vector2":30,"./Vector3":31}],33:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -21190,7 +21331,7 @@ var PhysicsEngine = /** @class */ (function () {
 }());
 exports.PhysicsEngine = PhysicsEngine;
 
-},{"../Core/Time":17,"cannon":2}],33:[function(require,module,exports){
+},{"../Core/Time":18,"cannon":2}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Line = exports.SubMesh = exports.Mesh = void 0;
@@ -21246,7 +21387,7 @@ var Line = /** @class */ (function () {
 }());
 exports.Line = Line;
 
-},{"../Math/Bounds":22}],34:[function(require,module,exports){
+},{"../Math/Bounds":23}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -21256,6 +21397,7 @@ var Vector4_1 = require("../Math/Vector4");
 var Renderer_1 = require("../Component/Renderer");
 var Camera_1 = require("../Component/Camera");
 var Engine_1 = require("../Core/Engine");
+var Setting_1 = require("../Core/Setting");
 var Lerp_1 = require("../Math/Lerp");
 var TransformTools_1 = require("../Math/TransformTools");
 var Debug_1 = require("../Utils/Debug");
@@ -21269,8 +21411,8 @@ var RasterizationPipeline = /** @class */ (function () {
     function RasterizationPipeline(frameBuffer) {
         this.drawMode = DrawMode.Shader;
         this.frameBuffer = frameBuffer;
-        this.depthBuffer = new Float32Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
-        this.overdrawBuffer = new Uint32Array(Engine_1.EngineConfig.canvasWidth * Engine_1.EngineConfig.canvasHeight);
+        this.depthBuffer = new Float32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
+        this.overdrawBuffer = new Uint32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
     }
     RasterizationPipeline.prototype.Render = function () {
         var _a;
@@ -21302,15 +21444,18 @@ var RasterizationPipeline = /** @class */ (function () {
         var viewport = camera.viewPort;
         var backgroundColor = camera.backGroundColor;
         // 1. 计算视口在屏幕缓冲区中的像素范围
-        var viewportPixelX = Math.floor(viewport.x * Engine_1.EngineConfig.canvasWidth);
-        var viewportPixelY = Math.floor(viewport.y * Engine_1.EngineConfig.canvasHeight);
-        var viewportPixelWidth = Math.floor(viewport.z * Engine_1.EngineConfig.canvasWidth);
-        var viewportPixelHeight = Math.floor(viewport.w * Engine_1.EngineConfig.canvasHeight);
+        var viewportPixelX = Math.floor(viewport.x * Setting_1.EngineConfig.canvasWidth);
+        var viewportPixelY = Math.floor(viewport.y * Setting_1.EngineConfig.canvasHeight);
+        var viewportPixelWidth = Math.floor(viewport.z * Setting_1.EngineConfig.canvasWidth);
+        var viewportPixelHeight = Math.floor(viewport.w * Setting_1.EngineConfig.canvasHeight);
         // 2. 根据清除标志，清除视口对应的区域
-        if (clearFlags & Camera_1.CameraClearFlags.Color) {
+        if (camera.clearFlags == Camera_1.CameraClearFlags.Skybox) {
+            // 绘制天空盒
+        }
+        else if (clearFlags == Camera_1.CameraClearFlags.Color) {
             this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor);
         }
-        if (clearFlags & Camera_1.CameraClearFlags.Depth) {
+        if (clearFlags != Camera_1.CameraClearFlags.None) {
             this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
         }
         this.clearViewportRegion(this.overdrawBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
@@ -21326,11 +21471,11 @@ var RasterizationPipeline = /** @class */ (function () {
      */
     RasterizationPipeline.prototype.clearViewportRegion = function (buffer, x, y, width, height, value) {
         // 如果是满屏幕，则快速填充
-        if (x == 0 && y == 0 && width == Engine_1.EngineConfig.canvasWidth && height == Engine_1.EngineConfig.canvasHeight) {
+        if (x == 0 && y == 0 && width == Setting_1.EngineConfig.canvasWidth && height == Setting_1.EngineConfig.canvasHeight) {
             buffer.fill(value);
             return;
         }
-        var canvasWidth = Engine_1.EngineConfig.canvasWidth;
+        var canvasWidth = Setting_1.EngineConfig.canvasWidth;
         for (var row = y; row < y + height; row++) {
             var startIndex = row * canvasWidth + x;
             var endIndex = startIndex + width;
@@ -21347,10 +21492,10 @@ var RasterizationPipeline = /** @class */ (function () {
         y = (y | 0);
         // x = Math.floor(x);
         // y = Math.floor(y);
-        if (x < 0 || x >= Engine_1.EngineConfig.canvasWidth || y < 0 || y >= Engine_1.EngineConfig.canvasHeight) {
+        if (x < 0 || x >= Setting_1.EngineConfig.canvasWidth || y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
             return;
         }
-        var index = y * Engine_1.EngineConfig.canvasWidth + x;
+        var index = y * Setting_1.EngineConfig.canvasWidth + x;
         // 颜色混合处理
         if (blendMode !== Color_1.BlendMode.replace) {
             var existingColor = this.frameBuffer[index];
@@ -21369,8 +21514,8 @@ var RasterizationPipeline = /** @class */ (function () {
         var _a, _b, _c, _d;
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
-        var w = Engine_1.EngineConfig.canvasWidth;
-        var h = Engine_1.EngineConfig.canvasHeight;
+        var w = Setting_1.EngineConfig.canvasWidth;
+        var h = Setting_1.EngineConfig.canvasHeight;
         if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h)) {
             //TODO:裁剪掉超出屏幕的部分
             return;
@@ -21452,8 +21597,8 @@ var RasterizationPipeline = /** @class */ (function () {
         // 注：以下提到的长边，特指y轴跨度最长的边，而不是实际上的边长
         var _a, _b, _c;
         // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-        var w = Engine_1.EngineConfig.canvasWidth;
-        var h = Engine_1.EngineConfig.canvasHeight;
+        var w = Setting_1.EngineConfig.canvasWidth;
+        var h = Setting_1.EngineConfig.canvasHeight;
         if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
             //TODO:裁剪掉超出屏幕的部分
             return;
@@ -21500,8 +21645,8 @@ var RasterizationPipeline = /** @class */ (function () {
     RasterizationPipeline.prototype.DrawTriangleFilledWithVertexColor = function (x1, y1, x2, y2, x3, y3, color1, color2, color3) {
         var _a, _b, _c;
         // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-        var w = Engine_1.EngineConfig.canvasWidth;
-        var h = Engine_1.EngineConfig.canvasHeight;
+        var w = Setting_1.EngineConfig.canvasWidth;
+        var h = Setting_1.EngineConfig.canvasHeight;
         if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
             //TODO:裁剪掉超出屏幕的部分
             return;
@@ -21715,12 +21860,12 @@ var RasterizationPipeline = /** @class */ (function () {
                     var y = fragment.y;
                     var z = fragment.z;
                     // 检查坐标是否在屏幕范围内
-                    if (x < 0 || x >= Engine_1.EngineConfig.canvasWidth ||
-                        y < 0 || y >= Engine_1.EngineConfig.canvasHeight) {
+                    if (x < 0 || x >= Setting_1.EngineConfig.canvasWidth ||
+                        y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
                         return;
                     }
                     // 计算深度缓冲区索引
-                    var index = y * Engine_1.EngineConfig.canvasWidth + x;
+                    var index = y * Setting_1.EngineConfig.canvasWidth + x;
                     var currentDepth = this.depthBuffer[index];
                     // 渲染管线8.早期深度测试
                     // 深度测试：只有当前像素更近（z值更小）时才绘制
@@ -21769,9 +21914,9 @@ var RasterizationPipeline = /** @class */ (function () {
         }
     };
     RasterizationPipeline.prototype.DrawDepthBuffer = function () {
-        for (var x = 0; x < Engine_1.EngineConfig.canvasWidth; x++) {
-            for (var y = 0; y < Engine_1.EngineConfig.canvasHeight; y++) {
-                var index = y * Engine_1.EngineConfig.canvasWidth + x;
+        for (var x = 0; x < Setting_1.EngineConfig.canvasWidth; x++) {
+            for (var y = 0; y < Setting_1.EngineConfig.canvasHeight; y++) {
+                var index = y * Setting_1.EngineConfig.canvasWidth + x;
                 var currentDepth = this.depthBuffer[index];
                 // 将深度值(0-1)转换为灰度值(0-255)
                 var grayValue = Math.floor(currentDepth * 255);
@@ -21785,9 +21930,9 @@ var RasterizationPipeline = /** @class */ (function () {
         this.frameBuffer.fill(Color_1.Color.BLACK);
         // 使用预设的最大可视化范围来归一化 Overdraw 计数
         var MAX_VISUALIZATION_RANGE = 8;
-        for (var x = 0; x < Engine_1.EngineConfig.canvasWidth; x++) {
-            for (var y = 0; y < Engine_1.EngineConfig.canvasHeight; y++) {
-                var index = y * Engine_1.EngineConfig.canvasWidth + x;
+        for (var x = 0; x < Setting_1.EngineConfig.canvasWidth; x++) {
+            for (var y = 0; y < Setting_1.EngineConfig.canvasHeight; y++) {
+                var index = y * Setting_1.EngineConfig.canvasWidth + x;
                 var overdrawCount = this.overdrawBuffer[index];
                 if (overdrawCount > 0) {
                     // 将 Overdraw 计数限制在可视化范围内并归一化
@@ -21879,7 +22024,7 @@ var RasterizationPipeline = /** @class */ (function () {
 }());
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Math/Color":23,"../Math/Lerp":24,"../Math/TransformTools":28,"../Math/Vector3":30,"../Math/Vector4":31,"../Utils/Debug":39}],35:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Core/Setting":17,"../Math/Color":24,"../Math/Lerp":25,"../Math/TransformTools":29,"../Math/Vector3":31,"../Math/Vector4":32,"../Utils/Debug":40}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
@@ -21903,7 +22048,7 @@ exports.MainScene = {
         var cma1 = camera1.addComponent(Camera_1.Camera);
         camera1.addComponent(CameraController_1.CameraController);
         if (cma1) {
-            cma1.clearFlags = Camera_1.CameraClearFlags.ALL;
+            cma1.clearFlags = Camera_1.CameraClearFlags.Color;
             cma1.depth = 0;
         }
         // const camera2 = new GameObject("camera");
@@ -21974,7 +22119,7 @@ exports.MainScene = {
     }
 };
 
-},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/SphereCollider":12,"../Core/GameObject":15,"../Math/Quaternion":26,"../Math/Vector3":30,"../Utils/AssetLoader":38}],36:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/SphereCollider":12,"../Core/GameObject":15,"../Math/Quaternion":27,"../Math/Vector3":31,"../Utils/AssetLoader":39}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -22085,7 +22230,7 @@ var Scene = /** @class */ (function () {
 }());
 exports.Scene = Scene;
 
-},{"../Component/Renderer":10,"../Core/GameObject":15,"../Math/BVHTree":21,"../Math/TransformTools":28,"../Math/Vector2":29}],37:[function(require,module,exports){
+},{"../Component/Renderer":10,"../Core/GameObject":15,"../Math/BVHTree":22,"../Math/TransformTools":29,"../Math/Vector2":30}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -22135,7 +22280,7 @@ var SceneManager = /** @class */ (function () {
 }());
 exports.SceneManager = SceneManager;
 
-},{"./Scene":36}],38:[function(require,module,exports){
+},{"./Scene":37}],39:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22251,7 +22396,7 @@ var AssetLoader = /** @class */ (function () {
 }());
 exports.AssetLoader = AssetLoader;
 
-},{"./Dictionary":40,"./ObjParser":41}],39:[function(require,module,exports){
+},{"./Dictionary":41,"./ObjParser":42}],40:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -22323,7 +22468,7 @@ var Debug = /** @class */ (function () {
 }());
 exports.Debug = Debug;
 
-},{"../Component/Camera":5,"../Core/Engine":14,"../Math/TransformTools":28}],40:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":14,"../Math/TransformTools":29}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dictionary = void 0;
@@ -22383,7 +22528,7 @@ var Dictionary = /** @class */ (function () {
 }());
 exports.Dictionary = Dictionary;
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -22657,7 +22802,7 @@ var OBJParser = /** @class */ (function () {
 }());
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":22,"../Math/Vector2":29,"../Math/Vector3":30,"../Math/Vector4":31,"../Renderer/Mesh":33}],42:[function(require,module,exports){
+},{"../Math/Bounds":23,"../Math/Vector2":30,"../Math/Vector3":31,"../Math/Vector4":32,"../Renderer/Mesh":34}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Engine_1 = require("./Core/Engine");
@@ -22675,6 +22820,6 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":14}]},{},[42])
+},{"./Core/Engine":14}]},{},[43])
 
 //# sourceMappingURL=bundle.js.map

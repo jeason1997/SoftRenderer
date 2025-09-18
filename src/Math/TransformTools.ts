@@ -1,5 +1,5 @@
 import { Camera } from "../Component/Camera";
-import { EngineConfig } from "../Core/Engine";
+import { EngineConfig } from "../Core/Setting";
 import { Transform } from "../Core/Transform";
 import { Quaternion } from "./Quaternion";
 import { Ray } from "./Ray";

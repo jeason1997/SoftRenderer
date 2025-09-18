@@ -6,6 +6,7 @@ import { Debug } from "../Utils/Debug";
 import { Time } from "./Time";
 import { TweenManager } from "./TweenManager";
 import { PhysicsEngine } from "../Physics/PhysicsEngine";
+import { EngineConfig } from "./Setting";
 
 export class Engine {
     public static sceneManager: SceneManager = new SceneManager();
@@ -84,12 +85,4 @@ export class Engine {
         // 将图像数据绘制到canvas上
         this.context.putImageData(this.imageData, 0, 0);
     }
-}
-
-export class EngineConfig {
-    public static canvasWidth: number = 400;
-    public static canvasHeight: number = 400;
-    public static halfCanvasWidth: number = EngineConfig.canvasWidth >> 1;
-    public static halfCanvasHeight: number = EngineConfig.canvasHeight >> 1;
-    public static aspectRatio: number = EngineConfig.canvasWidth / EngineConfig.canvasHeight;
 }

@@ -2,7 +2,7 @@ import * as CANNON from 'cannon';
 import { Color } from '../Math/Color';
 import { Camera } from '../Component/Camera';
 import { Vector4 } from '../Math/Vector4';
-import { EngineConfig } from '../Core/Engine';
+import { EngineConfig } from "../Core/Setting";
 import { TransformTools } from '../Math/TransformTools';
 import { Vector3 } from '../Math/Vector3';
 import { Quaternion } from '../Math/Quaternion';

@@ -1,16 +1,27 @@
 import { Color } from "../Math/Color";
-import { EngineConfig } from "../Core/Engine";
 import { Vector4 } from "../Math/Vector4";
 import { Component } from "./Component";
 import { Matrix4x4 } from "../Math/Matrix4x4";
 import { Time } from "../Core/Time";
 import { DisallowMultipleComponent } from "../Core/Decorators";
+import { EngineConfig } from "../Core/Setting";
 
 export enum CameraClearFlags {
-    NONE = 0,
-    ALL = 16384 | 256,
-    Color = 16384,  //gl.COLOR_BUFFER_BIT
-    Depth = 256,    //gl.DEPTH_BUFFER_BIT
+    None = 0,
+    Skybox = 1,
+    Color = 2,
+    DepthOnly = 3,
+}
+
+export enum Projection {
+    Perspective = 0,
+    Orthographic = 1,
+}
+
+export enum RenderingPath {
+    VertexLit = 0,
+    Forward = 1,
+    Deferred = 2,
 }
 
 @DisallowMultipleComponent
@@ -20,15 +31,16 @@ export class Camera extends Component {
 
     public targetTexture: null;
     public backGroundColor: number = Color.GRAY;
-    public fogColor: Color = new Color(0.27, 0.27, 0.27, 1.0);
-    public clearFlags: CameraClearFlags = CameraClearFlags.ALL;
+    public clearFlags: CameraClearFlags = CameraClearFlags.Color;
     public nearClip: number = 1;
     public farClip: number = 128;
     public fov: number = 60;
-    public depth: number = 0;
+    public depth: number = -1;
     public viewPort: Vector4 = new Vector4(0, 0, 1, 1);
-    public orthographic: boolean = false;
+    public projection: Projection = Projection.Perspective;
     public orthographicSize: number = 5;
+    public renderingPath: RenderingPath = RenderingPath.Forward;
+    public occlusionCulling: boolean = false;
 
     public get aspect(): number {
         var v = this.viewPort;
@@ -75,7 +87,7 @@ export class Camera extends Component {
     }
 
     public getProjectionMatrix(): Matrix4x4 {
-        if (this.orthographic) {
+        if (this.projection == Projection.Orthographic) {
             return Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
         }
         else {

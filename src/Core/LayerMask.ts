@@ -1,3 +1,4 @@
+import { Layers } from "./Setting";
 export class LayerMask {
     private m_Mask: number = 0;
 
@@ -35,17 +36,7 @@ export class LayerMask {
      * @returns The name of the layer
      */
     public static layerToName(layer: number): string {
-        // 这里需要实现与Unity TagManager的交互
-        // 在实际项目中，你可能需要从配置文件中获取层名称映射
-        const layerNames: { [key: number]: string } = {
-            0: "Default",
-            1: "TransparentFX",
-            2: "Ignore Raycast",
-            3: "Water",
-            4: "UI",
-            // 添加更多层映射...
-        };
-        return layerNames[layer] || `Layer${layer}`;
+        return Layers[layer] || `Layer${layer}`;
     }
 
     /**
@@ -55,17 +46,7 @@ export class LayerMask {
      * @returns The layer index, or -1 if not found
      */
     public static nameToLayer(layerName: string): number {
-        // 这里需要实现与Unity TagManager的交互
-        // 在实际项目中，你可能需要从配置文件中获取层名称映射
-        const layerMapping: { [key: string]: number } = {
-            "Default": 0,
-            "TransparentFX": 1,
-            "Ignore Raycast": 2,
-            "Water": 3,
-            "UI": 4,
-            // 添加更多层映射...
-        };
-        return layerMapping[layerName] ?? -1;
+        return Layers[layerName] ?? -1;
     }
 
     /**

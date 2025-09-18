@@ -23,7 +23,7 @@ export const MainScene = {
         const cma1 = camera1.addComponent(Camera);
         camera1.addComponent(CameraController);
         if (cma1) {
-            cma1.clearFlags = CameraClearFlags.ALL;
+            cma1.clearFlags = CameraClearFlags.Color;
             cma1.depth = 0;
         }
 
