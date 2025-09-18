@@ -13,12 +13,9 @@ export class SphereCollider extends Collider {
 
         // 先移除旧的
         this.destroyCollider();
-        this.collider = new CANNON.Sphere(this.radius);
+        this.connonShape = new CANNON.Sphere(this.radius);
 
-        const body = this.attachedRigidbody.connonBody;
-        if (body) {
-            body.addShape(this.collider);
-        }
+        Engine.physics.AddCollider(this, this.connonShape);
     }
 
     /**
@@ -49,7 +46,7 @@ export class SphereCollider extends Collider {
      * 注意：需要确保在物理世界的正确生命周期内操作，并处理可能的父刚体关联
      */
     private recreateCollider(): void {
-        if (this.collider) {
+        if (this.connonShape) {
             // 需要根据你的引擎架构实现销毁逻辑，例如：
             // Engine.physicsEngine.getWorld().removeCollider(this.collider);
         }

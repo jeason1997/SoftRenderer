@@ -32,6 +32,23 @@ export class Quaternion {
 
     public get eulerAngles(): Vector3 {
         return Matrix4x4.getRotateMatrixByQuaternion(this).getEulerAngles();
+
+        // 或下面直接通过三角函数公式提取欧拉角，无需矩阵
+        // // 四元数转XYZ顺序欧拉角（roll, pitch, yaw）
+        // // 旋转顺序：先绕X轴(roll)，再绕Y轴(pitch)，最后绕Z轴(yaw)
+        // // 计算各分量平方（用于减少重复计算）
+        // const qx2 = this.x * this.x;
+        // const qy2 = this.y * this.y;
+        // const qz2 = this.z * this.z;
+        // // XYZ顺序的转换公式（结果为弧度）
+        // const roll = Math.atan2(2 * (this.w * this.x + this.y * this.z), 1 - 2 * (qx2 + qy2));
+        // const pitch = Math.asin(2 * (this.w * this.y - this.z * this.x));
+        // const yaw = Math.atan2(2 * (this.w * this.z + this.x * this.y), 1 - 2 * (qy2 + qz2));
+        // // 转换为角度（可选，根据需要保留）
+        // const rollDeg = roll * 180 / Math.PI;
+        // const pitchDeg = pitch * 180 / Math.PI;
+        // const yawDeg = yaw * 180 / Math.PI;
+        // return new Vector3(rollDeg, pitchDeg, yawDeg);
     }
 
     public set eulerAngles(e: Vector3) {
@@ -40,6 +57,25 @@ export class Quaternion {
         this.x = q.x;
         this.y = q.y;
         this.z = q.z;
+
+        // 或下面直接通过三角函数公式计算四元数分量，无需矩阵
+        // // XYZ顺序的欧拉角（roll, pitch, yaw）转四元数
+        // // 旋转顺序：先绕X轴(roll)，再绕Y轴(pitch)，最后绕Z轴(yaw)
+        // const roll = e.x * Math.PI / 180;  // X轴旋转（roll），角度转弧度
+        // const pitch = e.y * Math.PI / 180; // Y轴旋转（pitch），角度转弧度
+        // const yaw = e.z * Math.PI / 180;   // Z轴旋转（yaw），角度转弧度
+        // // 计算半角的三角函数值
+        // const cosRoll = Math.cos(roll / 2);
+        // const sinRoll = Math.sin(roll / 2);
+        // const cosPitch = Math.cos(pitch / 2);
+        // const sinPitch = Math.sin(pitch / 2);
+        // const cosYaw = Math.cos(yaw / 2);
+        // const sinYaw = Math.sin(yaw / 2);
+        // // XYZ顺序的四元数转换公式
+        // this.w = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
+        // this.x = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
+        // this.y = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
+        // this.z = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
     }
 
     public rotateAround(angle: number, axis: Vector3): Quaternion {

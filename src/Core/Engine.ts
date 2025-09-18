@@ -5,12 +5,12 @@ import { SceneManager } from "../Scene/SceneManager";
 import { Debug } from "../Utils/Debug";
 import { Time } from "./Time";
 import { TweenManager } from "./TweenManager";
-import { PhysicsEngine } from "../Physics/PhysicsEngine";
+import { Physics } from "../Physics/Physics";
 import { EngineConfig } from "./Setting";
 
 export class Engine {
     public static sceneManager: SceneManager = new SceneManager();
-    public static physicsEngine: PhysicsEngine = new PhysicsEngine();
+    public static physics: Physics = new Physics();
     public static canvas: HTMLCanvasElement;
     public static context: CanvasRenderingContext2D;
     public static pipeline: RasterizationPipeline;
@@ -35,7 +35,7 @@ export class Engine {
         this.pipeline = new RasterizationPipeline(uint32View);
 
         // 初始化物理引擎
-        this.physicsEngine.init();
+        this.physics.init();
         // 初始化场景
         this.sceneManager.loadScene(MainScene);
         // 初始化输入系统
@@ -77,7 +77,7 @@ export class Engine {
     }
 
     private static FixedUpdate() {
-        this.physicsEngine.update();
+        this.physics.update();
     }
 
     private static Render() {

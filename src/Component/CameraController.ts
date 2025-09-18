@@ -10,7 +10,11 @@ import { Vector3 } from "../Math/Vector3";
 import { Debug } from "../Utils/Debug";
 import { Camera, Projection } from "./Camera";
 import { Component } from "./Component";
-import * as CANNON from 'cannon';
+
+interface Line {
+    start: Vector3;
+    end: Vector3;
+}
 
 @RequireComponent(Camera)
 export class CameraController extends Component {
@@ -28,7 +32,7 @@ export class CameraController extends Component {
     private _rotateCamera = false;
     private _rotateCenter = new Vector3();
 
-    private _ray: Ray[] = [];
+    private _lines: Line[] = [];
 
     public start(): void {
         this._camera = this.gameObject.getComponent(Camera);
@@ -86,7 +90,15 @@ export class CameraController extends Component {
         // 鼠标左键发射射线
         if (Input.GetMouseButtonDown(0) && this._camera) {
             const ray = TransformTools.ScreenToWorldPosRaycast(Input.mousePosition, this._camera);
-            this._ray.push(ray);
+            Engine.physics.Raycast(ray, (hit) => {
+                if (hit.collider) {
+                    this._lines.push({
+                        start: ray.origin,
+                        end: hit.point,
+                    });
+                    console.log(hit.toString());
+                }
+            });
         }
     }
 
@@ -112,17 +124,8 @@ export class CameraController extends Component {
         q = Quaternion.slerp(this.transform.rotation, q, Time.deltaTime / this.damp);
         this.transform.rotation = q;
 
-
-        this._ray.forEach(ray2 => {
-            const lengt = 20;
-            Debug.DrawLine3D(ray2.origin, ray2.at(lengt), Color.RED);
-            const result = new CANNON.RaycastResult();
-
-            Engine.physicsEngine.world.rayTest(ray2.origin.toVec3(), ray2.at(lengt).toVec3(), result);
-
-            if (result.hasHit) {
-                Debug.DrawLine3D(new Vector3(result.hitPointWorld.x, result.hitPointWorld.y, result.hitPointWorld.z), new Vector3(result.hitPointWorld.x + result.hitNormalWorld.x * 0.5, result.hitPointWorld.y + result.hitNormalWorld.y * 0.5, result.hitPointWorld.z + result.hitNormalWorld.z * 0.5), Color.GREEN);
-            }
+        this._lines.forEach(line => {
+            Debug.DrawLine3D(line.start, line.end, Color.RED);
         });
     }
 }

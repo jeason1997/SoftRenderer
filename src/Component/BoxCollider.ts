@@ -3,6 +3,7 @@ import { Collider } from "./Collider";
 import { Rigidbody } from "./RigidBody";
 import { MeshRenderer } from "./MeshRenderer";
 import * as CANNON from 'cannon';
+import { Engine } from "../Core/Engine";
 
 export class BoxCollider extends Collider {
 
@@ -23,12 +24,9 @@ export class BoxCollider extends Collider {
 
         // 先移除旧的
         this.destroyCollider();
-        this.collider = new CANNON.Box(new CANNON.Vec3(this.size.x / 2, this.size.y / 2, this.size.z / 2));
+        this.connonShape = new CANNON.Box(new CANNON.Vec3(this.size.x / 2, this.size.y / 2, this.size.z / 2));
 
-        const body = this.attachedRigidbody.connonBody;
-        if (body) {
-            body.addShape(this.collider);
-        }
+        Engine.physics.AddCollider(this, this.connonShape);
     }
 
     private updateSizeFromMeshBounds() {

@@ -79,10 +79,7 @@ export class Rigidbody extends Component {
     public excludeLayers: LayerMask;
     public includeLayers: LayerMask;
 
-    private _connonBody: CANNON.Body | null;
-    public get connonBody(): CANNON.Body | null {
-        return this._connonBody;
-    }
+    private connonBody: CANNON.Body | null;
 
     public start(): void {
         const parentRigidbody = this.gameObject.getComponetInParent(Rigidbody);
@@ -99,36 +96,35 @@ export class Rigidbody extends Component {
             UObject.Destroy(childRigidbody);
         }
 
-        if (this._connonBody != null) {
-            Engine.physicsEngine.world.remove(this._connonBody);
+        if (this.connonBody != null) {
+            Engine.physics.RemoveRigidbody(this);
         }
 
-        this._connonBody = new CANNON.Body({
+        this.connonBody = new CANNON.Body({
             mass: this.isKinematic ? 0 : this.mass,
             position: new CANNON.Vec3(this.transform.position.x, this.transform.position.y, this.transform.position.z),
             quaternion: new CANNON.Quaternion(this.transform.rotation.x, this.transform.rotation.y, this.transform.rotation.z, this.transform.rotation.w),
         })
+        Engine.physics.AddRigidbody(this, this.connonBody);
      
         const colliders = this.gameObject.getComponentsInChildren(Collider);
         for (const collider of colliders) {
             collider.createCollider(this);
         }
-
-        Engine.physicsEngine.world.addBody(this._connonBody);
     }
 
     public update(): void {
-        if (this._connonBody == null) return;
-        const pos = this._connonBody.position;
-        const rot = this._connonBody.quaternion;
+        if (this.connonBody == null) return;
+        const pos = this.connonBody.position;
+        const rot = this.connonBody.quaternion;
         this.transform.position = new Vector3(pos.x, pos.y, pos.z);
         this.transform.rotation = new Quaternion(rot.x, rot.y, rot.z, rot.w);
     }
 
     public onDestroy(): void {
-        if (this._connonBody != null) {
-            Engine.physicsEngine.world.remove(this._connonBody);
-            this._connonBody = null;
+        if (this.connonBody != null) {
+            Engine.physics.RemoveRigidbody(this);
+            this.connonBody = null;
         }
     }
 
