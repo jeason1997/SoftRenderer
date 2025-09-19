@@ -1,12 +1,13 @@
 import { Color } from "../Math/Color";
 import { Vector2 } from "../Math/Vector2";
+import { Texture } from "../Resources/Texture";
 
 export class Material {
     public name: string;
     public color: number = Color.WHITE;
-    public mainTexture: ImageData | null = null;
-    public textureOffset: Vector2 = new Vector2(0, 0);
-    public textureScale: Vector2 = new Vector2(1, 1);
+    public mainTexture: Texture | null = null;
+    public textureOffset: Vector2 = Vector2.ZERO;
+    public textureScale: Vector2 = Vector2.ONE;
     
     // 渲染模式
     public wireframe: boolean = false;

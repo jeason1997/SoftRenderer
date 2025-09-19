@@ -14,6 +14,7 @@ import { interpolateOverTriangle } from "../Math/Lerp"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
 import { Vector2 } from "../Math/Vector2";
+import { Light } from "../Component/Light";
 
 enum DrawMode {
     Wireframe = 1,
@@ -578,19 +579,59 @@ export class RasterizationPipeline {
                         this.depthBuffer[index] = z;
 
                         // uv
-                        const uv = fragment.attributes.uv as Vector2;
-                        const color = new Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
+                        // const uv = fragment.attributes.uv as Vector2;
+                        // const color = new Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
 
                         // nroaml
                         // const normal = fragment.attributes.normal as Vector3;
                         // const color = new Color(Math.floor((normal.x + 1) * 0.5 * 255), Math.floor((normal.y + 1) * 0.5 * 255), Math.floor((normal.z + 1) * 0.5 * 255)).ToUint32();
 
                         // 渲染管线9.绘制像素到帧缓冲
-                        this.DrawPixel(x, y, color, true);
+                        if (renderer.material && renderer.material.mainTexture) {
+                            const texture = renderer.material.mainTexture;
+                            const uv = fragment.attributes.uv as Vector2;
+                            const color = texture.Sample(uv.u, uv.v);
+                            this.DrawPixel(x, y, this.calculateLambertLighting(color, fragment.attributes.normal as Vector3), true);
+                        }
                     }
                 }
             }
         }
+    }
+
+    // 兰伯特光照计算
+    private calculateLambertLighting(
+        surfaceColor: number, 
+        normal: Vector3, 
+    ): number {
+        const light = Light.sunLight;
+
+        // 确保法向量归一化
+        const normalizedNormal = normal.normalize();
+        
+        // 计算法向量与光源方向的点积（兰伯特色度）
+        // 结果范围为[-1, 1]，我们只关心正面光照（>0的值）
+        const dotProduct = Math.max(0, normalizedNormal.dot(light.transform.forward));
+        
+        // 提取表面颜色的RGBA通道
+        const r = (surfaceColor >> 16) & 0xff;
+        const g = (surfaceColor >> 8) & 0xff;
+        const b = surfaceColor & 0xff;
+        const a = (surfaceColor >> 24) & 0xff;
+        
+        // 计算光照后的颜色（漫反射公式）
+        // 表面颜色 * 光源颜色 * 光照强度 * 兰伯特色度
+        const litR = Math.round(r * (light.color.r / 255) * light.intensity * dotProduct);
+        const litG = Math.round(g * (light.color.g / 255) * light.intensity * dotProduct);
+        const litB = Math.round(b * (light.color.b / 255) * light.intensity * dotProduct);
+        
+        // 确保颜色值在0-255范围内
+        const clampedR = Math.min(255, Math.max(0, litR));
+        const clampedG = Math.min(255, Math.max(0, litG));
+        const clampedB = Math.min(255, Math.max(0, litB));
+        
+        // 组合成32位颜色值（保留原始Alpha）
+        return (a << 24) | (clampedR << 16) | (clampedG << 8) | clampedB;
     }
 
     //#endregion

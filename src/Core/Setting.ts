@@ -33,11 +33,11 @@ export class PhysicsSettings {
 
 export class RenderSettings {
     public static fog: boolean = false;
-    public static fogColor: Color = new Color(0, 0, 0, 1);
+    public static fogColor: Color;
     public static fogMode: FogMode = FogMode.Exp2;
     public static fogDensity: number = 0.01;
     public static linearFogStart: number = 0;
     public static linearFogEnd: number = 300;
-    public static ambientLight: Color = new Color(0.1, 0.1, 0.1, 1);
+    public static ambientLight: Color = Color.FromUint32(Color.RED);
     public static skyboxMaterial;
 }

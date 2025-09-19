@@ -5,6 +5,7 @@ import { Matrix4x4 } from "../Math/Matrix4x4";
 import { Time } from "../Core/Time";
 import { DisallowMultipleComponent } from "../Core/Decorators";
 import { EngineConfig } from "../Core/Setting";
+import { Texture } from "../Resources/Texture";
 
 export enum CameraClearFlags {
     None = 0,
@@ -29,7 +30,7 @@ export class Camera extends Component {
     public static mainCamera: Camera;
     public static cameras: Array<Camera> = new Array<Camera>();
 
-    public targetTexture: null;
+    public targetTexture: Texture;
     public backGroundColor: number = Color.GRAY;
     public clearFlags: CameraClearFlags = CameraClearFlags.Color;
     public nearClip: number = 1;

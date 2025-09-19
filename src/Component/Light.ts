@@ -14,8 +14,9 @@ export enum ShadowType {
 }
 
 export class Light extends Component {
+    public static sunLight: Light;
     public type: LightType = LightType.Directional;
-    public color: Color = new Color(1, 1, 1, 1);
+    public color: Color = Color.FromUint32(Color.WHITE);
     public intensity: number = 1;
     public shadowType: ShadowType = ShadowType.None;
 }
