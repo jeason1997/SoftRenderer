@@ -10,7 +10,7 @@ export class ObjRotate extends Component {
     private angleX = 0;
     private angleY = 0;
 
-    public update(): void {
+    public onUpdate(): void {
         // // 键盘输入
         // const horizontalInput = Input.GetAxis(InputAxis.Horizontal);
         // const verticalInput = Input.GetAxis(InputAxis.Vertical);

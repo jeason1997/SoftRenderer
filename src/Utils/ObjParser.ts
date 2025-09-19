@@ -1,4 +1,4 @@
-import { Line, Mesh } from "../Renderer/Mesh";
+import { Mesh } from "../Renderer/Mesh";
 import { SubMesh } from "../Renderer/Mesh";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";

@@ -2,19 +2,10 @@ import { RequireComponent } from "../Core/Decorators";
 import { Engine } from "../Core/Engine";
 import { Input, InputAxis } from "../Core/Input";
 import { Time } from "../Core/Time";
-import { Color } from "../Math/Color";
 import { Quaternion } from "../Math/Quaternion";
-import { Ray } from "../Math/Ray";
-import { TransformTools } from "../Math/TransformTools";
 import { Vector3 } from "../Math/Vector3";
-import { Debug } from "../Utils/Debug";
 import { Camera, Projection } from "./Camera";
 import { Component } from "./Component";
-
-interface Line {
-    start: Vector3;
-    end: Vector3;
-}
 
 @RequireComponent(Camera)
 export class CameraController extends Component {
@@ -32,9 +23,7 @@ export class CameraController extends Component {
     private _rotateCamera = false;
     private _rotateCenter = new Vector3();
 
-    private _lines: Line[] = [];
-
-    public start(): void {
+    public onStart(): void {
         this._camera = this.gameObject.getComponent(Camera);
         this._euler = this.transform.rotation.eulerAngles;
         this._position = this.transform.position;
@@ -86,20 +75,6 @@ export class CameraController extends Component {
             this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
             this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
         }
-
-        // 鼠标左键发射射线
-        if (Input.GetMouseButtonDown(0) && this._camera) {
-            const ray = TransformTools.ScreenToWorldPosRaycast(Input.mousePosition, this._camera);
-            Engine.physics.Raycast(ray, (hit) => {
-                if (hit.collider) {
-                    this._lines.push({
-                        start: ray.origin,
-                        end: hit.point,
-                    });
-                    console.log(hit.toString());
-                }
-            });
-        }
     }
 
     private scaleAndAdd(a: Vector3, b: Vector3, scale: number): Vector3 {
@@ -110,7 +85,7 @@ export class CameraController extends Component {
         return out;
     }
 
-    public update(): void {
+    public onUpdate(): void {
         this.updateInput();
 
         // position
@@ -123,9 +98,5 @@ export class CameraController extends Component {
         var q = new Quaternion(new Vector3(this._euler.x, this._euler.y, this._euler.z));
         q = Quaternion.slerp(this.transform.rotation, q, Time.deltaTime / this.damp);
         this.transform.rotation = q;
-
-        this._lines.forEach(line => {
-            Debug.DrawLine3D(line.start, line.end, Color.RED);
-        });
     }
 }

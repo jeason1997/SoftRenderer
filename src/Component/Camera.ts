@@ -47,7 +47,7 @@ export class Camera extends Component {
         return (v.z * EngineConfig.canvasWidth) / (v.w * EngineConfig.canvasHeight);
     }
 
-    public awake(): void {
+    public onAwake(): void {
         if (Camera.mainCamera == null) {
             Camera.mainCamera = this;
         }
@@ -57,7 +57,7 @@ export class Camera extends Component {
 
     private timer: number = 0;
     public counter: number = 0;
-    public update(): void {
+    public onUpdate(): void {
         if (Time.time - this.timer >= 1) {
             this.timer = Time.time;
             this.counter++;

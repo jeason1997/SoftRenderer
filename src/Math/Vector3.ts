@@ -1,9 +1,7 @@
 import { Vector2 } from "./Vector2";
 import { Vector4 } from "./Vector4";
-import * as CANNON from 'cannon';
 
 export class Vector3 {
-
     public x: number;
     public y: number;
     public z: number;
@@ -12,17 +10,11 @@ export class Vector3 {
     public constructor(x: number, y: number, z: number);
     public constructor(v: Vector2);
     public constructor(v: Vector4);
-    public constructor(v: CANNON.Vec3);
     public constructor() {
         if (arguments[0] instanceof Vector2) {
             this.x = arguments[0].x;
             this.y = arguments[0].y;
             this.z = 0;
-        }
-        else if (arguments[0] instanceof CANNON.Vec3) {
-            this.x = arguments[0].x;
-            this.y = arguments[0].y;
-            this.z = arguments[0].z;
         }
         else if (arguments[0] instanceof Vector4) {
             this.x = arguments[0].x;
@@ -167,10 +159,6 @@ export class Vector3 {
 
     public toString(): string {
         return "[" + this.x + ", " + this.y + ", " + this.z + "]";
-    }
-
-    public toVec3(): CANNON.Vec3 {
-        return new CANNON.Vec3(this.x, this.y, this.z);
     }
 
     /*

@@ -1,5 +1,4 @@
 import { Vector3 } from "../Math/Vector3";
-import { Vector2 } from "../Math/Vector2";
 import { Collider } from "../Component/Collider";
 import { Transform } from "../Core/Transform";
 import { Rigidbody } from "../Component/RigidBody";

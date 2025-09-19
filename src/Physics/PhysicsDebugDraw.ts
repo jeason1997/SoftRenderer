@@ -1,11 +1,10 @@
 import * as CANNON from 'cannon';
 import { Color } from '../Math/Color';
 import { Camera } from '../Component/Camera';
-import { Vector4 } from '../Math/Vector4';
-import { EngineConfig } from "../Core/Setting";
 import { TransformTools } from '../Math/TransformTools';
 import { Vector3 } from '../Math/Vector3';
 import { Quaternion } from '../Math/Quaternion';
+import { Engine } from '../Core/Engine';
 
 export class PhysicsDebugDraw {
     // 存储绘图函数的引用
@@ -301,7 +300,9 @@ export class PhysicsDebugDraw {
     }
 
     // 完善的物理调试绘制入口
-    public static DrawPhysicsDebug(world: CANNON.World, DrawLine: Function) {
+    public static DrawPhysicsDebug(DrawLine: Function) {
+        // @ts-ignore
+        const world = Engine.physics.world;
         this.drawLineFunc = DrawLine;
         // 遍历所有刚体并绘制
         world.bodies.forEach(body => {

@@ -29,18 +29,18 @@ export abstract class Component extends UObject {
         this.checkRequiredComponents();
         this.checkComponentUniqueness();
         this.checkComponentCompatibility();
-        this.awake();
+        this.onAwake();
     }
 
     // 生命周期方法
     // 当组件被创建时调用
-    public awake(): void { }
+    public onAwake(): void { }
 
     // 在启用组件的第一帧调用
-    public start(): void { }
+    public onStart(): void { }
 
     // 每帧更新前调用
-    public update(): void { }
+    public onUpdate(): void { }
 
     // 每帧更新后调用
     //public lateUpdate(): void {}

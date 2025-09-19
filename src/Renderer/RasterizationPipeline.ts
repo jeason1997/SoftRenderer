@@ -611,7 +611,7 @@ export class RasterizationPipeline {
         // this.DrawOverdraw();
 
         // 绘制物理调试信息
-        // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
+        PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
 
         // 绘制调试线
         const lines = Debug.GetDebugLines();

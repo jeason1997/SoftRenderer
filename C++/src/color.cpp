@@ -22,7 +22,7 @@ Color Color::operator*(float t) const
 
 Color Color::operator+(const Color &c) const
 {
-    // TODO：这个算法明显不对，两个透明度255的颜色相加，透明度反而变成254了
+    //TODO:这个算法明显不对，两个透明度255的颜色相加，透明度反而变成254了
     //  对每个通道进行相加，并确保结果不超过255
     return {static_cast<uint8_t>(r + c.r),
             static_cast<uint8_t>(g + c.g),

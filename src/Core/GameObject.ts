@@ -70,7 +70,7 @@ export class GameObject extends UObject {
 
         for (const component of this.components) {
             if (!this.startedComponents.has(component) && component.enabled) {
-                component.start();
+                component.onStart();
                 component.onEnable();
                 this.startedComponents.add(component);
             }
@@ -90,7 +90,7 @@ export class GameObject extends UObject {
 
         for (const component of this.components) {
             if (component.enabled) {
-                component.update();
+                component.onUpdate();
             }
         }
 
@@ -252,6 +252,19 @@ export class GameObject extends UObject {
             return true;
         }
         return false;
+    }
+
+    public removeComponentInstance<T extends Component>(component: T): boolean {
+        // 查找组件实例在数组中的索引
+        const index = this.components.indexOf(component);
+        if (index !== -1) {
+            // 调用组件的销毁生命周期方法
+            component.onDestroy();
+            // 从数组中移除该实例
+            this.components.splice(index, 1);
+            return true; // 移除成功
+        }
+        return false; // 未找到该组件实例
     }
 
     // 静态方法：通过名称查找GameObject

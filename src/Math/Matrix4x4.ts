@@ -281,7 +281,7 @@ export class Matrix4x4 {
     }
 
     public lookAt(target: Vector3): Matrix4x4 {
-        // todo
+        //TODO:
         return this;
     }
 

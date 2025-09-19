@@ -15,7 +15,7 @@ var watchedBrowserify = watchify(browserify({
 	cache: {},
 	packageCache: {}
 }).plugin(tsify, {
-	target: "ES5", 			// 适配低版本浏览器
+	target: "ES6",
 	module: "CommonJS", 	// 关键：输出 CommonJS 模块，兼容 Browserify
 	//strict: true, 			// 开启严格模式，提前发现类型错误
 	esModuleInterop: true, 	// 兼容 ES Module 和 CommonJS 的互操作

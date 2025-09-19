@@ -1,18 +1,15 @@
 import { Vector3 } from "../Math/Vector3";
 import { Collider } from "./Collider";
-import { Rigidbody } from "./RigidBody";
 import { MeshRenderer } from "./MeshRenderer";
-import * as CANNON from 'cannon';
-import { Engine } from "../Core/Engine";
+
+export interface BoxColliderData {
+    size: Vector3;
+}
 
 export class BoxCollider extends Collider {
-
-    public center: Vector3;
     public size: Vector3;
 
-    public createCollider(rigidbody: Rigidbody) {
-        this.attachedRigidbody = rigidbody;
-
+    public getColliderData(): BoxColliderData {
         if (this.center == null || this.size == null) {
             this.updateSizeFromMeshBounds();
         }
@@ -22,11 +19,9 @@ export class BoxCollider extends Collider {
         if (this.size.y <= 0) this.size.y = 0.01;
         if (this.size.z <= 0) this.size.z = 0.01;
 
-        // 先移除旧的
-        this.destroyCollider();
-        this.connonShape = new CANNON.Box(new CANNON.Vec3(this.size.x / 2, this.size.y / 2, this.size.z / 2));
-
-        Engine.physics.AddCollider(this, this.connonShape);
+        return {
+            size: this.size
+        };
     }
 
     private updateSizeFromMeshBounds() {

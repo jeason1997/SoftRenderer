@@ -7,7 +7,6 @@ import { Vector3 } from "../Math/Vector3";
 import { RaycastHit } from "../Physics/RaycastHit";
 import { Collider } from "./Collider";
 import { Component } from "./Component";
-import * as CANNON from 'cannon';
 import { DisallowMultipleComponent } from "../Core/Decorators";
 
 export enum ForceMode {
@@ -79,9 +78,8 @@ export class Rigidbody extends Component {
     public excludeLayers: LayerMask;
     public includeLayers: LayerMask;
 
-    private connonBody: CANNON.Body | null;
 
-    public start(): void {
+    public onStart(): void {
         const parentRigidbody = this.gameObject.getComponetInParent(Rigidbody);
         if (parentRigidbody && parentRigidbody != this) {
             console.warn("一个节点层级只能拥有一个Rigidbody组件");
@@ -96,36 +94,20 @@ export class Rigidbody extends Component {
             UObject.Destroy(childRigidbody);
         }
 
-        if (this.connonBody != null) {
-            Engine.physics.RemoveRigidbody(this);
-        }
+        Engine.physics.CreateRigidbody(this);
 
-        this.connonBody = new CANNON.Body({
-            mass: this.isKinematic ? 0 : this.mass,
-            position: new CANNON.Vec3(this.transform.position.x, this.transform.position.y, this.transform.position.z),
-            quaternion: new CANNON.Quaternion(this.transform.rotation.x, this.transform.rotation.y, this.transform.rotation.z, this.transform.rotation.w),
-        })
-        Engine.physics.AddRigidbody(this, this.connonBody);
-     
         const colliders = this.gameObject.getComponentsInChildren(Collider);
         for (const collider of colliders) {
-            collider.createCollider(this);
+            collider.attachedRigidbody = this;
+            Engine.physics.CreateCollider(collider);
         }
     }
 
-    public update(): void {
-        if (this.connonBody == null) return;
-        const pos = this.connonBody.position;
-        const rot = this.connonBody.quaternion;
-        this.transform.position = new Vector3(pos.x, pos.y, pos.z);
-        this.transform.rotation = new Quaternion(rot.x, rot.y, rot.z, rot.w);
+    public onUpdate(): void {
     }
 
     public onDestroy(): void {
-        if (this.connonBody != null) {
-            Engine.physics.RemoveRigidbody(this);
-            this.connonBody = null;
-        }
+        Engine.physics.RemoveRigidbody(this);
     }
 
     // 只读属性

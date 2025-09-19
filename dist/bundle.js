@@ -16516,68 +16516,13 @@ var Reflect;
 
 },{}],4:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BoxCollider = void 0;
-var Vector3_1 = require("../Math/Vector3");
-var Collider_1 = require("./Collider");
-var MeshRenderer_1 = require("./MeshRenderer");
-var CANNON = __importStar(require("cannon"));
-var Engine_1 = require("../Core/Engine");
-var BoxCollider = /** @class */ (function (_super) {
-    __extends(BoxCollider, _super);
-    function BoxCollider() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    BoxCollider.prototype.createCollider = function (rigidbody) {
-        this.attachedRigidbody = rigidbody;
+const Vector3_1 = require("../Math/Vector3");
+const Collider_1 = require("./Collider");
+const MeshRenderer_1 = require("./MeshRenderer");
+class BoxCollider extends Collider_1.Collider {
+    getColliderData() {
         if (this.center == null || this.size == null) {
             this.updateSizeFromMeshBounds();
         }
@@ -16588,22 +16533,21 @@ var BoxCollider = /** @class */ (function (_super) {
             this.size.y = 0.01;
         if (this.size.z <= 0)
             this.size.z = 0.01;
-        // 先移除旧的
-        this.destroyCollider();
-        this.connonShape = new CANNON.Box(new CANNON.Vec3(this.size.x / 2, this.size.y / 2, this.size.z / 2));
-        Engine_1.Engine.physics.AddCollider(this, this.connonShape);
-    };
-    BoxCollider.prototype.updateSizeFromMeshBounds = function () {
+        return {
+            size: this.size
+        };
+    }
+    updateSizeFromMeshBounds() {
         var _a;
         // 获取MeshRenderer组件
-        var meshRenderer = this.gameObject.getComponent(MeshRenderer_1.MeshRenderer);
+        const meshRenderer = this.gameObject.getComponent(MeshRenderer_1.MeshRenderer);
         // 获取网格包围盒
-        var bounds = (_a = meshRenderer === null || meshRenderer === void 0 ? void 0 : meshRenderer.mesh) === null || _a === void 0 ? void 0 : _a.bounds[0];
+        const bounds = (_a = meshRenderer === null || meshRenderer === void 0 ? void 0 : meshRenderer.mesh) === null || _a === void 0 ? void 0 : _a.bounds[0];
         if (bounds) {
             // 如果有包围盒数据，使用包围盒的尺寸和中心点
-            var x = bounds.halfExtents.x * 2 * this.gameObject.transform.scale.x;
-            var y = bounds.halfExtents.y * 2 * this.gameObject.transform.scale.y;
-            var z = bounds.halfExtents.z * 2 * this.gameObject.transform.scale.z;
+            const x = bounds.halfExtents.x * 2 * this.gameObject.transform.scale.x;
+            const y = bounds.halfExtents.y * 2 * this.gameObject.transform.scale.y;
+            const z = bounds.halfExtents.z * 2 * this.gameObject.transform.scale.z;
             this.size = new Vector3_1.Vector3(x, y, z);
             this.center = bounds.center;
         }
@@ -16612,28 +16556,12 @@ var BoxCollider = /** @class */ (function (_super) {
             this.size = Vector3_1.Vector3.ONE;
             this.center = Vector3_1.Vector3.ZERO;
         }
-    };
-    return BoxCollider;
-}(Collider_1.Collider));
+    }
+}
 exports.BoxCollider = BoxCollider;
 
-},{"../Core/Engine":14,"../Math/Vector3":31,"./Collider":7,"./MeshRenderer":9,"cannon":2}],5:[function(require,module,exports){
+},{"../Math/Vector3":32,"./Collider":7,"./MeshRenderer":9}],5:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
     var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
@@ -16674,13 +16602,13 @@ var __setFunctionName = (this && this.__setFunctionName) || function (f, name, p
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Camera = exports.RenderingPath = exports.Projection = exports.CameraClearFlags = void 0;
-var Color_1 = require("../Math/Color");
-var Vector4_1 = require("../Math/Vector4");
-var Component_1 = require("./Component");
-var Matrix4x4_1 = require("../Math/Matrix4x4");
-var Time_1 = require("../Core/Time");
-var Decorators_1 = require("../Core/Decorators");
-var Setting_1 = require("../Core/Setting");
+const Color_1 = require("../Math/Color");
+const Vector4_1 = require("../Math/Vector4");
+const Component_1 = require("./Component");
+const Matrix4x4_1 = require("../Math/Matrix4x4");
+const Time_1 = require("../Core/Time");
+const Decorators_1 = require("../Core/Decorators");
+const Setting_1 = require("../Core/Setting");
 var CameraClearFlags;
 (function (CameraClearFlags) {
     CameraClearFlags[CameraClearFlags["None"] = 0] = "None";
@@ -16699,53 +16627,47 @@ var RenderingPath;
     RenderingPath[RenderingPath["Forward"] = 1] = "Forward";
     RenderingPath[RenderingPath["Deferred"] = 2] = "Deferred";
 })(RenderingPath || (exports.RenderingPath = RenderingPath = {}));
-var Camera = function () {
-    var _classDecorators = [Decorators_1.DisallowMultipleComponent];
-    var _classDescriptor;
-    var _classExtraInitializers = [];
-    var _classThis;
-    var _classSuper = Component_1.Component;
-    var Camera = _classThis = /** @class */ (function (_super) {
-        __extends(Camera_1, _super);
-        function Camera_1() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.backGroundColor = Color_1.Color.GRAY;
-            _this.clearFlags = CameraClearFlags.Color;
-            _this.nearClip = 1;
-            _this.farClip = 128;
-            _this.fov = 60;
-            _this.depth = -1;
-            _this.viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
-            _this.projection = Projection.Perspective;
-            _this.orthographicSize = 5;
-            _this.renderingPath = RenderingPath.Forward;
-            _this.occlusionCulling = false;
-            _this.timer = 0;
-            _this.counter = 0;
-            return _this;
+let Camera = (() => {
+    let _classDecorators = [Decorators_1.DisallowMultipleComponent];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = Component_1.Component;
+    var Camera = _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.backGroundColor = Color_1.Color.GRAY;
+            this.clearFlags = CameraClearFlags.Color;
+            this.nearClip = 1;
+            this.farClip = 128;
+            this.fov = 60;
+            this.depth = -1;
+            this.viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
+            this.projection = Projection.Perspective;
+            this.orthographicSize = 5;
+            this.renderingPath = RenderingPath.Forward;
+            this.occlusionCulling = false;
+            this.timer = 0;
+            this.counter = 0;
         }
-        Object.defineProperty(Camera_1.prototype, "aspect", {
-            get: function () {
-                var v = this.viewPort;
-                return (v.z * Setting_1.EngineConfig.canvasWidth) / (v.w * Setting_1.EngineConfig.canvasHeight);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Camera_1.prototype.awake = function () {
+        get aspect() {
+            var v = this.viewPort;
+            return (v.z * Setting_1.EngineConfig.canvasWidth) / (v.w * Setting_1.EngineConfig.canvasHeight);
+        }
+        onAwake() {
             if (Camera.mainCamera == null) {
                 Camera.mainCamera = this;
             }
             Camera.cameras.push(this);
             this.transform.forward;
-        };
-        Camera_1.prototype.update = function () {
+        }
+        onUpdate() {
             if (Time_1.Time.time - this.timer >= 1) {
                 this.timer = Time_1.Time.time;
                 this.counter++;
             }
-        };
-        Camera_1.prototype.onDestroy = function () {
+        }
+        onDestroy() {
             var index = Camera.cameras.indexOf(this, 0);
             if (index > -1) {
                 Camera.cameras.splice(index, 1);
@@ -16756,57 +16678,41 @@ var Camera = function () {
                 else
                     Camera.mainCamera = undefined;
             }
-        };
-        Camera_1.prototype.getViewMatrix = function () {
+        }
+        getViewMatrix() {
             // 1. 获取相机的世界变换矩阵
-            var worldMatrix = this.transform.localToWorldMatrix;
+            const worldMatrix = this.transform.localToWorldMatrix;
             // 2. 计算逆矩阵（世界空间 → 视图空间）
-            var viewMatrix = worldMatrix.clone().invert();
+            const viewMatrix = worldMatrix.clone().invert();
             return viewMatrix;
-        };
-        Camera_1.prototype.getProjectionMatrix = function () {
+        }
+        getProjectionMatrix() {
             if (this.projection == Projection.Orthographic) {
                 return Matrix4x4_1.Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
             }
             else {
                 return Matrix4x4_1.Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
             }
-        };
-        return Camera_1;
-    }(_classSuper));
+        }
+    };
     __setFunctionName(_classThis, "Camera");
-    (function () {
+    (() => {
         var _a;
-        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
         __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
         Camera = _classThis = _classDescriptor.value;
         if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
     })();
     _classThis.cameras = new Array();
-    (function () {
+    (() => {
         __runInitializers(_classThis, _classExtraInitializers);
     })();
     return Camera = _classThis;
-}();
+})();
 exports.Camera = Camera;
 
-},{"../Core/Decorators":13,"../Core/Setting":17,"../Core/Time":18,"../Math/Color":24,"../Math/Matrix4x4":26,"../Math/Vector4":32,"./Component":8}],6:[function(require,module,exports){
+},{"../Core/Decorators":14,"../Core/Setting":18,"../Core/Time":19,"../Math/Color":25,"../Math/Matrix4x4":27,"../Math/Vector4":33,"./Component":8}],6:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
     var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
@@ -16847,48 +16753,41 @@ var __setFunctionName = (this && this.__setFunctionName) || function (f, name, p
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CameraController = void 0;
-var Decorators_1 = require("../Core/Decorators");
-var Engine_1 = require("../Core/Engine");
-var Input_1 = require("../Core/Input");
-var Time_1 = require("../Core/Time");
-var Color_1 = require("../Math/Color");
-var Quaternion_1 = require("../Math/Quaternion");
-var TransformTools_1 = require("../Math/TransformTools");
-var Vector3_1 = require("../Math/Vector3");
-var Debug_1 = require("../Utils/Debug");
-var Camera_1 = require("./Camera");
-var Component_1 = require("./Component");
-var CameraController = function () {
-    var _classDecorators = [(0, Decorators_1.RequireComponent)(Camera_1.Camera)];
-    var _classDescriptor;
-    var _classExtraInitializers = [];
-    var _classThis;
-    var _classSuper = Component_1.Component;
-    var CameraController = _classThis = /** @class */ (function (_super) {
-        __extends(CameraController_1, _super);
-        function CameraController_1() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.moveSpeed = 0.5;
-            _this.moveSpeedShiftScale = 2.5;
-            _this.dragSpeed = 0.3;
-            _this.damp = 0.2;
-            _this.rotateSpeed = 1;
-            _this._euler = new Vector3_1.Vector3();
-            _this._velocity = new Vector3_1.Vector3();
-            _this._position = new Vector3_1.Vector3();
-            _this._speedScale = 1;
-            _this._rotateCamera = false;
-            _this._rotateCenter = new Vector3_1.Vector3();
-            _this._lines = [];
-            return _this;
+const Decorators_1 = require("../Core/Decorators");
+const Engine_1 = require("../Core/Engine");
+const Input_1 = require("../Core/Input");
+const Time_1 = require("../Core/Time");
+const Quaternion_1 = require("../Math/Quaternion");
+const Vector3_1 = require("../Math/Vector3");
+const Camera_1 = require("./Camera");
+const Component_1 = require("./Component");
+let CameraController = (() => {
+    let _classDecorators = [(0, Decorators_1.RequireComponent)(Camera_1.Camera)];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = Component_1.Component;
+    var CameraController = _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.moveSpeed = 0.5;
+            this.moveSpeedShiftScale = 2.5;
+            this.dragSpeed = 0.3;
+            this.damp = 0.2;
+            this.rotateSpeed = 1;
+            this._euler = new Vector3_1.Vector3();
+            this._velocity = new Vector3_1.Vector3();
+            this._position = new Vector3_1.Vector3();
+            this._speedScale = 1;
+            this._rotateCamera = false;
+            this._rotateCenter = new Vector3_1.Vector3();
         }
-        CameraController_1.prototype.start = function () {
+        onStart() {
             this._camera = this.gameObject.getComponent(Camera_1.Camera);
             this._euler = this.transform.rotation.eulerAngles;
             this._position = this.transform.position;
-        };
-        CameraController_1.prototype.updateInput = function () {
-            var _this = this;
+        }
+        updateInput() {
             var _a;
             // WSADQE+SHIFT相机移动以及加速
             this._velocity.x = Input_1.Input.GetAxis(Input_1.InputAxis.Horizontal);
@@ -16897,13 +16796,13 @@ var CameraController = function () {
             this._speedScale = Input_1.Input.GetKey(Input_1.Input.KeyCode.Shift) ? this.moveSpeedShiftScale : 1;
             // 鼠标中键相机拖动
             if (Input_1.Input.GetMouseButton(1)) {
-                var moveDelta = Input_1.Input.mouseDelta;
+                const moveDelta = Input_1.Input.mouseDelta;
                 //TODO:这里应该是托多少就移动多少，而不是乘一个系数
                 this._velocity.x -= moveDelta.x * this.dragSpeed;
                 this._velocity.y += moveDelta.y * this.dragSpeed;
             }
             // 鼠标滚轮相机缩放
-            var scrollDelta = Input_1.Input.mouseScrollDelta.y * this.moveSpeed;
+            const scrollDelta = Input_1.Input.mouseScrollDelta.y * this.moveSpeed;
             if (((_a = this._camera) === null || _a === void 0 ? void 0 : _a.projection) == Camera_1.Projection.Orthographic) {
                 this._camera.orthographicSize += scrollDelta * 0.01;
             }
@@ -16922,38 +16821,25 @@ var CameraController = function () {
                 this._rotateCamera = false;
             }
             if (this._rotateCamera) {
-                var moveDelta = Input_1.Input.mouseDelta;
+                const moveDelta = Input_1.Input.mouseDelta;
                 this._euler.y += moveDelta.x * this.rotateSpeed * 0.1;
                 this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
             }
             // ALT+鼠标左键相机绕中心点旋转
             if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Alt) && Input_1.Input.GetMouseButton(0)) {
-                var moveDelta = Input_1.Input.mouseDelta;
+                const moveDelta = Input_1.Input.mouseDelta;
                 this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
                 this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
             }
-            // 鼠标左键发射射线
-            if (Input_1.Input.GetMouseButtonDown(0) && this._camera) {
-                var ray_1 = TransformTools_1.TransformTools.ScreenToWorldPosRaycast(Input_1.Input.mousePosition, this._camera);
-                Engine_1.Engine.physics.Raycast(ray_1, function (hit) {
-                    if (hit.collider) {
-                        _this._lines.push({
-                            start: ray_1.origin,
-                            end: hit.point,
-                        });
-                        console.log(hit.toString());
-                    }
-                });
-            }
-        };
-        CameraController_1.prototype.scaleAndAdd = function (a, b, scale) {
+        }
+        scaleAndAdd(a, b, scale) {
             var out = new Vector3_1.Vector3();
             out.x = a.x + b.x * scale;
             out.y = a.y + b.y * scale;
             out.z = a.z + b.z * scale;
             return out;
-        };
-        CameraController_1.prototype.update = function () {
+        }
+        onUpdate() {
             this.updateInput();
             // position
             var v = this.transform.rotation.transformQuat(this._velocity);
@@ -16964,214 +16850,161 @@ var CameraController = function () {
             var q = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this._euler.x, this._euler.y, this._euler.z));
             q = Quaternion_1.Quaternion.slerp(this.transform.rotation, q, Time_1.Time.deltaTime / this.damp);
             this.transform.rotation = q;
-            this._lines.forEach(function (line) {
-                Debug_1.Debug.DrawLine3D(line.start, line.end, Color_1.Color.RED);
-            });
-        };
-        return CameraController_1;
-    }(_classSuper));
+        }
+    };
     __setFunctionName(_classThis, "CameraController");
-    (function () {
+    (() => {
         var _a;
-        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
         __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
         CameraController = _classThis = _classDescriptor.value;
         if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         __runInitializers(_classThis, _classExtraInitializers);
     })();
     return CameraController = _classThis;
-}();
+})();
 exports.CameraController = CameraController;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Input":16,"../Core/Time":18,"../Math/Color":24,"../Math/Quaternion":27,"../Math/TransformTools":29,"../Math/Vector3":31,"../Utils/Debug":41,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
+},{"../Core/Decorators":14,"../Core/Engine":15,"../Core/Input":17,"../Core/Time":19,"../Math/Quaternion":28,"../Math/Vector3":32,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Collider = void 0;
-var Engine_1 = require("../Core/Engine");
-var Component_1 = require("./Component");
-var Collider = /** @class */ (function (_super) {
-    __extends(Collider, _super);
-    function Collider() {
-        return _super !== null && _super.apply(this, arguments) || this;
+const Engine_1 = require("../Core/Engine");
+const Vector3_1 = require("../Math/Vector3");
+const Component_1 = require("./Component");
+class Collider extends Component_1.Component {
+    constructor() {
+        super(...arguments);
+        this.center = Vector3_1.Vector3.ZERO;
     }
-    Collider.prototype.onEnable = function () {
+    onEnable() {
         // if (this.attachedRigidbody == null || this.connonShape == null) {
         //     this.attachedRigidbody = this.gameObject.getComponetInParent(Rigidbody);
         //     if (this.attachedRigidbody == null) return;
         //     this.connonShape = this.createCollider(this.attachedRigidbody);
         // }
-    };
-    Collider.prototype.destroyCollider = function () {
-        if (this.connonShape != null) {
-            Engine_1.Engine.physics.RemoveCollider(this.connonShape);
-            this.connonShape = null;
-        }
-    };
-    Collider.prototype.onDestroy = function () {
-        this.destroyCollider();
-    };
-    return Collider;
-}(Component_1.Component));
+    }
+    onDestroy() {
+        Engine_1.Engine.physics.RemoveCollider(this);
+    }
+}
 exports.Collider = Collider;
 
-},{"../Core/Engine":14,"./Component":8}],8:[function(require,module,exports){
+},{"../Core/Engine":15,"../Math/Vector3":32,"./Component":8}],8:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Component = void 0;
-var Decorators_1 = require("../Core/Decorators");
-var UObject_1 = require("../Core/UObject");
-var Component = /** @class */ (function (_super) {
-    __extends(Component, _super);
-    function Component(gameObject) {
-        var _this = _super.call(this) || this;
-        _this._enabled = true;
-        _this.gameObject = gameObject;
-        _this.checkRequiredComponents();
-        _this.checkComponentUniqueness();
-        _this.checkComponentCompatibility();
-        _this.awake();
-        return _this;
+const Decorators_1 = require("../Core/Decorators");
+const UObject_1 = require("../Core/UObject");
+class Component extends UObject_1.UObject {
+    get transform() {
+        return this.gameObject.transform;
     }
-    Object.defineProperty(Component.prototype, "transform", {
-        get: function () {
-            return this.gameObject.transform;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Component.prototype, "enabled", {
-        get: function () {
-            return this._enabled;
-        },
-        set: function (value) {
-            this._enabled = value;
-            if (value) {
-                this.onEnable();
-            }
-            else {
-                this.onDisable();
-            }
-        },
-        enumerable: false,
-        configurable: true
-    });
+    get enabled() {
+        return this._enabled;
+    }
+    set enabled(value) {
+        this._enabled = value;
+        if (value) {
+            this.onEnable();
+        }
+        else {
+            this.onDisable();
+        }
+    }
+    constructor(gameObject) {
+        super();
+        this._enabled = true;
+        this.gameObject = gameObject;
+        this.checkRequiredComponents();
+        this.checkComponentUniqueness();
+        this.checkComponentCompatibility();
+        this.onAwake();
+    }
     // 生命周期方法
     // 当组件被创建时调用
-    Component.prototype.awake = function () { };
+    onAwake() { }
     // 在启用组件的第一帧调用
-    Component.prototype.start = function () { };
+    onStart() { }
     // 每帧更新前调用
-    Component.prototype.update = function () { };
+    onUpdate() { }
     // 每帧更新后调用
     //public lateUpdate(): void {}
     // 当组件被启用时调用
-    Component.prototype.onEnable = function () { };
+    onEnable() { }
     // 当组件被禁用时调用
-    Component.prototype.onDisable = function () { };
+    onDisable() { }
     // 当组件被销毁时调用
-    Component.prototype.onDestroy = function () { };
+    onDestroy() { }
     /**
      * 检查通过@RequireComponent装饰器声明的依赖组件是否存在
      */
-    Component.prototype.checkRequiredComponents = function () {
+    checkRequiredComponents() {
         // 1. 获取通过装饰器声明的依赖组件类型数组
-        var requiredComponents = Reflect.getMetadata(Decorators_1.REQUIRED_COMPONENTS_KEY, this.constructor);
+        const requiredComponents = Reflect.getMetadata(Decorators_1.REQUIRED_COMPONENTS_KEY, this.constructor);
         // 如果没有声明任何依赖，则直接返回
         if (!requiredComponents || requiredComponents.length === 0) {
             return true;
         }
         // 2. 遍历所有必需的组件类型
-        for (var _i = 0, requiredComponents_1 = requiredComponents; _i < requiredComponents_1.length; _i++) {
-            var compType = requiredComponents_1[_i];
+        for (const compType of requiredComponents) {
             // 跳过未定义的组件类型
             if (compType == null) {
                 continue;
             }
             // 3. 检查该GameObject上是否已挂载所需的组件类型
-            var existingComponent = this.gameObject.getComponent(compType);
+            const existingComponent = this.gameObject.getComponent(compType);
             if (existingComponent == null) {
                 // 4. 如果依赖组件不存在，输出错误信息
-                console.error("Component ".concat(this.constructor.name, " requires a ").concat(compType.name, " on the same GameObject."));
+                console.error(`Component ${this.constructor.name} requires a ${compType.name} on the same GameObject.`);
                 // 5. 自动添加缺失的组件（使用类型断言确保类型安全）
                 try {
                     this.gameObject.addComponent(compType);
-                    console.log("Auto-added missing component: ".concat(compType.name));
+                    console.log(`Auto-added missing component: ${compType.name}`);
                 }
                 catch (error) {
-                    console.error("Failed to auto-add component ".concat(compType.name, ":"), error);
+                    console.error(`Failed to auto-add component ${compType.name}:`, error);
                     return false;
                 }
             }
         }
         return true;
-    };
+    }
     /**
      * 检查是否存在多个不允许同时存在的组件
      */
-    Component.prototype.checkComponentUniqueness = function () {
-        var _this = this;
-        var componentType = this.constructor;
-        var isDisallowed = Reflect.getMetadata(Decorators_1.DISALLOW_MULTIPLE_COMPONENT_KEY, componentType);
+    checkComponentUniqueness() {
+        const componentType = this.constructor;
+        const isDisallowed = Reflect.getMetadata(Decorators_1.DISALLOW_MULTIPLE_COMPONENT_KEY, componentType);
         if (isDisallowed) {
             // 查找同类型组件
-            var sameTypeComponents = this.gameObject.getAllComponents().filter(function (comp) { return comp instanceof componentType && comp !== _this; });
+            const sameTypeComponents = this.gameObject.getAllComponents().filter(comp => comp instanceof componentType && comp !== this);
             if (sameTypeComponents.length > 0) {
-                console.error("Component ".concat(componentType.name, " is marked with @DisallowMultipleComponent, but multiple instances were found. This may cause unexpected behavior."));
+                console.error(`Component ${componentType.name} is marked with @DisallowMultipleComponent, but multiple instances were found. This may cause unexpected behavior.`);
                 return false;
             }
         }
         return true;
-    };
+    }
     /**
      * 检查组件共存限制
      */
-    Component.prototype.checkComponentCompatibility = function () {
+    checkComponentCompatibility() {
         // 获取当前组件类上通过@DisallowComponent声明的禁止共存组件类型
-        var disallowedComponents = Reflect.getMetadata(Decorators_1.DISALLOW_COMPONENTS_KEY, this.constructor);
+        const disallowedComponents = Reflect.getMetadata(Decorators_1.DISALLOW_COMPONENTS_KEY, this.constructor);
         if (!disallowedComponents || disallowedComponents.length === 0) {
             return true; // 如果没有声明任何禁止共存的组件，直接返回
         }
         // 检查所有被禁止的组件类型
-        for (var _i = 0, disallowedComponents_1 = disallowedComponents; _i < disallowedComponents_1.length; _i++) {
-            var disallowedType = disallowedComponents_1[_i];
+        for (const disallowedType of disallowedComponents) {
             if (disallowedType == null)
                 continue;
             // 检查是否存在被禁止的组件
-            var foundComponent = this.gameObject.getComponent(disallowedType);
+            const foundComponent = this.gameObject.getComponent(disallowedType);
             if (foundComponent) {
                 // 如果找到被禁止的组件，抛出错误或警告
-                console.error("Component ".concat(this.constructor.name, " cannot coexist with ").concat(disallowedType.name, " ") +
-                    "on the same GameObject. Please remove one of them.");
+                console.error(`Component ${this.constructor.name} cannot coexist with ${disallowedType.name} ` +
+                    `on the same GameObject. Please remove one of them.`);
                 // 自动移除冲突组件
                 this.gameObject.removeComponent(disallowedType);
                 // 或者抛出异常阻止游戏运行
@@ -17180,66 +17013,71 @@ var Component = /** @class */ (function (_super) {
             }
         }
         return true;
-    };
-    return Component;
-}(UObject_1.UObject));
+    }
+}
 exports.Component = Component;
 
-},{"../Core/Decorators":13,"../Core/UObject":21}],9:[function(require,module,exports){
+},{"../Core/Decorators":14,"../Core/UObject":22}],9:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MeshRenderer = void 0;
-var Renderer_1 = require("./Renderer");
-var MeshRenderer = /** @class */ (function (_super) {
-    __extends(MeshRenderer, _super);
-    function MeshRenderer() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.mesh = null;
-        return _this;
+const Renderer_1 = require("./Renderer");
+class MeshRenderer extends Renderer_1.Renderer {
+    constructor() {
+        super(...arguments);
+        this.mesh = null;
     }
-    MeshRenderer.prototype.render = function () {
-    };
-    MeshRenderer.prototype.onDestroy = function () {
-        _super.prototype.onDestroy.call(this);
+    render() {
+    }
+    onDestroy() {
+        super.onDestroy();
         // 清理资源
         this.mesh = null;
-    };
-    return MeshRenderer;
-}(Renderer_1.Renderer));
+    }
+}
 exports.MeshRenderer = MeshRenderer;
 
-},{"./Renderer":10}],10:[function(require,module,exports){
+},{"./Renderer":11}],10:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RayTest = void 0;
+const Engine_1 = require("../Core/Engine");
+const Input_1 = require("../Core/Input");
+const TransformTools_1 = require("../Math/TransformTools");
+const Camera_1 = require("./Camera");
+const Component_1 = require("./Component");
+class RayTest extends Component_1.Component {
+    constructor() {
+        super(...arguments);
+        this._lines = [];
+    }
+    onUpdate() {
+        // 鼠标左键发射射线
+        if (Input_1.Input.GetMouseButtonDown(0)) {
+            const ray = TransformTools_1.TransformTools.ScreenToWorldPosRaycast(Input_1.Input.mousePosition, Camera_1.Camera.mainCamera);
+            const hitInfo = Engine_1.Engine.physics.Raycast(ray);
+            if (hitInfo) {
+                if (hitInfo.collider) {
+                    this._lines.push({
+                        start: ray.origin,
+                        end: hitInfo.point,
+                    });
+                    const scale = hitInfo.collider.transform.scale;
+                    // hitInfo.collider.transform.scale = scale.multiply(0.9);
+                    hitInfo.collider.gameObject.removeComponentInstance(hitInfo.collider);
+                    // console.log(hit.toString());
+                }
+            }
+        }
+        this._lines.forEach(line => {
+            // Debug.DrawLine3D(line.start, line.end, Color.RED);
+        });
+    }
+}
+exports.RayTest = RayTest;
+
+},{"../Core/Engine":15,"../Core/Input":17,"../Math/TransformTools":30,"./Camera":5,"./Component":8}],11:[function(require,module,exports){
+"use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
     var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
@@ -17280,142 +17118,84 @@ var __setFunctionName = (this && this.__setFunctionName) || function (f, name, p
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Renderer = void 0;
-var Component_1 = require("./Component");
-var Bounds_1 = require("../Math/Bounds");
-var Decorators_1 = require("../Core/Decorators");
-var Renderer = function () {
-    var _classDecorators = [Decorators_1.DisallowMultipleComponent];
-    var _classDescriptor;
-    var _classExtraInitializers = [];
-    var _classThis;
-    var _classSuper = Component_1.Component;
-    var Renderer = _classThis = /** @class */ (function (_super) {
-        __extends(Renderer_1, _super);
-        function Renderer_1() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this._bounds = new Bounds_1.Bounds();
-            _this._material = null;
-            _this._sortingLayerID = 0;
-            _this._sortingOrder = 0;
-            _this._castShadows = true;
-            _this._receiveShadows = true;
-            return _this;
+const Component_1 = require("./Component");
+const Bounds_1 = require("../Math/Bounds");
+const Decorators_1 = require("../Core/Decorators");
+let Renderer = (() => {
+    let _classDecorators = [Decorators_1.DisallowMultipleComponent];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = Component_1.Component;
+    var Renderer = _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this._bounds = new Bounds_1.Bounds();
+            this._material = null;
+            this._sortingLayerID = 0;
+            this._sortingOrder = 0;
+            this._castShadows = true;
+            this._receiveShadows = true;
         }
-        Object.defineProperty(Renderer_1.prototype, "material", {
-            // 材质属性
-            get: function () {
-                return this._material;
-            },
-            set: function (value) {
-                this._material = value;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Renderer_1.prototype, "sortingLayerID", {
-            // 排序层ID
-            get: function () {
-                return this._sortingLayerID;
-            },
-            set: function (value) {
-                this._sortingLayerID = value;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Renderer_1.prototype, "sortingOrder", {
-            // 排序顺序
-            get: function () {
-                return this._sortingOrder;
-            },
-            set: function (value) {
-                this._sortingOrder = value;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Renderer_1.prototype, "castShadows", {
-            // 是否投射阴影
-            get: function () {
-                return this._castShadows;
-            },
-            set: function (value) {
-                this._castShadows = value;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Renderer_1.prototype, "receiveShadows", {
-            // 是否接收阴影
-            get: function () {
-                return this._receiveShadows;
-            },
-            set: function (value) {
-                this._receiveShadows = value;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Renderer_1.prototype, "shouldRender", {
-            // 是否应该被渲染
-            get: function () {
-                return this.enabled && this.gameObject.active;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Renderer_1.prototype.onDestroy = function () {
+        // 材质属性
+        get material() {
+            return this._material;
+        }
+        set material(value) {
+            this._material = value;
+        }
+        // 排序层ID
+        get sortingLayerID() {
+            return this._sortingLayerID;
+        }
+        set sortingLayerID(value) {
+            this._sortingLayerID = value;
+        }
+        // 排序顺序
+        get sortingOrder() {
+            return this._sortingOrder;
+        }
+        set sortingOrder(value) {
+            this._sortingOrder = value;
+        }
+        // 是否投射阴影
+        get castShadows() {
+            return this._castShadows;
+        }
+        set castShadows(value) {
+            this._castShadows = value;
+        }
+        // 是否接收阴影
+        get receiveShadows() {
+            return this._receiveShadows;
+        }
+        set receiveShadows(value) {
+            this._receiveShadows = value;
+        }
+        // 是否应该被渲染
+        get shouldRender() {
+            return this.enabled && this.gameObject.active;
+        }
+        onDestroy() {
             // 清理资源
             this._material = null;
-        };
-        return Renderer_1;
-    }(_classSuper));
+        }
+    };
     __setFunctionName(_classThis, "Renderer");
-    (function () {
+    (() => {
         var _a;
-        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
         __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
         Renderer = _classThis = _classDescriptor.value;
         if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         __runInitializers(_classThis, _classExtraInitializers);
     })();
     return Renderer = _classThis;
-}();
+})();
 exports.Renderer = Renderer;
 
-},{"../Core/Decorators":13,"../Math/Bounds":23,"./Component":8}],11:[function(require,module,exports){
+},{"../Core/Decorators":14,"../Math/Bounds":24,"./Component":8}],12:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
     var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
@@ -17450,38 +17230,19 @@ var __runInitializers = (this && this.__runInitializers) || function (thisArg, i
     }
     return useValue ? value : void 0;
 };
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __setFunctionName = (this && this.__setFunctionName) || function (f, name, prefix) {
     if (typeof name === "symbol") name = name.description ? "[".concat(name.description, "]") : "";
     return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Rigidbody = exports.QueryTriggerInteraction = exports.RigidbodyConstraints = exports.CollisionDetectionMode = exports.RigidbodyInterpolation = exports.ForceMode = void 0;
-var Engine_1 = require("../Core/Engine");
-var UObject_1 = require("../Core/UObject");
-var Time_1 = require("../Core/Time");
-var Quaternion_1 = require("../Math/Quaternion");
-var Vector3_1 = require("../Math/Vector3");
-var Collider_1 = require("./Collider");
-var Component_1 = require("./Component");
-var CANNON = __importStar(require("cannon"));
-var Decorators_1 = require("../Core/Decorators");
+const Engine_1 = require("../Core/Engine");
+const UObject_1 = require("../Core/UObject");
+const Time_1 = require("../Core/Time");
+const Vector3_1 = require("../Math/Vector3");
+const Collider_1 = require("./Collider");
+const Component_1 = require("./Component");
+const Decorators_1 = require("../Core/Decorators");
 var ForceMode;
 (function (ForceMode) {
     ForceMode[ForceMode["Force"] = 0] = "Force";
@@ -17521,289 +17282,194 @@ var QueryTriggerInteraction;
     QueryTriggerInteraction[QueryTriggerInteraction["Ignore"] = 1] = "Ignore";
     QueryTriggerInteraction[QueryTriggerInteraction["Collide"] = 2] = "Collide";
 })(QueryTriggerInteraction || (exports.QueryTriggerInteraction = QueryTriggerInteraction = {}));
-var Rigidbody = function () {
-    var _classDecorators = [Decorators_1.DisallowMultipleComponent];
-    var _classDescriptor;
-    var _classExtraInitializers = [];
-    var _classThis;
-    var _classSuper = Component_1.Component;
-    var Rigidbody = _classThis = /** @class */ (function (_super) {
-        __extends(Rigidbody_1, _super);
-        function Rigidbody_1() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.mass = 1;
-            _this.isKinematic = false;
-            return _this;
+let Rigidbody = (() => {
+    let _classDecorators = [Decorators_1.DisallowMultipleComponent];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = Component_1.Component;
+    var Rigidbody = _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.mass = 1;
+            this.isKinematic = false;
         }
-        Rigidbody_1.prototype.start = function () {
-            var parentRigidbody = this.gameObject.getComponetInParent(Rigidbody);
+        onStart() {
+            const parentRigidbody = this.gameObject.getComponetInParent(Rigidbody);
             if (parentRigidbody && parentRigidbody != this) {
                 console.warn("一个节点层级只能拥有一个Rigidbody组件");
                 UObject_1.UObject.Destroy(this);
                 return;
             }
-            var childRigidbodies = this.gameObject.getComponentsInChildren(Rigidbody);
-            for (var _i = 0, childRigidbodies_1 = childRigidbodies; _i < childRigidbodies_1.length; _i++) {
-                var childRigidbody = childRigidbodies_1[_i];
+            const childRigidbodies = this.gameObject.getComponentsInChildren(Rigidbody);
+            for (const childRigidbody of childRigidbodies) {
                 if (childRigidbody == this)
                     continue;
                 console.warn("一个节点层级只能拥有一个Rigidbody组件");
                 UObject_1.UObject.Destroy(childRigidbody);
             }
-            if (this.connonBody != null) {
-                Engine_1.Engine.physics.RemoveRigidbody(this);
+            Engine_1.Engine.physics.CreateRigidbody(this);
+            const colliders = this.gameObject.getComponentsInChildren(Collider_1.Collider);
+            for (const collider of colliders) {
+                collider.attachedRigidbody = this;
+                Engine_1.Engine.physics.CreateCollider(collider);
             }
-            this.connonBody = new CANNON.Body({
-                mass: this.isKinematic ? 0 : this.mass,
-                position: new CANNON.Vec3(this.transform.position.x, this.transform.position.y, this.transform.position.z),
-                quaternion: new CANNON.Quaternion(this.transform.rotation.x, this.transform.rotation.y, this.transform.rotation.z, this.transform.rotation.w),
-            });
-            Engine_1.Engine.physics.AddRigidbody(this, this.connonBody);
-            var colliders = this.gameObject.getComponentsInChildren(Collider_1.Collider);
-            for (var _a = 0, colliders_1 = colliders; _a < colliders_1.length; _a++) {
-                var collider = colliders_1[_a];
-                collider.createCollider(this);
-            }
-        };
-        Rigidbody_1.prototype.update = function () {
-            if (this.connonBody == null)
-                return;
-            var pos = this.connonBody.position;
-            var rot = this.connonBody.quaternion;
-            this.transform.position = new Vector3_1.Vector3(pos.x, pos.y, pos.z);
-            this.transform.rotation = new Quaternion_1.Quaternion(rot.x, rot.y, rot.z, rot.w);
-        };
-        Rigidbody_1.prototype.onDestroy = function () {
-            if (this.connonBody != null) {
-                Engine_1.Engine.physics.RemoveRigidbody(this);
-                this.connonBody = null;
-            }
-        };
-        Object.defineProperty(Rigidbody_1.prototype, "worldCenterOfMass", {
-            // 只读属性
-            get: function () {
-                // 实现获取世界坐标系下的质心
-                return new Vector3_1.Vector3();
-            },
-            enumerable: false,
-            configurable: true
-        });
+        }
+        onUpdate() {
+        }
+        onDestroy() {
+            Engine_1.Engine.physics.RemoveRigidbody(this);
+        }
+        // 只读属性
+        get worldCenterOfMass() {
+            // 实现获取世界坐标系下的质心
+            return new Vector3_1.Vector3();
+        }
         // 方法
-        Rigidbody_1.prototype.setDensity = function (density) {
+        setDensity(density) {
             // 根据密度设置质量
-        };
-        Rigidbody_1.prototype.movePosition = function (position) {
+        }
+        movePosition(position) {
             // 移动刚体到指定位置
-        };
-        Rigidbody_1.prototype.moveRotation = function (rotation) {
+        }
+        moveRotation(rotation) {
             // 旋转刚体到指定方向
-        };
-        Rigidbody_1.prototype.move = function (position, rotation) {
+        }
+        move(position, rotation) {
             // 同时移动和旋转刚体
-        };
-        Rigidbody_1.prototype.sleep = function () {
+        }
+        sleep() {
             // 让刚体进入睡眠状态
-        };
-        Rigidbody_1.prototype.isSleeping = function () {
+        }
+        isSleeping() {
             // 检查刚体是否在睡眠状态
             return false;
-        };
-        Rigidbody_1.prototype.wakeUp = function () {
+        }
+        wakeUp() {
             // 唤醒刚体
-        };
-        Rigidbody_1.prototype.resetCenterOfMass = function () {
+        }
+        resetCenterOfMass() {
             // 重置质心
-        };
-        Rigidbody_1.prototype.resetInertiaTensor = function () {
+        }
+        resetInertiaTensor() {
             // 重置惯性张量
-        };
-        Rigidbody_1.prototype.getRelativePointVelocity = function (relativePoint) {
+        }
+        getRelativePointVelocity(relativePoint) {
             // 获取相对点的速度
             return new Vector3_1.Vector3();
-        };
-        Rigidbody_1.prototype.getPointVelocity = function (worldPoint) {
+        }
+        getPointVelocity(worldPoint) {
             // 获取世界点的速度
             return new Vector3_1.Vector3();
-        };
-        Rigidbody_1.prototype.getAccumulatedForce = function (step) {
-            if (step === void 0) { step = Time_1.Time.fixedDeltaTime; }
+        }
+        getAccumulatedForce(step = Time_1.Time.fixedDeltaTime) {
             // 获取累积的力
             return new Vector3_1.Vector3();
-        };
-        Rigidbody_1.prototype.getAccumulatedTorque = function (step) {
-            if (step === void 0) { step = Time_1.Time.fixedDeltaTime; }
+        }
+        getAccumulatedTorque(step = Time_1.Time.fixedDeltaTime) {
             // 获取累积的扭矩
             return new Vector3_1.Vector3();
-        };
-        Rigidbody_1.prototype.addForce = function (forceOrX, modeOrY, z, mode) {
-        };
-        Rigidbody_1.prototype.addRelativeForce = function (forceOrX, modeOrY, z, mode) {
+        }
+        addForce(forceOrX, modeOrY, z, mode) {
+        }
+        addRelativeForce(forceOrX, modeOrY, z, mode) {
             // 实现添加相对力的重载
-        };
-        Rigidbody_1.prototype.addTorque = function (torqueOrX, modeOrY, z, mode) {
+        }
+        addTorque(torqueOrX, modeOrY, z, mode) {
             // 实现添加扭矩的重载
-        };
-        Rigidbody_1.prototype.addRelativeTorque = function (torqueOrX, modeOrY, z, mode) {
+        }
+        addRelativeTorque(torqueOrX, modeOrY, z, mode) {
             // 实现添加相对扭矩的重载
-        };
-        Rigidbody_1.prototype.addForceAtPosition = function (force, position, mode) {
-            if (mode === void 0) { mode = ForceMode.Force; }
+        }
+        addForceAtPosition(force, position, mode = ForceMode.Force) {
             // 在指定位置添加力
-        };
-        Rigidbody_1.prototype.addExplosionForce = function (explosionForce, explosionPosition, explosionRadius, upwardsModifier, mode) {
-            if (upwardsModifier === void 0) { upwardsModifier = 0; }
-            if (mode === void 0) { mode = ForceMode.Force; }
+        }
+        addExplosionForce(explosionForce, explosionPosition, explosionRadius, upwardsModifier = 0, mode = ForceMode.Force) {
             // 添加爆炸力
-        };
-        Rigidbody_1.prototype.closestPointOnBounds = function (position) {
+        }
+        closestPointOnBounds(position) {
             // 获取边界上最近的点
             return new Vector3_1.Vector3();
-        };
-        Rigidbody_1.prototype.sweepTest = function (direction, hitInfo, maxDistance, queryTriggerInteraction) {
-            if (maxDistance === void 0) { maxDistance = Number.POSITIVE_INFINITY; }
-            if (queryTriggerInteraction === void 0) { queryTriggerInteraction = QueryTriggerInteraction.UseGlobal; }
+        }
+        sweepTest(direction, hitInfo, maxDistance = Number.POSITIVE_INFINITY, queryTriggerInteraction = QueryTriggerInteraction.UseGlobal) {
             // 扫描测试
             return false;
-        };
-        Rigidbody_1.prototype.sweepTestAll = function (direction, maxDistance, queryTriggerInteraction) {
-            if (maxDistance === void 0) { maxDistance = Number.POSITIVE_INFINITY; }
-            if (queryTriggerInteraction === void 0) { queryTriggerInteraction = QueryTriggerInteraction.UseGlobal; }
+        }
+        sweepTestAll(direction, maxDistance = Number.POSITIVE_INFINITY, queryTriggerInteraction = QueryTriggerInteraction.UseGlobal) {
             // 扫描测试所有碰撞
             return [];
-        };
+        }
         // 已废弃的方法（保持兼容性）
-        Rigidbody_1.prototype.setMaxAngularVelocity = function (a) {
+        setMaxAngularVelocity(a) {
             this.maxAngularVelocity = a;
-        };
-        return Rigidbody_1;
-    }(_classSuper));
+        }
+    };
     __setFunctionName(_classThis, "Rigidbody");
-    (function () {
+    (() => {
         var _a;
-        var _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
         __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
         Rigidbody = _classThis = _classDescriptor.value;
         if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         __runInitializers(_classThis, _classExtraInitializers);
     })();
     return Rigidbody = _classThis;
-}();
+})();
 exports.Rigidbody = Rigidbody;
 
-},{"../Core/Decorators":13,"../Core/Engine":14,"../Core/Time":18,"../Core/UObject":21,"../Math/Quaternion":27,"../Math/Vector3":31,"./Collider":7,"./Component":8,"cannon":2}],12:[function(require,module,exports){
+},{"../Core/Decorators":14,"../Core/Engine":15,"../Core/Time":19,"../Core/UObject":22,"../Math/Vector3":32,"./Collider":7,"./Component":8}],13:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SphereCollider = void 0;
-var Engine_1 = require("../Core/Engine");
-var Vector3_1 = require("../Math/Vector3");
-var Collider_1 = require("./Collider");
-var CANNON = __importStar(require("cannon"));
-var SphereCollider = /** @class */ (function (_super) {
-    __extends(SphereCollider, _super);
-    function SphereCollider() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.center = Vector3_1.Vector3.ZERO;
-        _this.radius = 0.5;
-        return _this;
+const Collider_1 = require("./Collider");
+class SphereCollider extends Collider_1.Collider {
+    constructor() {
+        super(...arguments);
+        this.radius = 0.5;
     }
-    SphereCollider.prototype.createCollider = function (rigidbody) {
-        this.attachedRigidbody = rigidbody;
-        // 先移除旧的
-        this.destroyCollider();
-        this.connonShape = new CANNON.Sphere(this.radius);
-        Engine_1.Engine.physics.AddCollider(this, this.connonShape);
-    };
+    getColliderData() {
+        return {
+            radius: this.radius,
+        };
+    }
     /**
      * 可选：在运行时更新球体半径（注意：Rapier 可能不支持直接修改现有碰撞体的形状参数，
      * 通常需要销毁后重新创建，此方法仅供参考）
      */
-    SphereCollider.prototype.setRadius = function (newRadius) {
+    setRadius(newRadius) {
         if (this.radius !== newRadius) {
             this.radius = newRadius;
             // 通常需要重新初始化碰撞体
             // this.recreateCollider();
         }
-    };
+    }
     /**
      * 可选：在运行时更新中心偏移
      */
-    SphereCollider.prototype.setCenter = function (newCenter) {
+    setCenter(newCenter) {
         if (!this.center.equals(newCenter)) {
             this.center = newCenter.clone();
             // 通常需要重新初始化碰撞体
             // this.recreateCollider();
         }
-    };
+    }
     /**
      * 销毁并重新创建碰撞体（用于更新形状或位置）
      * 注意：需要确保在物理世界的正确生命周期内操作，并处理可能的父刚体关联
      */
-    SphereCollider.prototype.recreateCollider = function () {
-        if (this.connonShape) {
-            // 需要根据你的引擎架构实现销毁逻辑，例如：
-            // Engine.physicsEngine.getWorld().removeCollider(this.collider);
-        }
+    recreateCollider() {
         // 重新初始化
-    };
+    }
     /**
      * 返回球的体积（用于计算质量等）
      */
-    SphereCollider.prototype.getVolume = function () {
+    getVolume() {
         return (4.0 / 3.0) * Math.PI * Math.pow(this.radius, 3);
-    };
-    return SphereCollider;
-}(Collider_1.Collider));
+    }
+}
 exports.SphereCollider = SphereCollider;
 
-},{"../Core/Engine":14,"../Math/Vector3":31,"./Collider":7,"cannon":2}],13:[function(require,module,exports){
+},{"./Collider":7}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DISALLOW_COMPONENTS_KEY = exports.DISALLOW_MULTIPLE_COMPONENT_KEY = exports.REQUIRED_COMPONENTS_KEY = void 0;
@@ -17818,11 +17484,7 @@ exports.DISALLOW_COMPONENTS_KEY = Symbol('DisallowedComponents');
  * 装饰器：标记当前组件需要依赖的其他组件类型
  * @param componentTypes 需要依赖的组件类型数组
  */
-function RequireComponent() {
-    var componentTypes = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        componentTypes[_i] = arguments[_i];
-    }
+function RequireComponent(...componentTypes) {
     return function (target) {
         // 将依赖的组件类型元数据存储在目标组件上
         Reflect.defineMetadata(exports.REQUIRED_COMPONENTS_KEY, componentTypes, target);
@@ -17832,11 +17494,7 @@ function RequireComponent() {
  * 装饰器：标记当前组件不允许与指定类型的组件共存于同一个GameObject上
  * @param disallowedComponentTypes 不允许共存的组件类型数组
  */
-function DisallowComponent() {
-    var disallowedComponentTypes = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        disallowedComponentTypes[_i] = arguments[_i];
-    }
+function DisallowComponent(...disallowedComponentTypes) {
     return function (target) {
         // 存储被禁止的组件类型数组到元数据中
         Reflect.defineMetadata(exports.DISALLOW_COMPONENTS_KEY, disallowedComponentTypes, target);
@@ -17851,23 +17509,21 @@ function DisallowMultipleComponent(target) {
     Reflect.defineMetadata(exports.DISALLOW_MULTIPLE_COMPONENT_KEY, true, target);
 }
 
-},{"reflect-metadata":3}],14:[function(require,module,exports){
+},{"reflect-metadata":3}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Engine = void 0;
-var Input_1 = require("./Input");
-var RasterizationPipeline_1 = require("../Renderer/RasterizationPipeline");
-var MainScene_1 = require("../Scene/MainScene");
-var SceneManager_1 = require("../Scene/SceneManager");
-var Debug_1 = require("../Utils/Debug");
-var Time_1 = require("./Time");
-var TweenManager_1 = require("./TweenManager");
-var Physics_1 = require("../Physics/Physics");
-var Setting_1 = require("./Setting");
-var Engine = /** @class */ (function () {
-    function Engine() {
-    }
-    Engine.Init = function () {
+const Input_1 = require("./Input");
+const RasterizationPipeline_1 = require("../Renderer/RasterizationPipeline");
+const MainScene_1 = require("../Scene/MainScene");
+const SceneManager_1 = require("../Scene/SceneManager");
+const Debug_1 = require("../Utils/Debug");
+const Time_1 = require("./Time");
+const TweenManager_1 = require("./TweenManager");
+const Physics_1 = require("../Physics/Physics");
+const Setting_1 = require("./Setting");
+class Engine {
+    static Init() {
         // 获取canvas元素和2D渲染上下文
         this.canvas = document.getElementById('canvas');
         this.context = this.canvas.getContext('2d');
@@ -17880,7 +17536,7 @@ var Engine = /** @class */ (function () {
         // 创建图像数据对象
         this.imageData = Engine.context.createImageData(Setting_1.EngineConfig.canvasWidth, Setting_1.EngineConfig.canvasHeight);
         // 创建32位无符号整型数组视图，用于直接操作像素数据
-        var uint32View = new Uint32Array(this.imageData.data.buffer);
+        const uint32View = new Uint32Array(this.imageData.data.buffer);
         // 创建渲染器实例
         this.pipeline = new RasterizationPipeline_1.RasterizationPipeline(uint32View);
         // 初始化物理引擎
@@ -17889,16 +17545,16 @@ var Engine = /** @class */ (function () {
         this.sceneManager.loadScene(MainScene_1.MainScene);
         // 初始化输入系统
         Input_1.Input.initialize();
-    };
-    Engine.Loop = function (time) {
+    }
+    static Loop(time) {
         Debug_1.Debug.Log(Math.floor(1 / Time_1.Time.deltaTime).toString());
         // 1. 更新时间数据：判断当前帧是否需要执行（受 maxFps 影响）
-        var shouldExecuteFrame = Time_1.Time.updateFrame();
+        const shouldExecuteFrame = Time_1.Time.updateFrame();
         // if (!shouldExecuteFrame) {
         //     return;
         // }
         // 2. 固定更新（对应 Unity FixedUpdate，例如物理引擎、AI逻辑）
-        Time_1.Time.updateFixedTime(function () {
+        Time_1.Time.updateFixedTime(() => {
             Engine.FixedUpdate(); // 你的固定逻辑更新（如物理碰撞、技能CD）
         });
         // 3. 普通逻辑更新（对应 Unity Update，受 deltaTime 影响）
@@ -17909,155 +17565,128 @@ var Engine = /** @class */ (function () {
         Engine.Render();
         // 6. 屏幕输出日志
         Debug_1.Debug.PrintLogs();
-    };
-    Engine.Update = function () {
+    }
+    static Update() {
         var _a;
         // 使用场景的update方法更新所有游戏对象
         (_a = this.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.update();
         // 更新动画
         TweenManager_1.TweenManager.update();
-    };
-    Engine.FixedUpdate = function () {
+    }
+    static FixedUpdate() {
         this.physics.update();
-    };
-    Engine.Render = function () {
+    }
+    static Render() {
         this.pipeline.Render();
         // 将图像数据绘制到canvas上
         this.context.putImageData(this.imageData, 0, 0);
-    };
-    Engine.sceneManager = new SceneManager_1.SceneManager();
-    Engine.physics = new Physics_1.Physics();
-    return Engine;
-}());
+    }
+}
 exports.Engine = Engine;
+Engine.sceneManager = new SceneManager_1.SceneManager();
+Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":33,"../Renderer/RasterizationPipeline":36,"../Scene/MainScene":37,"../Scene/SceneManager":39,"../Utils/Debug":41,"./Input":16,"./Setting":17,"./Time":18,"./TweenManager":20}],15:[function(require,module,exports){
+},{"../Physics/Physics":34,"../Renderer/RasterizationPipeline":38,"../Scene/MainScene":39,"../Scene/SceneManager":41,"../Utils/Debug":43,"./Input":17,"./Setting":18,"./Time":19,"./TweenManager":21}],16:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
-var Transform_1 = require("./Transform");
-var UObject_1 = require("./UObject");
-var Decorators_1 = require("./Decorators");
-var Engine_1 = require("./Engine");
-var GameObject = /** @class */ (function (_super) {
-    __extends(GameObject, _super);
-    function GameObject(name, parent) {
+const Transform_1 = require("./Transform");
+const UObject_1 = require("./UObject");
+const Decorators_1 = require("./Decorators");
+const Engine_1 = require("./Engine");
+class GameObject extends UObject_1.UObject {
+    constructor(name, parent) {
         var _a;
-        var _this = _super.call(this) || this;
-        _this.tag = "Untagged";
-        _this.layer = 0;
-        _this.components = [];
-        _this.startedComponents = new Set();
-        _this._active = true;
-        _this.name = name;
-        _this.transform = new Transform_1.Transform(_this);
+        super();
+        this.tag = "Untagged";
+        this.layer = 0;
+        this.components = [];
+        this.startedComponents = new Set();
+        this._active = true;
+        this.name = name;
+        this.transform = new Transform_1.Transform(this);
         if (parent) {
-            _this.transform.setParent(parent.transform);
+            this.transform.setParent(parent.transform);
         }
         else {
-            var p = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObject();
+            const p = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObject();
             if (p) {
-                _this.transform.setParent(p.transform);
+                this.transform.setParent(p.transform);
             }
         }
-        return _this;
     }
-    Object.defineProperty(GameObject.prototype, "active", {
-        // 检查游戏对象是否处于活动状态（考虑父对象）
-        get: function () {
-            if (!this._active)
+    // 设置游戏对象的激活状态
+    set active(value) {
+        if (this._active !== value) {
+            this._active = value;
+            // 处理组件的启用/禁用
+            for (const component of this.components) {
+                if (value) {
+                    component.onEnable();
+                }
+                else {
+                    component.onDisable();
+                }
+            }
+        }
+    }
+    // 检查游戏对象是否处于活动状态（考虑父对象）
+    get active() {
+        if (!this._active)
+            return false;
+        // 检查父对象的激活状态
+        let parent = this.transform.parent;
+        while (parent) {
+            const parentGameObject = parent.gameObject;
+            if (parentGameObject && !parentGameObject.active) {
                 return false;
-            // 检查父对象的激活状态
-            var parent = this.transform.parent;
-            while (parent) {
-                var parentGameObject = parent.gameObject;
-                if (parentGameObject && !parentGameObject.active) {
-                    return false;
-                }
-                parent = parent.parent;
             }
-            return true;
-        },
-        // 设置游戏对象的激活状态
-        set: function (value) {
-            if (this._active !== value) {
-                this._active = value;
-                // 处理组件的启用/禁用
-                for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
-                    var component = _a[_i];
-                    if (value) {
-                        component.onEnable();
-                    }
-                    else {
-                        component.onDisable();
-                    }
-                }
-            }
-        },
-        enumerable: false,
-        configurable: true
-    });
+            parent = parent.parent;
+        }
+        return true;
+    }
     // 调用所有组件的Start方法（如果尚未调用）
-    GameObject.prototype.startComponents = function () {
+    startComponents() {
         if (!this.active)
             return;
-        for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
-            var component = _a[_i];
+        for (const component of this.components) {
             if (!this.startedComponents.has(component) && component.enabled) {
-                component.start();
+                component.onStart();
                 component.onEnable();
                 this.startedComponents.add(component);
             }
         }
         // 递归调用子对象的startComponents
-        for (var _b = 0, _c = this.transform.children; _b < _c.length; _b++) {
-            var child = _c[_b];
+        for (const child of this.transform.children) {
             if (child.gameObject) {
                 child.gameObject.startComponents();
             }
         }
-    };
+    }
     // 更新所有组件
-    GameObject.prototype.updateComponents = function () {
+    updateComponents() {
         if (!this.active)
             return;
-        for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
-            var component = _a[_i];
+        for (const component of this.components) {
             if (component.enabled) {
-                component.update();
+                component.onUpdate();
             }
         }
         // 递归调用子对象的updateComponents
-        for (var _b = 0, _c = this.transform.children; _b < _c.length; _b++) {
-            var child = _c[_b];
+        for (const child of this.transform.children) {
             if (child.gameObject) {
                 child.gameObject.updateComponents();
             }
         }
-    };
+    }
     /**
      * 添加组件到游戏对象
      * @param componentType 组件类型
      * @returns 添加的组件实例
      */
-    GameObject.prototype.addComponent = function (componentType) {
+    addComponent(componentType) {
         // 1.检查是否已经存在该类型的组件
-        var existingComponent = this.getComponent(componentType);
+        const existingComponent = this.getComponent(componentType);
         if (existingComponent) {
             if (!existingComponent.checkComponentUniqueness()) {
                 // 不允许添加多个相同的组件，返回已经存在的
@@ -18065,17 +17694,16 @@ var GameObject = /** @class */ (function (_super) {
             }
         }
         // 2.判断是否有与该组件排斥的组件
-        for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
-            var existingComponent_1 = _a[_i];
-            var existingDisallowed = Reflect.getMetadata(Decorators_1.DISALLOW_COMPONENTS_KEY, existingComponent_1.constructor);
+        for (const existingComponent of this.components) {
+            const existingDisallowed = Reflect.getMetadata(Decorators_1.DISALLOW_COMPONENTS_KEY, existingComponent.constructor);
             if (existingDisallowed && existingDisallowed.includes(componentType)) {
-                console.error("Cannot add ".concat(componentType.name, ": existing ").concat(existingComponent_1.constructor.name, " ") +
-                    "forbids this component type");
+                console.error(`Cannot add ${componentType.name}: existing ${existingComponent.constructor.name} ` +
+                    `forbids this component type`);
                 return null;
             }
         }
         // 创建新组件实例
-        var comp = new componentType(this);
+        const comp = new componentType(this);
         // 3.判断是否有依赖组件，有的话添加
         if (comp.checkRequiredComponents()) {
             this.components.push(comp);
@@ -18088,42 +17716,40 @@ var GameObject = /** @class */ (function (_super) {
             comp.Destroy();
             return null;
         }
-    };
-    GameObject.prototype.getAllComponents = function () {
+    }
+    getAllComponents() {
         return this.components;
-    };
+    }
     // 获取指定类型的组件
-    GameObject.prototype.getComponent = function (componentType) {
-        for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
-            var component = _a[_i];
+    getComponent(componentType) {
+        for (const component of this.components) {
             if (component instanceof componentType) {
                 return component;
             }
         }
         return null;
-    };
+    }
     // 获取所有指定类型的组件
-    GameObject.prototype.getComponents = function (componentType) {
-        var result = [];
-        for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
-            var component = _a[_i];
+    getComponents(componentType) {
+        const result = [];
+        for (const component of this.components) {
             if (component instanceof componentType) {
                 result.push(component);
             }
         }
         return result;
-    };
-    GameObject.prototype.getComponetInParent = function (componentType) {
+    }
+    getComponetInParent(componentType) {
         // 先检查自身
-        var comp = this.getComponent(componentType);
+        const comp = this.getComponent(componentType);
         if (comp != null) {
             return comp;
         }
-        var parent = this.transform.parent;
+        let parent = this.transform.parent;
         while (parent) {
-            var parentGameObject = parent.gameObject;
+            const parentGameObject = parent.gameObject;
             if (parentGameObject) {
-                var component = parentGameObject.getComponent(componentType);
+                const component = parentGameObject.getComponent(componentType);
                 if (component) {
                     return component;
                 }
@@ -18131,91 +17757,101 @@ var GameObject = /** @class */ (function (_super) {
             parent = parent.parent;
         }
         return null;
-    };
+    }
     // 获取子节点上的组件
-    GameObject.prototype.getComponentInChildren = function (componentType) {
+    getComponentInChildren(componentType) {
         // 先检查自身
-        var comp = this.getComponent(componentType);
+        const comp = this.getComponent(componentType);
         if (comp != null) {
             return comp;
         }
         // 遍历所有子节点
-        for (var _i = 0, _a = this.transform.children; _i < _a.length; _i++) {
-            var child = _a[_i];
-            var childGameObject = child.gameObject;
+        for (const child of this.transform.children) {
+            const childGameObject = child.gameObject;
             if (childGameObject) {
-                var childComp = childGameObject.getComponent(componentType);
+                const childComp = childGameObject.getComponent(componentType);
                 if (childComp != null) {
                     return childComp;
                 }
                 // 递归检查子节点的子节点
-                var deepChildComp = childGameObject.getComponentInChildren(componentType);
+                const deepChildComp = childGameObject.getComponentInChildren(componentType);
                 if (deepChildComp != null) {
                     return deepChildComp;
                 }
             }
         }
         return null;
-    };
+    }
     // 获取子节点上的所有组件
-    GameObject.prototype.getComponentsInChildren = function (componentType) {
-        var result = [];
+    getComponentsInChildren(componentType) {
+        const result = [];
         // 添加自身的组件
-        result.push.apply(result, this.getComponents(componentType));
+        result.push(...this.getComponents(componentType));
         // 遍历所有子节点
-        for (var _i = 0, _a = this.transform.children; _i < _a.length; _i++) {
-            var child = _a[_i];
+        for (const child of this.transform.children) {
             // 假设每个Transform都有对应的GameObject
-            var childGameObject = child.gameObject;
+            const childGameObject = child.gameObject;
             if (childGameObject) {
                 // 递归获取子节点的所有组件
-                result.push.apply(result, childGameObject.getComponentsInChildren(componentType));
+                result.push(...childGameObject.getComponentsInChildren(componentType));
             }
         }
         return result;
-    };
+    }
     // 移除组件
-    GameObject.prototype.removeComponent = function (componentType) {
-        var index = this.components.findIndex(function (component) { return component instanceof componentType; });
+    removeComponent(componentType) {
+        const index = this.components.findIndex(component => component instanceof componentType);
         if (index !== -1) {
-            var component = this.components[index];
+            const component = this.components[index];
             component.onDestroy();
             this.components.splice(index, 1);
             return true;
         }
         return false;
-    };
+    }
+    removeComponentInstance(component) {
+        // 查找组件实例在数组中的索引
+        const index = this.components.indexOf(component);
+        if (index !== -1) {
+            // 调用组件的销毁生命周期方法
+            component.onDestroy();
+            // 从数组中移除该实例
+            this.components.splice(index, 1);
+            return true; // 移除成功
+        }
+        return false; // 未找到该组件实例
+    }
     // 静态方法：通过名称查找GameObject
-    GameObject.find = function (name) {
+    static find(name) {
         // 实现查找逻辑
         // 这需要一个全局的GameObject注册表
         return null;
-    };
+    }
     // 静态方法：通过标签查找第一个GameObject
-    GameObject.findWithTag = function (tag) {
+    static findWithTag(tag) {
         // 实现查找逻辑
         // 这需要一个标签系统
         return null;
-    };
+    }
     // 静态方法：通过标签查找所有GameObject
-    GameObject.findGameObjectsWithTag = function (tag) {
+    static findGameObjectsWithTag(tag) {
         // 实现查找逻辑
         return [];
-    };
+    }
     // 静态方法：查找特定类型的第一个组件
-    GameObject.findObjectOfType = function (type) {
+    static findObjectOfType(type) {
         // 实现查找逻辑
         return null;
-    };
+    }
     // 静态方法：查找特定类型的所有组件
-    GameObject.findObjectsOfType = function (type) {
+    static findObjectsOfType(type) {
         // 实现查找逻辑
         return [];
-    };
+    }
     // 静态方法：实例化游戏对象
-    GameObject.instantiate = function (original, position, rotation) {
+    static instantiate(original, position, rotation) {
         // 创建新的游戏对象
-        var clone = new GameObject(original.name);
+        const clone = new GameObject(original.name);
         // 复制属性
         clone.tag = original.tag;
         clone.layer = original.layer;
@@ -18228,118 +17864,105 @@ var GameObject = /** @class */ (function (_super) {
         if (rotation)
             clone.transform.rotation = rotation;
         // 复制组件（这需要一个深度复制机制）
-        var comps = original.getAllComponents();
-        for (var i = 0; i < comps.length; i++) {
-            var comp = comps[i];
+        const comps = original.getAllComponents();
+        for (let i = 0; i < comps.length; i++) {
+            const comp = comps[i];
             //clone.addComponent()
         }
         return clone;
-    };
+    }
     // 销毁游戏对象
-    GameObject.prototype.onDestroy = function () {
+    onDestroy() {
         // 调用所有组件的onDestroy方法
-        for (var _i = 0, _a = this.components; _i < _a.length; _i++) {
-            var component = _a[_i];
+        for (const component of this.components) {
             component.onDestroy();
         }
         // 这里可以添加从场景中移除游戏对象的逻辑
-    };
-    return GameObject;
-}(UObject_1.UObject));
+    }
+}
 exports.GameObject = GameObject;
 
-},{"./Decorators":13,"./Engine":14,"./Transform":19,"./UObject":21}],16:[function(require,module,exports){
+},{"./Decorators":14,"./Engine":15,"./Transform":20,"./UObject":22}],17:[function(require,module,exports){
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TouchPhase = exports.InputAxis = exports.Input = void 0;
-var Vector2_1 = require("../Math/Vector2");
-var Input = /** @class */ (function () {
-    function Input() {
-    }
+const Vector2_1 = require("../Math/Vector2");
+class Input {
     // 初始化输入系统
-    Input.initialize = function () {
+    static initialize() {
         // 键盘事件
-        document.addEventListener('keydown', function (event) {
+        document.addEventListener('keydown', (event) => {
             Input.currentKeys.set(event.code, true);
         });
-        document.addEventListener('keyup', function (event) {
+        document.addEventListener('keyup', (event) => {
             Input.currentKeys.set(event.code, false);
         });
         // 鼠标事件
-        document.addEventListener('mousedown', function (event) {
+        document.addEventListener('mousedown', (event) => {
             if (event.button >= 0 && event.button < 3) {
                 Input.currentMouseButtons[event.button] = true;
             }
         });
-        document.addEventListener('mouseup', function (event) {
+        document.addEventListener('mouseup', (event) => {
             if (event.button >= 0 && event.button < 3) {
                 Input.currentMouseButtons[event.button] = false;
             }
         });
-        document.addEventListener('mousemove', function (event) {
-            var canvas = document.getElementById('canvas');
-            var rect = canvas.getBoundingClientRect();
+        document.addEventListener('mousemove', (event) => {
+            const canvas = document.getElementById('canvas');
+            const rect = canvas.getBoundingClientRect();
             Input.mousePosition.x = event.clientX - rect.left;
             Input.mousePosition.y = event.clientY - rect.top;
             Input.mouseDelta.x = event.movementX;
             Input.mouseDelta.y = event.movementY;
         });
-        document.addEventListener('wheel', function (event) {
+        document.addEventListener('wheel', (event) => {
             Input.mouseScrollDelta.y = event.deltaY;
         });
-        document.addEventListener('scrollend', function () {
+        document.addEventListener('scrollend', () => {
             Input.mouseScrollDelta.y = 0;
         });
         // 触摸事件
-        document.addEventListener('touchstart', function (event) {
+        document.addEventListener('touchstart', (event) => {
             Input.updateTouches(event.touches);
         });
-        document.addEventListener('touchmove', function (event) {
+        document.addEventListener('touchmove', (event) => {
             Input.updateTouches(event.touches);
         });
-        document.addEventListener('touchend', function (event) {
+        document.addEventListener('touchend', (event) => {
             Input.updateTouches(event.touches);
         });
-        document.addEventListener('touchcancel', function (event) {
+        document.addEventListener('touchcancel', (event) => {
             Input.updateTouches(event.touches);
         });
-    };
+    }
     // 更新输入状态（在每帧开始时调用）
-    Input.update = function () {
+    static update() {
         // 更新键盘状态
         Input.previousKeys = new Map(Input.currentKeys);
         // 更新鼠标状态
-        Input.previousMouseButtons = __spreadArray([], Input.currentMouseButtons, true);
+        Input.previousMouseButtons = [...Input.currentMouseButtons];
         // 复位鼠标滚轮
         Input.mouseScrollDelta.y = 0;
         // 复位鼠标移动
         Input.mouseDelta.x = 0;
         Input.mouseDelta.y = 0;
-    };
+    }
     //#region 键盘输入检测
     // 检查按键是否被按下（持续触发）
-    Input.GetKey = function (keyCode) {
+    static GetKey(keyCode) {
         return Input.currentKeys.get(keyCode) === true;
-    };
+    }
     // 检查按键是否在当前帧被按下（仅一帧触发）
-    Input.GetKeyDown = function (keyCode) {
+    static GetKeyDown(keyCode) {
         return Input.currentKeys.get(keyCode) === true && Input.previousKeys.get(keyCode) !== true;
-    };
+    }
     // 检查按键是否在当前帧被释放（仅一帧触发）
-    Input.GetKeyUp = function (keyCode) {
+    static GetKeyUp(keyCode) {
         return Input.currentKeys.get(keyCode) !== true && Input.previousKeys.get(keyCode) === true;
-    };
+    }
     // 获取指定轴向的输入值
-    Input.GetAxis = function (axis) {
+    static GetAxis(axis) {
         switch (axis) {
             case InputAxis.Horizontal:
                 // 水平轴 A/D 或 左右方向键
@@ -18362,32 +17985,32 @@ var Input = /** @class */ (function () {
             default:
                 return 0;
         }
-    };
+    }
     //#endregion
     //#region 鼠标输入检测
     // 检查鼠标按钮是否被按下（持续触发）
-    Input.GetMouseButton = function (button) {
+    static GetMouseButton(button) {
         return button >= 0 && button < 3 ? Input.currentMouseButtons[button] : false;
-    };
+    }
     // 检查鼠标按钮是否在当前帧被按下（仅一帧触发）
-    Input.GetMouseButtonDown = function (button) {
+    static GetMouseButtonDown(button) {
         return button >= 0 && button < 3 ?
             (Input.currentMouseButtons[button] && !Input.previousMouseButtons[button]) : false;
-    };
+    }
     // 检查鼠标按钮是否在当前帧被释放（仅一帧触发）
-    Input.GetMouseButtonUp = function (button) {
+    static GetMouseButtonUp(button) {
         return button >= 0 && button < 3 ?
             (!Input.currentMouseButtons[button] && Input.previousMouseButtons[button]) : false;
-    };
+    }
     //#endregion
     //#region 触摸输入检测
     // 更新触摸状态
-    Input.updateTouches = function (touchList) {
+    static updateTouches(touchList) {
         Input.touches = [];
-        for (var i = 0; i < touchList.length; i++) {
-            var touch = touchList[i];
-            var canvas = document.getElementById('canvas');
-            var rect = canvas.getBoundingClientRect();
+        for (let i = 0; i < touchList.length; i++) {
+            const touch = touchList[i];
+            const canvas = document.getElementById('canvas');
+            const rect = canvas.getBoundingClientRect();
             Input.touches.push({
                 fingerId: touch.identifier,
                 position: {
@@ -18399,73 +18022,68 @@ var Input = /** @class */ (function () {
                 tapCount: 1 // 简化实现
             });
         }
-    };
+    }
     // 获取指定索引的触摸
-    Input.GetTouch = function (index) {
+    static GetTouch(index) {
         return index >= 0 && index < Input.touches.length ? Input.touches[index] : null;
-    };
-    Object.defineProperty(Input, "touchCount", {
-        // 获取触摸数量
-        get: function () {
-            return Input.touches.length;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    // 键盘状态
-    Input.currentKeys = new Map();
-    Input.previousKeys = new Map();
-    // 鼠标状态
-    Input.currentMouseButtons = [false, false, false]; // 左、中、右键
-    Input.previousMouseButtons = [false, false, false];
-    Input.mousePosition = Vector2_1.Vector2.ZERO;
-    Input.mouseDelta = Vector2_1.Vector2.ZERO;
-    Input.mouseScrollDelta = Vector2_1.Vector2.ZERO;
-    // 触摸状态
-    Input.touches = [];
-    // 按键常量
-    Input.KeyCode = {
-        // 字母键
-        A: 'KeyA', B: 'KeyB', C: 'KeyC', D: 'KeyD', E: 'KeyE', F: 'KeyF', G: 'KeyG',
-        H: 'KeyH', I: 'KeyI', J: 'KeyJ', K: 'KeyK', L: 'KeyL', M: 'KeyM', N: 'KeyN',
-        O: 'KeyO', P: 'KeyP', Q: 'KeyQ', R: 'KeyR', S: 'KeyS', T: 'KeyT', U: 'KeyU',
-        V: 'KeyV', W: 'KeyW', X: 'KeyX', Y: 'KeyY', Z: 'KeyZ',
-        // 数字键
-        Alpha0: 'Digit0', Alpha1: 'Digit1', Alpha2: 'Digit2', Alpha3: 'Digit3', Alpha4: 'Digit4',
-        Alpha5: 'Digit5', Alpha6: 'Digit6', Alpha7: 'Digit7', Alpha8: 'Digit8', Alpha9: 'Digit9',
-        // 小键盘数字键
-        Numpad0: 'Numpad0', Numpad1: 'Numpad1', Numpad2: 'Numpad2', Numpad3: 'Numpad3',
-        Numpad4: 'Numpad4', Numpad5: 'Numpad5', Numpad6: 'Numpad6', Numpad7: 'Numpad7',
-        Numpad8: 'Numpad8', Numpad9: 'Numpad9',
-        // 小键盘功能键（可选添加）
-        NumpadMultiply: 'NumpadMultiply', // 乘号 *
-        NumpadAdd: 'NumpadAdd', // 加号 +
-        NumpadSubtract: 'NumpadSubtract', // 减号 -
-        NumpadDecimal: 'NumpadDecimal', // 小数点 .
-        NumpadDivide: 'NumpadDivide', // 除号 /
-        NumpadEnter: 'NumpadEnter', // 回车键
-        // 功能键
-        F1: 'F1', F2: 'F2', F3: 'F3', F4: 'F4', F5: 'F5', F6: 'F6',
-        F7: 'F7', F8: 'F8', F9: 'F9', F10: 'F10', F11: 'F11', F12: 'F12',
-        // 特殊键
-        Space: 'Space',
-        Enter: 'Enter',
-        Tab: 'Tab',
-        Escape: 'Escape',
-        Backspace: 'Backspace',
-        Shift: 'ShiftLeft',
-        Control: 'ControlLeft',
-        Alt: 'AltLeft',
-        CapsLock: 'CapsLock',
-        // 方向键
-        UpArrow: 'ArrowUp',
-        DownArrow: 'ArrowDown',
-        LeftArrow: 'ArrowLeft',
-        RightArrow: 'ArrowRight',
-    };
-    return Input;
-}());
+    }
+    // 获取触摸数量
+    static get touchCount() {
+        return Input.touches.length;
+    }
+}
 exports.Input = Input;
+// 键盘状态
+Input.currentKeys = new Map();
+Input.previousKeys = new Map();
+// 鼠标状态
+Input.currentMouseButtons = [false, false, false]; // 左、中、右键
+Input.previousMouseButtons = [false, false, false];
+Input.mousePosition = Vector2_1.Vector2.ZERO;
+Input.mouseDelta = Vector2_1.Vector2.ZERO;
+Input.mouseScrollDelta = Vector2_1.Vector2.ZERO;
+// 触摸状态
+Input.touches = [];
+// 按键常量
+Input.KeyCode = {
+    // 字母键
+    A: 'KeyA', B: 'KeyB', C: 'KeyC', D: 'KeyD', E: 'KeyE', F: 'KeyF', G: 'KeyG',
+    H: 'KeyH', I: 'KeyI', J: 'KeyJ', K: 'KeyK', L: 'KeyL', M: 'KeyM', N: 'KeyN',
+    O: 'KeyO', P: 'KeyP', Q: 'KeyQ', R: 'KeyR', S: 'KeyS', T: 'KeyT', U: 'KeyU',
+    V: 'KeyV', W: 'KeyW', X: 'KeyX', Y: 'KeyY', Z: 'KeyZ',
+    // 数字键
+    Alpha0: 'Digit0', Alpha1: 'Digit1', Alpha2: 'Digit2', Alpha3: 'Digit3', Alpha4: 'Digit4',
+    Alpha5: 'Digit5', Alpha6: 'Digit6', Alpha7: 'Digit7', Alpha8: 'Digit8', Alpha9: 'Digit9',
+    // 小键盘数字键
+    Numpad0: 'Numpad0', Numpad1: 'Numpad1', Numpad2: 'Numpad2', Numpad3: 'Numpad3',
+    Numpad4: 'Numpad4', Numpad5: 'Numpad5', Numpad6: 'Numpad6', Numpad7: 'Numpad7',
+    Numpad8: 'Numpad8', Numpad9: 'Numpad9',
+    // 小键盘功能键（可选添加）
+    NumpadMultiply: 'NumpadMultiply', // 乘号 *
+    NumpadAdd: 'NumpadAdd', // 加号 +
+    NumpadSubtract: 'NumpadSubtract', // 减号 -
+    NumpadDecimal: 'NumpadDecimal', // 小数点 .
+    NumpadDivide: 'NumpadDivide', // 除号 /
+    NumpadEnter: 'NumpadEnter', // 回车键
+    // 功能键
+    F1: 'F1', F2: 'F2', F3: 'F3', F4: 'F4', F5: 'F5', F6: 'F6',
+    F7: 'F7', F8: 'F8', F9: 'F9', F10: 'F10', F11: 'F11', F12: 'F12',
+    // 特殊键
+    Space: 'Space',
+    Enter: 'Enter',
+    Tab: 'Tab',
+    Escape: 'Escape',
+    Backspace: 'Backspace',
+    Shift: 'ShiftLeft',
+    Control: 'ControlLeft',
+    Alt: 'AltLeft',
+    CapsLock: 'CapsLock',
+    // 方向键
+    UpArrow: 'ArrowUp',
+    DownArrow: 'ArrowDown',
+    LeftArrow: 'ArrowLeft',
+    RightArrow: 'ArrowRight',
+};
 // 轴向枚举
 var InputAxis;
 (function (InputAxis) {
@@ -18482,12 +18100,12 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":30}],17:[function(require,module,exports){
+},{"../Math/Vector2":31}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RenderSettings = exports.PhysicsSettings = exports.TimeSettings = exports.EngineConfig = exports.Layers = exports.FogMode = void 0;
-var Color_1 = require("../Math/Color");
-var Vector3_1 = require("../Math/Vector3");
+const Color_1 = require("../Math/Color");
+const Vector3_1 = require("../Math/Vector3");
 var FogMode;
 (function (FogMode) {
     FogMode[FogMode["Linear"] = 0] = "Linear";
@@ -18500,46 +18118,34 @@ exports.Layers = [
     "Ignore Raycast",
     "Water",
 ];
-var EngineConfig = /** @class */ (function () {
-    function EngineConfig() {
-    }
-    EngineConfig.canvasWidth = 400;
-    EngineConfig.canvasHeight = 400;
-    EngineConfig.halfCanvasWidth = EngineConfig.canvasWidth >> 1;
-    EngineConfig.halfCanvasHeight = EngineConfig.canvasHeight >> 1;
-    EngineConfig.aspectRatio = EngineConfig.canvasWidth / EngineConfig.canvasHeight;
-    return EngineConfig;
-}());
+class EngineConfig {
+}
 exports.EngineConfig = EngineConfig;
-var TimeSettings = /** @class */ (function () {
-    function TimeSettings() {
-    }
-    return TimeSettings;
-}());
+EngineConfig.canvasWidth = 400;
+EngineConfig.canvasHeight = 400;
+EngineConfig.halfCanvasWidth = EngineConfig.canvasWidth >> 1;
+EngineConfig.halfCanvasHeight = EngineConfig.canvasHeight >> 1;
+EngineConfig.aspectRatio = EngineConfig.canvasWidth / EngineConfig.canvasHeight;
+class TimeSettings {
+}
 exports.TimeSettings = TimeSettings;
-var PhysicsSettings = /** @class */ (function () {
-    function PhysicsSettings() {
-    }
-    PhysicsSettings.gravity = new Vector3_1.Vector3(0, -9.8, 0);
-    PhysicsSettings.layerCollisionMatrix = [];
-    return PhysicsSettings;
-}());
+class PhysicsSettings {
+}
 exports.PhysicsSettings = PhysicsSettings;
-var RenderSettings = /** @class */ (function () {
-    function RenderSettings() {
-    }
-    RenderSettings.fog = false;
-    RenderSettings.fogColor = new Color_1.Color(0, 0, 0, 1);
-    RenderSettings.fogMode = FogMode.Exp2;
-    RenderSettings.fogDensity = 0.01;
-    RenderSettings.linearFogStart = 0;
-    RenderSettings.linearFogEnd = 300;
-    RenderSettings.ambientLight = new Color_1.Color(0.1, 0.1, 0.1, 1);
-    return RenderSettings;
-}());
+PhysicsSettings.gravity = new Vector3_1.Vector3(0, -9.8, 0);
+PhysicsSettings.layerCollisionMatrix = [];
+class RenderSettings {
+}
 exports.RenderSettings = RenderSettings;
+RenderSettings.fog = false;
+RenderSettings.fogColor = new Color_1.Color(0, 0, 0, 1);
+RenderSettings.fogMode = FogMode.Exp2;
+RenderSettings.fogDensity = 0.01;
+RenderSettings.linearFogStart = 0;
+RenderSettings.linearFogEnd = 300;
+RenderSettings.ambientLight = new Color_1.Color(0.1, 0.1, 0.1, 1);
 
-},{"../Math/Color":24,"../Math/Vector3":31}],18:[function(require,module,exports){
+},{"../Math/Color":25,"../Math/Vector3":32}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Time = void 0;
@@ -18552,15 +18158,13 @@ exports.Time = void 0;
  * 4. fixedTime：固定时间步长的累计时间（用于物理/固定逻辑更新）
  * 5. timeScale：时间缩放系数（0=暂停，1=正常，>1=加速，<1=减速）
  */
-var Time = /** @class */ (function () {
-    function Time() {
-    }
+class Time {
     // ========================== 核心方法（需集成到渲染循环）==========================
     /**
      * 每帧更新时间数据（必须在主循环中调用，对应 Unity 帧生命周期）
      * @returns 该帧是否需要执行（用于帧率限制）
      */
-    Time.updateFrame = function () {
+    static updateFrame() {
         // 初始化：记录第一帧时间
         if (!this.isInitialized) {
             this.lastFrameTime = performance.now();
@@ -18568,12 +18172,12 @@ var Time = /** @class */ (function () {
             return true;
         }
         // 1. 计算当前帧的原始时间间隔（毫秒转秒）
-        var currentTime = performance.now();
-        var rawDeltaMs = currentTime - this.lastFrameTime;
+        const currentTime = performance.now();
+        const rawDeltaMs = currentTime - this.lastFrameTime;
         this.unscaledDeltaTime = rawDeltaMs / 1000; // 原始帧间隔（不受 timeScale 影响）
         // 2. 帧率限制逻辑：若设置 maxFps，判断是否达到目标帧间隔
         if (this.maxFps !== null) {
-            var targetFrameMs = 1000 / this.maxFps; // 目标帧间隔（毫秒）
+            const targetFrameMs = 1000 / this.maxFps; // 目标帧间隔（毫秒）
             if (rawDeltaMs < targetFrameMs) {
                 return false; // 未达到目标间隔，不执行当前帧
             }
@@ -18587,28 +18191,28 @@ var Time = /** @class */ (function () {
         // 5. 记录当前时间，为下一帧做准备
         this.lastFrameTime = currentTime;
         return true; // 允许执行当前帧逻辑
-    };
+    }
     /**
      * 固定时间步长更新（用于物理引擎、固定频率逻辑，对应 Unity FixedUpdate）
      * @param fixedUpdateCallback 固定更新回调（每累计一个 fixedDeltaTime 执行一次）
      */
-    Time.updateFixedTime = function (fixedUpdateCallback) {
+    static updateFixedTime(fixedUpdateCallback) {
         // 累计原始时间（不受 timeScale 影响，确保物理更新稳定）
-        var totalFixedDelta = this.unscaledDeltaTime + this.fixedTimeRemainder;
-        var fixedStep = this.fixedDeltaTime;
+        const totalFixedDelta = this.unscaledDeltaTime + this.fixedTimeRemainder;
+        const fixedStep = this.fixedDeltaTime;
         // 计算需要执行多少次固定更新（例如：累计 0.05 秒，固定步长 0.02 秒 → 执行 2 次，余数 0.01 秒）
-        var fixedUpdateCount = Math.floor(totalFixedDelta / fixedStep);
+        const fixedUpdateCount = Math.floor(totalFixedDelta / fixedStep);
         this.fixedTimeRemainder = totalFixedDelta % fixedStep;
         // 执行固定更新回调
-        for (var i = 0; i < fixedUpdateCount; i++) {
+        for (let i = 0; i < fixedUpdateCount; i++) {
             this.fixedTime += fixedStep; // 更新固定时间累计
             fixedUpdateCallback === null || fixedUpdateCallback === void 0 ? void 0 : fixedUpdateCallback();
         }
-    };
+    }
     /**
      * 重置时间状态（用于游戏重启、场景切换）
      */
-    Time.reset = function () {
+    static reset() {
         this.deltaTime = 0;
         this.unscaledDeltaTime = 0;
         this.time = 0;
@@ -18616,57 +18220,56 @@ var Time = /** @class */ (function () {
         this.fixedTime = 0;
         this.fixedTimeRemainder = 0;
         this.lastFrameTime = performance.now();
-    };
+    }
     /**
      * 暂停游戏（等价于设置 timeScale = 0）
      */
-    Time.pause = function () {
+    static pause() {
         this.timeScale = 0;
-    };
+    }
     /**
      * 恢复游戏正常速度（等价于设置 timeScale = 1）
      */
-    Time.resume = function () {
+    static resume() {
         this.timeScale = 1;
-    };
-    // ========================== 静态属性（对应 Unity Time 静态接口）==========================
-    /** 上一帧到当前帧的时间间隔（秒），受 timeScale 影响（暂停时为 0） */
-    Time.deltaTime = 0;
-    /** 上一帧到当前帧的原始时间间隔（秒），不受 timeScale 影响（暂停时仍为真实时间间隔） */
-    Time.unscaledDeltaTime = 0;
-    /** 游戏启动到现在的总时间（秒），受 timeScale 影响（暂停时不增加） */
-    Time.time = 0;
-    /** 游戏启动到现在的原始总时间（秒），不受 timeScale 影响（暂停时仍增加） */
-    Time.unscaledTime = 0;
-    /** 固定时间步长（秒），用于物理更新/固定逻辑更新（默认 0.02 秒 = 50 次/秒，对应 Unity fixedDeltaTime） */
-    Time.fixedDeltaTime = 0.02;
-    /** 固定时间步长的累计时间（秒），用于触发固定更新（对应 Unity fixedTime） */
-    Time.fixedTime = 0;
-    /** 时间缩放系数（0 = 暂停，1 = 正常速度，2 = 2倍速，0.5 = 0.5倍速） */
-    Time.timeScale = 1;
-    /** 帧率限制（默认无限制，设为 30/60 可固定帧率） */
-    Time.maxFps = null;
-    // ========================== 私有成员（内部计时逻辑）==========================
-    /** 上一帧的时间戳（毫秒，用于计算帧间隔） */
-    Time.lastFrameTime = performance.now();
-    /** 固定时间步长的累计余数（避免固定更新丢失精度） */
-    Time.fixedTimeRemainder = 0;
-    /** 是否已初始化（确保仅启动一次计时） */
-    Time.isInitialized = false;
-    return Time;
-}());
+    }
+}
 exports.Time = Time;
+// ========================== 静态属性（对应 Unity Time 静态接口）==========================
+/** 上一帧到当前帧的时间间隔（秒），受 timeScale 影响（暂停时为 0） */
+Time.deltaTime = 0;
+/** 上一帧到当前帧的原始时间间隔（秒），不受 timeScale 影响（暂停时仍为真实时间间隔） */
+Time.unscaledDeltaTime = 0;
+/** 游戏启动到现在的总时间（秒），受 timeScale 影响（暂停时不增加） */
+Time.time = 0;
+/** 游戏启动到现在的原始总时间（秒），不受 timeScale 影响（暂停时仍增加） */
+Time.unscaledTime = 0;
+/** 固定时间步长（秒），用于物理更新/固定逻辑更新（默认 0.02 秒 = 50 次/秒，对应 Unity fixedDeltaTime） */
+Time.fixedDeltaTime = 0.02;
+/** 固定时间步长的累计时间（秒），用于触发固定更新（对应 Unity fixedTime） */
+Time.fixedTime = 0;
+/** 时间缩放系数（0 = 暂停，1 = 正常速度，2 = 2倍速，0.5 = 0.5倍速） */
+Time.timeScale = 1;
+/** 帧率限制（默认无限制，设为 30/60 可固定帧率） */
+Time.maxFps = null;
+// ========================== 私有成员（内部计时逻辑）==========================
+/** 上一帧的时间戳（毫秒，用于计算帧间隔） */
+Time.lastFrameTime = performance.now();
+/** 固定时间步长的累计余数（避免固定更新丢失精度） */
+Time.fixedTimeRemainder = 0;
+/** 是否已初始化（确保仅启动一次计时） */
+Time.isInitialized = false;
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transform = void 0;
-var Matrix4x4_1 = require("../Math/Matrix4x4");
-var Quaternion_1 = require("../Math/Quaternion");
-var Vector3_1 = require("../Math/Vector3");
-var Vector4_1 = require("../Math/Vector4");
-var Transform = /** @class */ (function () {
-    function Transform(gameObject) {
+const Matrix4x4_1 = require("../Math/Matrix4x4");
+const Quaternion_1 = require("../Math/Quaternion");
+const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
+class Transform {
+    constructor(gameObject) {
         this._parent = null;
         this.gameObject = gameObject;
         this.children = new Array();
@@ -18675,147 +18278,82 @@ var Transform = /** @class */ (function () {
         this._tempRot = Quaternion_1.Quaternion.identity;
         this._tempScale = Vector3_1.Vector3.ONE;
     }
-    Object.defineProperty(Transform.prototype, "selfMatrix", {
-        get: function () {
-            return Matrix4x4_1.Matrix4x4.getTRSMatrix(this._tempPos, this._tempRot, this._tempScale);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "localToWorldMatrix", {
-        get: function () {
-            var p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4_1.Matrix4x4.identity;
-            return p.multiply(this.selfMatrix);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "worldToLocalMatrix", {
-        get: function () {
-            var p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4_1.Matrix4x4.identity;
-            return this.selfMatrix.invert().multiply(p);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "x", {
-        get: function () {
-            return this.position.x;
-        },
-        set: function (x) {
-            var pos = this.position;
-            pos.x = x;
-            this.position = pos;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "y", {
-        get: function () {
-            return this.position.y;
-        },
-        set: function (y) {
-            var pos = this.position;
-            pos.y = y;
-            this.position = pos;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "z", {
-        get: function () {
-            return this.position.z;
-        },
-        set: function (z) {
-            var pos = this.position;
-            pos.z = z;
-            this.position = pos;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "forward", {
-        get: function () {
-            //我们要得到的是一个方向，因此不需要位置信息，将齐次坐标的w设置为0，抛弃掉坐标信息
-            return this.convertToWorldSpace(Vector3_1.Vector3.FORWARD, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "up", {
-        get: function () {
-            return this.convertToWorldSpace(Vector3_1.Vector3.UP, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "right", {
-        get: function () {
-            return this.convertToWorldSpace(Vector3_1.Vector3.RIGHT, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "position", {
-        get: function () {
-            return this._tempPos.clone();
-        },
-        set: function (pos) {
-            this._tempPos = pos;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "worldPosition", {
-        get: function () {
-            return this.localToWorldMatrix.getTranslate();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "rotation", {
-        get: function () {
-            return this._tempRot.clone();
-        },
-        set: function (q) {
-            this._tempRot = q;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "worldRotation", {
-        get: function () {
-            return this.localToWorldMatrix.getRotate();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "scale", {
-        get: function () {
-            return this._tempScale.clone();
-        },
-        set: function (s) {
-            this._tempScale = s;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "worldScale", {
-        get: function () {
-            return this.localToWorldMatrix.getScale();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Transform.prototype, "parent", {
-        get: function () {
-            return this._parent;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Transform.prototype.setParent = function (parent, worldPositionStays) {
-        if (worldPositionStays === void 0) { worldPositionStays = true; }
+    get selfMatrix() {
+        return Matrix4x4_1.Matrix4x4.getTRSMatrix(this._tempPos, this._tempRot, this._tempScale);
+    }
+    get localToWorldMatrix() {
+        var p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4_1.Matrix4x4.identity;
+        return p.multiply(this.selfMatrix);
+    }
+    get worldToLocalMatrix() {
+        var p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4_1.Matrix4x4.identity;
+        return this.selfMatrix.invert().multiply(p);
+    }
+    get x() {
+        return this.position.x;
+    }
+    set x(x) {
+        var pos = this.position;
+        pos.x = x;
+        this.position = pos;
+    }
+    get y() {
+        return this.position.y;
+    }
+    set y(y) {
+        var pos = this.position;
+        pos.y = y;
+        this.position = pos;
+    }
+    get z() {
+        return this.position.z;
+    }
+    set z(z) {
+        var pos = this.position;
+        pos.z = z;
+        this.position = pos;
+    }
+    get forward() {
+        //我们要得到的是一个方向，因此不需要位置信息，将齐次坐标的w设置为0，抛弃掉坐标信息
+        return this.convertToWorldSpace(Vector3_1.Vector3.FORWARD, 0);
+    }
+    get up() {
+        return this.convertToWorldSpace(Vector3_1.Vector3.UP, 0);
+    }
+    get right() {
+        return this.convertToWorldSpace(Vector3_1.Vector3.RIGHT, 0);
+    }
+    get position() {
+        return this._tempPos.clone();
+    }
+    set position(pos) {
+        this._tempPos = pos;
+    }
+    get worldPosition() {
+        return this.localToWorldMatrix.getTranslate();
+    }
+    get rotation() {
+        return this._tempRot.clone();
+    }
+    set rotation(q) {
+        this._tempRot = q;
+    }
+    get worldRotation() {
+        return this.localToWorldMatrix.getRotate();
+    }
+    get scale() {
+        return this._tempScale.clone();
+    }
+    set scale(s) {
+        this._tempScale = s;
+    }
+    get worldScale() {
+        return this.localToWorldMatrix.getScale();
+    }
+    get parent() {
+        return this._parent;
+    }
+    setParent(parent, worldPositionStays = true) {
         if (parent != null && parent != this && parent != this.parent) {
             //防止出现：父节点是当前节点的子节点，将子节的设置为自己的父节点，会死循环
             if (parent.hasParent(this)) {
@@ -18831,18 +18369,17 @@ var Transform = /** @class */ (function () {
         else if (parent == null && this.parent != null) {
             this.parent.removeChild(this, worldPositionStays);
         }
-    };
+    }
     //节点p是否是当前节点的上级
-    Transform.prototype.hasParent = function (p) {
+    hasParent(p) {
         if (this.parent == null)
             return false;
         else if (this.parent == p)
             return true;
         else
             return this.parent.hasParent(p);
-    };
-    Transform.prototype.addChild = function (child, worldPositionStays) {
-        if (worldPositionStays === void 0) { worldPositionStays = true; }
+    }
+    addChild(child, worldPositionStays = true) {
         if (child != null && child != this && !this.children.includes(child)) {
             //防止出现：child节点是当前节点的父节点，将父节的设置为自己的子节点，会死循环
             if (this.hasParent(child)) {
@@ -18866,9 +18403,8 @@ var Transform = /** @class */ (function () {
             return true;
         }
         return false;
-    };
-    Transform.prototype.removeChild = function (child, worldPositionStays) {
-        if (worldPositionStays === void 0) { worldPositionStays = true; }
+    }
+    removeChild(child, worldPositionStays = true) {
         var index = this.children.indexOf(child, 0);
         if (index > -1) {
             if (worldPositionStays) {
@@ -18883,110 +18419,97 @@ var Transform = /** @class */ (function () {
             return true;
         }
         return false;
-    };
-    Transform.prototype.convertToNodeSpace = function (v, w) {
-        if (w === void 0) { w = 1; }
+    }
+    convertToNodeSpace(v, w = 1) {
         /*
          *将某个坐标转到自己的局部空间，例如当前的局部坐标原点在世界坐标的（1，1）处
          *点p在世界坐标（2，1）处，那么将点p相对于当前局部坐标系的位置就是（2，1）-（1，1）= （1， 0）
          *即将点p反向变换当前的矩阵
          */
         return this.worldToLocalMatrix.multiplyVector4(new Vector4_1.Vector4(v, w)).vector3;
-    };
-    Transform.prototype.convertToWorldSpace = function (v, w) {
-        if (w === void 0) { w = 1; }
+    }
+    convertToWorldSpace(v, w = 1) {
         return this.localToWorldMatrix.multiplyVector4(new Vector4_1.Vector4(v, w)).vector3;
-    };
-    Transform.prototype.destroy = function (destroyChildren) {
-        var _this = this;
-        if (destroyChildren === void 0) { destroyChildren = true; }
+    }
+    destroy(destroyChildren = true) {
         if (destroyChildren) {
-            this.children.forEach(function (child) {
+            this.children.forEach(child => {
                 child.destroy(destroyChildren);
             });
         }
         else {
-            this.children.forEach(function (child) {
-                _this.removeChild(child);
+            this.children.forEach(child => {
+                this.removeChild(child);
             });
         }
-    };
-    return Transform;
-}());
+    }
+}
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":26,"../Math/Quaternion":27,"../Math/Vector3":31,"../Math/Vector4":32}],20:[function(require,module,exports){
+},{"../Math/Matrix4x4":27,"../Math/Quaternion":28,"../Math/Vector3":32,"../Math/Vector4":33}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TweenManager = void 0;
-var tween_js_1 = require("@tweenjs/tween.js");
-var TweenManager = /** @class */ (function () {
-    function TweenManager() {
-    }
-    TweenManager.add = function (tween) {
-        var _this = this;
+const tween_js_1 = require("@tweenjs/tween.js");
+class TweenManager {
+    static add(tween) {
         // 保存用户原有的 onComplete 回调
-        var originalOnComplete = tween._onCompleteCallback;
+        const originalOnComplete = tween._onCompleteCallback;
         // 设置新的 onComplete 回调
-        tween.onComplete(function () {
+        tween.onComplete(() => {
             // 先调用用户原有的回调（如果存在）
             if (originalOnComplete) {
                 originalOnComplete();
             }
             // 然后从管理器中移除
-            _this.remove(tween);
+            this.remove(tween);
             console.log("移除");
         });
         this.tweenGroup.add(tween);
-    };
-    TweenManager.update = function (time) {
+    }
+    static update(time) {
         this.tweenGroup.update(time);
-    };
-    TweenManager.remove = function (tween) {
+    }
+    static remove(tween) {
         this.tweenGroup.remove(tween);
-    };
-    TweenManager.tweenGroup = new tween_js_1.Group();
-    return TweenManager;
-}());
+    }
+}
 exports.TweenManager = TweenManager;
+TweenManager.tweenGroup = new tween_js_1.Group();
 
-},{"@tweenjs/tween.js":1}],21:[function(require,module,exports){
+},{"@tweenjs/tween.js":1}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UObject = void 0;
-var UObject = /** @class */ (function () {
-    function UObject() {
-    }
-    UObject.prototype.Destroy = function () {
+class UObject {
+    Destroy() {
         this.onDestroy();
-    };
-    UObject.Destroy = function (obj) {
+    }
+    static Destroy(obj) {
         obj.Destroy();
-    };
-    return UObject;
-}());
+    }
+}
 exports.UObject = UObject;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BVHTree = void 0;
-var Vector3_1 = require("../Math/Vector3");
-var Bounds_1 = require("./Bounds");
+const Vector3_1 = require("../Math/Vector3");
+const Bounds_1 = require("./Bounds");
 // BVH节点类
-var BVHNode = /** @class */ (function () {
-    function BVHNode(bounds) {
+class BVHNode {
+    constructor(bounds) {
         this.gameObject = null;
         this.left = null;
         this.right = null;
         this.isLeaf = false;
         this.bounds = bounds;
     }
-    return BVHNode;
-}());
+}
 // BVH树类
-var BVHTree = /** @class */ (function () {
-    function BVHTree() {
+class BVHTree {
+    constructor() {
         this.root = null;
         this.maxObjectsPerNode = 8; // 每个节点最大对象数量
         this.maxDepth = 16; // 最大深度
@@ -18994,66 +18517,64 @@ var BVHTree = /** @class */ (function () {
     /**
      * 构建BVH树
      */
-    BVHTree.prototype.build = function (sceneObjects) {
+    build(sceneObjects) {
         if (sceneObjects.length === 0) {
             this.root = null;
             return;
         }
         // 计算所有对象的包围盒
-        var boundsList = [];
-        for (var _i = 0, sceneObjects_1 = sceneObjects; _i < sceneObjects_1.length; _i++) {
-            var obj = sceneObjects_1[_i];
-            var bounds = this.calculateObjectBounds(obj);
+        const boundsList = [];
+        for (const obj of sceneObjects) {
+            const bounds = this.calculateObjectBounds(obj);
             if (bounds) {
                 boundsList.push(bounds);
             }
         }
         // 构建BVH树
         this.root = this.buildRecursive(boundsList, sceneObjects, 0);
-    };
+    }
     /**
      * 递归构建BVH节点
      */
-    BVHTree.prototype.buildRecursive = function (boundsList, objects, depth) {
+    buildRecursive(boundsList, objects, depth) {
         // 终止条件：对象数量少或达到最大深度
         if (objects.length <= this.maxObjectsPerNode || depth >= this.maxDepth) {
-            var node_1 = new BVHNode(this.calculateCombinedBounds(boundsList));
-            node_1.gameObject = objects.length === 1 ? objects[0] : null;
-            node_1.isLeaf = true;
-            return node_1;
+            const node = new BVHNode(this.calculateCombinedBounds(boundsList));
+            node.gameObject = objects.length === 1 ? objects[0] : null;
+            node.isLeaf = true;
+            return node;
         }
         // 选择分割轴（选择方差最大的轴）
-        var axis = this.selectSplitAxis(boundsList);
+        const axis = this.selectSplitAxis(boundsList);
         // 按选中轴排序对象
-        var sorted = this.sortObjectsByAxis(objects, boundsList, axis);
+        const sorted = this.sortObjectsByAxis(objects, boundsList, axis);
         // 分割点（中位数分割）
-        var mid = Math.floor(objects.length / 2);
-        var leftBounds = boundsList.slice(0, mid);
-        var rightBounds = boundsList.slice(mid);
-        var leftObjects = objects.slice(0, mid);
-        var rightObjects = objects.slice(mid);
+        const mid = Math.floor(objects.length / 2);
+        const leftBounds = boundsList.slice(0, mid);
+        const rightBounds = boundsList.slice(mid);
+        const leftObjects = objects.slice(0, mid);
+        const rightObjects = objects.slice(mid);
         // 创建内部节点
-        var node = new BVHNode(this.calculateCombinedBounds(boundsList));
+        const node = new BVHNode(this.calculateCombinedBounds(boundsList));
         node.left = this.buildRecursive(leftBounds, leftObjects, depth + 1);
         node.right = this.buildRecursive(rightBounds, rightObjects, depth + 1);
         node.isLeaf = false;
         return node;
-    };
+    }
     /**
      * 射线检测 - 找到所有相交对象
      */
-    BVHTree.prototype.raycast = function (rayOrigin, rayDirection, maxDistance) {
-        if (maxDistance === void 0) { maxDistance = Infinity; }
-        var results = [];
+    raycast(rayOrigin, rayDirection, maxDistance = Infinity) {
+        const results = [];
         if (this.root) {
             this.raycastRecursive(this.root, rayOrigin, rayDirection, maxDistance, results);
         }
         return results;
-    };
+    }
     /**
      * 递归射线检测
      */
-    BVHTree.prototype.raycastRecursive = function (node, rayOrigin, rayDirection, maxDistance, results) {
+    raycastRecursive(node, rayOrigin, rayDirection, maxDistance, results) {
         if (!node.bounds.intersectsRay(rayOrigin, rayDirection, maxDistance)) {
             return;
         }
@@ -19069,105 +18590,98 @@ var BVHTree = /** @class */ (function () {
         if (node.right) {
             this.raycastRecursive(node.right, rayOrigin, rayDirection, maxDistance, results);
         }
-    };
+    }
     /**
      * 计算对象包围盒
      */
-    BVHTree.prototype.calculateObjectBounds = function (obj) {
+    calculateObjectBounds(obj) {
         // 这里需要实现具体的包围盒计算逻辑
         // 可以根据对象的变换和渲染组件来计算实际包围盒
-        var transform = obj.transform;
+        const transform = obj.transform;
         if (!transform)
             return null;
-        var position = transform.worldPosition;
-        var scale = transform.worldScale;
+        const position = transform.worldPosition;
+        const scale = transform.worldScale;
         // 简单实现：假设每个对象都是单位立方体，根据变换缩放和平移
-        var halfSize = new Vector3_1.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z);
+        const halfSize = new Vector3_1.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z);
         return new Bounds_1.Bounds(position.subtract(halfSize), position.add(halfSize));
-    };
+    }
     /**
      * 计算多个包围盒的合并包围盒
      */
-    BVHTree.prototype.calculateCombinedBounds = function (boundsList) {
+    calculateCombinedBounds(boundsList) {
         if (boundsList.length === 0) {
             return new Bounds_1.Bounds(new Vector3_1.Vector3(0, 0, 0), new Vector3_1.Vector3(0, 0, 0));
         }
-        var min = boundsList[0].min.clone();
-        var max = boundsList[0].max.clone();
-        for (var i = 1; i < boundsList.length; i++) {
+        let min = boundsList[0].min.clone();
+        let max = boundsList[0].max.clone();
+        for (let i = 1; i < boundsList.length; i++) {
             min = Vector3_1.Vector3.min(min, boundsList[i].min);
             max = Vector3_1.Vector3.max(max, boundsList[i].max);
         }
         return new Bounds_1.Bounds(min, max);
-    };
+    }
     /**
      * 选择最佳分割轴
      */
-    BVHTree.prototype.selectSplitAxis = function (boundsList) {
+    selectSplitAxis(boundsList) {
         // 计算每个轴的方差，选择方差最大的轴
-        var variances = this.calculateAxisVariances(boundsList);
-        var bestAxis = 0;
-        var maxVariance = variances[0];
-        for (var i = 1; i < 3; i++) {
+        const variances = this.calculateAxisVariances(boundsList);
+        let bestAxis = 0;
+        let maxVariance = variances[0];
+        for (let i = 1; i < 3; i++) {
             if (variances[i] > maxVariance) {
                 maxVariance = variances[i];
                 bestAxis = i;
             }
         }
         return bestAxis;
-    };
+    }
     /**
      * 计算各轴方差
      */
-    BVHTree.prototype.calculateAxisVariances = function (boundsList) {
-        var centers = [];
-        for (var _i = 0, boundsList_1 = boundsList; _i < boundsList_1.length; _i++) {
-            var bounds = boundsList_1[_i];
+    calculateAxisVariances(boundsList) {
+        const centers = [];
+        for (const bounds of boundsList) {
             centers.push(bounds.center);
         }
-        var variances = [0, 0, 0];
-        var _loop_1 = function (axis) {
-            var mean = centers.reduce(function (sum, center) { return sum + center.getComponent(axis); }, 0) / centers.length;
-            variances[axis] = centers.reduce(function (sum, center) {
-                var diff = center.getComponent(axis) - mean;
+        const variances = [0, 0, 0];
+        for (let axis = 0; axis < 3; axis++) {
+            const mean = centers.reduce((sum, center) => sum + center.getComponent(axis), 0) / centers.length;
+            variances[axis] = centers.reduce((sum, center) => {
+                const diff = center.getComponent(axis) - mean;
                 return sum + diff * diff;
             }, 0) / centers.length;
-        };
-        for (var axis = 0; axis < 3; axis++) {
-            _loop_1(axis);
         }
         return variances;
-    };
+    }
     /**
      * 按指定轴排序对象
      */
-    BVHTree.prototype.sortObjectsByAxis = function (objects, boundsList, axis) {
-        var sortedIndices = boundsList
-            .map(function (bounds, index) { return ({
-            index: index,
+    sortObjectsByAxis(objects, boundsList, axis) {
+        const sortedIndices = boundsList
+            .map((bounds, index) => ({
+            index,
             center: bounds.center.getComponent(axis)
-        }); })
-            .sort(function (a, b) { return a.center - b.center; })
-            .map(function (item) { return item.index; });
-        return sortedIndices.map(function (index) { return objects[index]; });
-    };
-    return BVHTree;
-}());
+        }))
+            .sort((a, b) => a.center - b.center)
+            .map(item => item.index);
+        return sortedIndices.map(index => objects[index]);
+    }
+}
 exports.BVHTree = BVHTree;
 
-},{"../Math/Vector3":31,"./Bounds":23}],23:[function(require,module,exports){
+},{"../Math/Vector3":32,"./Bounds":24}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
-var Vector3_1 = require("./Vector3");
+const Vector3_1 = require("./Vector3");
 /**
  * 轴对齐包围盒 (AABB)
  * 最简单的包围盒，边与坐标轴平行
  */
-var Bounds = /** @class */ (function () {
-    function Bounds(min, max) {
-        if (min === void 0) { min = Vector3_1.Vector3.ZERO; }
-        if (max === void 0) { max = Vector3_1.Vector3.ZERO; }
+class Bounds {
+    constructor(min = Vector3_1.Vector3.ZERO, max = Vector3_1.Vector3.ZERO) {
         // 定义12条边的顶点索引对 (每个面4条边，共6个面，但共享边只画一次)
         this.edges = [
             [0, 1], [1, 2], [2, 3], [3, 0], // 后面
@@ -19200,17 +18714,16 @@ var Bounds = /** @class */ (function () {
     /**
      * 射线与包围盒相交检测
      */
-    Bounds.prototype.intersectsRay = function (rayOrigin, rayDirection, maxDistance) {
-        var _a;
+    intersectsRay(rayOrigin, rayDirection, maxDistance) {
         // 使用slab方法进行射线与AABB相交检测
-        var tmin = 0;
-        var tmax = maxDistance;
-        for (var i = 0; i < 3; i++) {
-            var invD = 1.0 / rayDirection.getComponent(i);
-            var t0 = (this.min.getComponent(i) - rayOrigin.getComponent(i)) * invD;
-            var t1 = (this.max.getComponent(i) - rayOrigin.getComponent(i)) * invD;
+        let tmin = 0;
+        let tmax = maxDistance;
+        for (let i = 0; i < 3; i++) {
+            const invD = 1.0 / rayDirection.getComponent(i);
+            let t0 = (this.min.getComponent(i) - rayOrigin.getComponent(i)) * invD;
+            let t1 = (this.max.getComponent(i) - rayOrigin.getComponent(i)) * invD;
             if (invD < 0) {
-                _a = [t1, t0], t0 = _a[0], t1 = _a[1];
+                [t0, t1] = [t1, t0];
             }
             tmin = Math.max(tmin, t0);
             tmax = Math.min(tmax, t1);
@@ -19219,23 +18732,22 @@ var Bounds = /** @class */ (function () {
             }
         }
         return true;
-    };
+    }
     /**
      * 计算射线与包围盒的相交距离
      */
-    Bounds.prototype.rayIntersectDistance = function (rayOrigin, rayDirection) {
+    rayIntersectDistance(rayOrigin, rayDirection) {
         // 简化的相交距离计算
-        var center = this.center;
-        var toCenter = center.subtract(rayOrigin);
+        const center = this.center;
+        const toCenter = center.subtract(rayOrigin);
         return toCenter.dot(rayDirection);
-    };
-    Bounds.fromPoints = function (points) {
+    }
+    static fromPoints(points) {
         if (points.length === 0)
             return new Bounds();
-        var min = new Vector3_1.Vector3(points[0].x, points[0].y, points[0].z);
-        var max = new Vector3_1.Vector3(points[0].x, points[0].y, points[0].z);
-        for (var _i = 0, points_1 = points; _i < points_1.length; _i++) {
-            var p = points_1[_i];
+        let min = new Vector3_1.Vector3(points[0].x, points[0].y, points[0].z);
+        let max = new Vector3_1.Vector3(points[0].x, points[0].y, points[0].z);
+        for (const p of points) {
             min.x = Math.min(min.x, p.x);
             min.y = Math.min(min.y, p.y);
             min.z = Math.min(min.z, p.z);
@@ -19244,18 +18756,17 @@ var Bounds = /** @class */ (function () {
             max.z = Math.max(max.z, p.z);
         }
         // 假设Bounds有min和max属性
-        var bounds = new Bounds(min, max);
+        const bounds = new Bounds(min, max);
         return bounds;
-    };
-    return Bounds;
-}());
+    }
+}
 exports.Bounds = Bounds;
 /**
  * 球体包围盒
  * 用球心和半径表示的简化包围体
  */
-var Sphere = /** @class */ (function () {
-    function Sphere(center, radius) {
+class Sphere {
+    constructor(center, radius) {
         this.center = center;
         this.radius = radius;
     }
@@ -19265,14 +18776,13 @@ var Sphere = /** @class */ (function () {
      * @param vertices 三维顶点数组
      * @returns 生成的球体
      */
-    Sphere.fromVertices = function (vertices) {
+    static fromVertices(vertices) {
         if (vertices.length === 0) {
             throw new Error("顶点数组不能为空");
         }
         // 1. 计算中心点（平均值）
-        var center = new Vector3_1.Vector3();
-        for (var _i = 0, vertices_1 = vertices; _i < vertices_1.length; _i++) {
-            var v = vertices_1[_i];
+        const center = new Vector3_1.Vector3();
+        for (const v of vertices) {
             center.x += v.x;
             center.y += v.y;
             center.z += v.z;
@@ -19281,36 +18791,34 @@ var Sphere = /** @class */ (function () {
         center.y /= vertices.length;
         center.z /= vertices.length;
         // 2. 找到离中心点最远的顶点，其距离即为半径
-        var maxDistanceSquared = 0;
-        for (var _a = 0, vertices_2 = vertices; _a < vertices_2.length; _a++) {
-            var v = vertices_2[_a];
-            var dx = v.x - center.x;
-            var dy = v.y - center.y;
-            var dz = v.z - center.z;
-            var distanceSquared = dx * dx + dy * dy + dz * dz;
+        let maxDistanceSquared = 0;
+        for (const v of vertices) {
+            const dx = v.x - center.x;
+            const dy = v.y - center.y;
+            const dz = v.z - center.z;
+            const distanceSquared = dx * dx + dy * dy + dz * dz;
             if (distanceSquared > maxDistanceSquared) {
                 maxDistanceSquared = distanceSquared;
             }
         }
-        var radius = Math.sqrt(maxDistanceSquared);
+        const radius = Math.sqrt(maxDistanceSquared);
         return new Sphere(center, radius);
-    };
+    }
     /**
      * 从AABB生成球体包围盒
      * @param aabb 轴对齐包围盒
      * @returns 生成的球体
      */
-    Sphere.fromAABB = function (aabb) {
-        var center = aabb.center;
-        var halfExtents = aabb.halfExtents;
+    static fromAABB(aabb) {
+        const center = aabb.center;
+        const halfExtents = aabb.halfExtents;
         // 半径是从中心到角落的距离
-        var radius = halfExtents.magnitude;
+        const radius = halfExtents.magnitude;
         return new Sphere(center, radius);
-    };
-    return Sphere;
-}());
+    }
+}
 
-},{"./Vector3":31}],24:[function(require,module,exports){
+},{"./Vector3":32}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = exports.BlendMode = void 0;
@@ -19323,41 +18831,40 @@ var BlendMode;
     BlendMode[BlendMode["overlay"] = 4] = "overlay";
     BlendMode[BlendMode["replace"] = 5] = "replace";
 })(BlendMode || (exports.BlendMode = BlendMode = {}));
-var Color = /** @class */ (function () {
-    function Color(r, g, b, a) {
-        if (a === void 0) { a = 255; }
+class Color {
+    constructor(r, g, b, a = 255) {
         this.r = r;
         this.g = g;
         this.b = b;
         this.a = a;
     }
-    Color.prototype.ToUint32 = function () {
+    ToUint32() {
         return (this.a << 24) | (this.b << 16) | (this.g << 8) | this.r;
-    };
-    Color.FromUint32 = function (uint32) {
+    }
+    static FromUint32(uint32) {
         return new Color(uint32 & 0xFF, (uint32 >> 8) & 0xFF, (uint32 >> 16) & 0xFF, (uint32 >> 24) & 0xFF);
-    };
+    }
     /**
      * 颜色混合方法
      * 支持多种混合模式
      */
-    Color.blendColors = function (dest, src, mode) {
+    static blendColors(dest, src, mode) {
         // 提取目标颜色分量 (ARGB格式)
-        var destA = (dest >> 24) & 0xFF;
-        var destR = (dest >> 16) & 0xFF;
-        var destG = (dest >> 8) & 0xFF;
-        var destB = dest & 0xFF;
+        const destA = (dest >> 24) & 0xFF;
+        const destR = (dest >> 16) & 0xFF;
+        const destG = (dest >> 8) & 0xFF;
+        const destB = dest & 0xFF;
         // 提取源颜色分量 (ARGB格式)
-        var srcA = (src >> 24) & 0xFF;
-        var srcR = (src >> 16) & 0xFF;
-        var srcG = (src >> 8) & 0xFF;
-        var srcB = src & 0xFF;
-        var resultA, resultR, resultG, resultB;
+        const srcA = (src >> 24) & 0xFF;
+        const srcR = (src >> 16) & 0xFF;
+        const srcG = (src >> 8) & 0xFF;
+        const srcB = src & 0xFF;
+        let resultA, resultR, resultG, resultB;
         switch (mode) {
             case BlendMode.alpha:
                 // Alpha 混合 (最常用的混合模式)
-                var alpha = srcA / 255;
-                var invAlpha = 1 - alpha;
+                const alpha = srcA / 255;
+                const invAlpha = 1 - alpha;
                 resultA = Math.min(255, destA + srcA - (destA * srcA) / 255);
                 resultR = Math.floor(srcR * alpha + destR * invAlpha);
                 resultG = Math.floor(srcG * alpha + destG * invAlpha);
@@ -19398,46 +18905,45 @@ var Color = /** @class */ (function () {
         }
         // 组合颜色分量
         return (resultA << 24) | (resultR << 16) | (resultG << 8) | resultB;
-    };
+    }
     /**
      * 叠加混合的辅助函数
      */
-    Color.overlayBlend = function (dest, src) {
+    static overlayBlend(dest, src) {
         if (dest < 128) {
             return Math.floor((2 * dest * src) / 255);
         }
         else {
             return 255 - Math.floor((2 * (255 - dest) * (255 - src)) / 255);
         }
-    };
-    Color.WHITE = new Color(255, 255, 255).ToUint32();
-    Color.BLACK = new Color(0, 0, 0).ToUint32();
-    Color.GRAY = new Color(128, 128, 128).ToUint32();
-    Color.RED = new Color(255, 0, 0).ToUint32();
-    Color.GREEN = new Color(0, 255, 0).ToUint32();
-    Color.BLUE = new Color(0, 0, 255).ToUint32();
-    Color.YELLOW = new Color(255, 255, 0).ToUint32();
-    Color.CYAN = new Color(0, 255, 255).ToUint32();
-    Color.MAGENTA = new Color(255, 0, 255).ToUint32();
-    Color.ORANGE = new Color(255, 165, 0).ToUint32();
-    Color.PURPLE = new Color(128, 0, 128).ToUint32();
-    Color.BROWN = new Color(165, 42, 0).ToUint32();
-    Color.MAROON = new Color(128, 0, 0).ToUint32();
-    // 颜色混合查找表
-    Color.blendLUT = [];
-    return Color;
-}());
+    }
+}
 exports.Color = Color;
+Color.WHITE = new Color(255, 255, 255).ToUint32();
+Color.BLACK = new Color(0, 0, 0).ToUint32();
+Color.GRAY = new Color(128, 128, 128).ToUint32();
+Color.RED = new Color(255, 0, 0).ToUint32();
+Color.GREEN = new Color(0, 255, 0).ToUint32();
+Color.BLUE = new Color(0, 0, 255).ToUint32();
+Color.YELLOW = new Color(255, 255, 0).ToUint32();
+Color.CYAN = new Color(0, 255, 255).ToUint32();
+Color.MAGENTA = new Color(255, 0, 255).ToUint32();
+Color.ORANGE = new Color(255, 165, 0).ToUint32();
+Color.PURPLE = new Color(128, 0, 128).ToUint32();
+Color.BROWN = new Color(165, 42, 0).ToUint32();
+Color.MAROON = new Color(128, 0, 0).ToUint32();
+// 颜色混合查找表
+Color.blendLUT = [];
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.interpolateOverTriangle = interpolateOverTriangle;
-var Color_1 = require("./Color");
-var Vector2_1 = require("./Vector2");
-var Vector3_1 = require("./Vector3");
-var Vector4_1 = require("./Vector4");
-var Matrix4x4_1 = require("./Matrix4x4");
+const Color_1 = require("./Color");
+const Vector2_1 = require("./Vector2");
+const Vector3_1 = require("./Vector3");
+const Vector4_1 = require("./Vector4");
+const Matrix4x4_1 = require("./Matrix4x4");
 /**
  * 计算点 p 在三角形 (v0, v1, v2) 中的重心坐标。
  * @param p 目标点（2D 坐标）
@@ -19447,18 +18953,18 @@ var Matrix4x4_1 = require("./Matrix4x4");
  * @returns 重心坐标 [alpha, beta, gamma]
  */
 function computeBarycentricCoords(p, v0, v1, v2) {
-    var x = p[0], y = p[1];
+    const [x, y] = p;
     // 计算整个三角形的面积（的两倍，有符号）
-    var areaABC = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
+    const areaABC = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
     // 计算子三角形 PBC 的面积（的两倍，有符号）
-    var areaPBC = (v1.x - x) * (v2.y - y) - (v2.x - x) * (v1.y - y);
-    var alpha = areaPBC / areaABC;
+    const areaPBC = (v1.x - x) * (v2.y - y) - (v2.x - x) * (v1.y - y);
+    const alpha = areaPBC / areaABC;
     // 计算子三角形 PCA 的面积（的两倍，有签名）
-    var areaPCA = (v2.x - x) * (v0.y - y) - (v0.x - x) * (v2.y - y);
-    var beta = areaPCA / areaABC;
+    const areaPCA = (v2.x - x) * (v0.y - y) - (v0.x - x) * (v2.y - y);
+    const beta = areaPCA / areaABC;
     // 计算子三角形 PAB 的面积（的两倍，有签名）
-    var areaPAB = (v0.x - x) * (v1.y - y) - (v1.x - x) * (v0.y - y);
-    var gamma = areaPAB / areaABC;
+    const areaPAB = (v0.x - x) * (v1.y - y) - (v1.x - x) * (v0.y - y);
+    const gamma = areaPAB / areaABC;
     // 或者 gamma = 1 - alpha - beta;
     return [alpha, beta, gamma];
 }
@@ -19473,20 +18979,20 @@ function computeBarycentricCoords(p, v0, v1, v2) {
  * @returns 所有像素及其插值后的属性
  */
 function interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2) {
-    var fragments = [];
+    const fragments = [];
     // 1. 计算三角形的包围盒
-    var minX = Math.floor(Math.min(v0.x, v1.x, v2.x));
-    var maxX = Math.ceil(Math.max(v0.x, v1.x, v2.x));
-    var minY = Math.floor(Math.min(v0.y, v1.y, v2.y));
-    var maxY = Math.ceil(Math.max(v0.y, v1.y, v2.y));
+    const minX = Math.floor(Math.min(v0.x, v1.x, v2.x));
+    const maxX = Math.ceil(Math.max(v0.x, v1.x, v2.x));
+    const minY = Math.floor(Math.min(v0.y, v1.y, v2.y));
+    const maxY = Math.ceil(Math.max(v0.y, v1.y, v2.y));
     // 2. 遍历边界框内的每一个像素点
-    for (var y = minY; y <= maxY; y++) {
-        for (var x = minX; x <= maxX; x++) {
-            var pixel = [x, y];
+    for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
+            const pixel = [x, y];
             // 3. 计算当前像素点的重心坐标
-            var _a = computeBarycentricCoords(pixel, v0, v1, v2), alpha = _a[0], beta = _a[1], gamma = _a[2];
+            const [alpha, beta, gamma] = computeBarycentricCoords(pixel, v0, v1, v2);
             // 4. 判断点是否在三角形内部（重心坐标均非负，且近似和为1）
-            var tolerance = 1e-5; // 浮点数精度容差
+            const tolerance = 1e-5; // 浮点数精度容差
             if (alpha >= -tolerance &&
                 beta >= -tolerance &&
                 gamma >= -tolerance &&
@@ -19494,14 +19000,12 @@ function interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2) {
                 // 5. 使用重心坐标作为权重对属性进行插值
                 // 例如，如果 T 是 number: interpolatedValue = alpha * v0.attr + beta * v1.attr + gamma * v2.attr;
                 // 如果 T 是数组，需要每个分量分别计算。
-                var interpolatedAttrs = interpolateAttributes(attrs0, attrs1, attrs2, alpha, beta, gamma);
+                const interpolatedAttrs = interpolateAttributes(attrs0, attrs1, attrs2, alpha, beta, gamma);
                 // 6. 深度值，需要单独额外插值计算
-                var z = interpolateNumber(v0.z, v1.z, v2.z, alpha, beta, gamma);
+                const z = interpolateNumber(v0.z, v1.z, v2.z, alpha, beta, gamma);
                 // 添加到片段列表
                 fragments.push({
-                    x: x,
-                    y: y,
-                    z: z,
+                    x, y, z,
                     attributes: interpolatedAttrs
                 });
             }
@@ -19516,43 +19020,42 @@ function interpolateAttributes(a, b, c, w, // 顶点a的权重
 u, // 顶点b的权重
 v // 顶点c的权重
 ) {
-    var result = {};
+    const result = {};
     // 获取所有属性名称并验证
-    var attributeNames = Object.keys(a);
+    const attributeNames = Object.keys(a);
     validateAttributes(attributeNames, b, c);
     // 对每个属性进行插值
-    for (var _i = 0, attributeNames_1 = attributeNames; _i < attributeNames_1.length; _i++) {
-        var name_1 = attributeNames_1[_i];
-        var valA = a[name_1];
-        var valB = b[name_1];
-        var valC = c[name_1];
+    for (const name of attributeNames) {
+        const valA = a[name];
+        const valB = b[name];
+        const valC = c[name];
         // 根据属性类型执行相应的插值
         if (typeof valA === 'number') {
             // 标量插值
-            result[name_1] = interpolateNumber(valA, valB, valC, w, u, v);
+            result[name] = interpolateNumber(valA, valB, valC, w, u, v);
         }
         else if (valA instanceof Color_1.Color) {
             // Color插值
-            result[name_1] = interpolateColor(valA, valB, valC, w, u, v);
+            result[name] = interpolateColor(valA, valB, valC, w, u, v);
         }
         else if (valA instanceof Vector2_1.Vector2) {
             // Vector2插值
-            result[name_1] = interpolateVector2(valA, valB, valC, w, u, v);
+            result[name] = interpolateVector2(valA, valB, valC, w, u, v);
         }
         else if (valA instanceof Vector3_1.Vector3) {
             // Vector3插值
-            result[name_1] = interpolateVector3(valA, valB, valC, w, u, v);
+            result[name] = interpolateVector3(valA, valB, valC, w, u, v);
         }
         else if (valA instanceof Vector4_1.Vector4) {
             // Vector4插值
-            result[name_1] = interpolateVector4(valA, valB, valC, w, u, v);
+            result[name] = interpolateVector4(valA, valB, valC, w, u, v);
         }
         else if (valA instanceof Matrix4x4_1.Matrix4x4) {
             // 矩阵插值 - 对矩阵的每个元素分别插值
-            result[name_1] = interpolateMatrix4x4(valA, valB, valC, w, u, v);
+            result[name] = interpolateMatrix4x4(valA, valB, valC, w, u, v);
         }
         else {
-            throw new Error("\u4E0D\u652F\u6301\u7684\u5C5E\u6027\u7C7B\u578B: ".concat(typeof valA, " \u7528\u4E8E\u5C5E\u6027 ").concat(name_1));
+            throw new Error(`不支持的属性类型: ${typeof valA} 用于属性 ${name}`);
         }
     }
     return result;
@@ -19560,23 +19063,16 @@ v // 顶点c的权重
 /**
  * 验证所有顶点是否具有相同的属性
  */
-function validateAttributes(attributeNames) {
-    var otherAttrs = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        otherAttrs[_i - 1] = arguments[_i];
-    }
-    for (var _a = 0, otherAttrs_1 = otherAttrs; _a < otherAttrs_1.length; _a++) {
-        var attrs = otherAttrs_1[_a];
-        for (var _b = 0, attributeNames_2 = attributeNames; _b < attributeNames_2.length; _b++) {
-            var name_2 = attributeNames_2[_b];
-            if (!(name_2 in attrs)) {
-                throw new Error("\u9876\u70B9\u5C5E\u6027\u4E0D\u5339\u914D: \u7F3A\u5C11\u5C5E\u6027 ".concat(name_2));
+function validateAttributes(attributeNames, ...otherAttrs) {
+    for (const attrs of otherAttrs) {
+        for (const name of attributeNames) {
+            if (!(name in attrs)) {
+                throw new Error(`顶点属性不匹配: 缺少属性 ${name}`);
             }
         }
-        for (var _c = 0, _d = Object.keys(attrs); _c < _d.length; _c++) {
-            var name_3 = _d[_c];
-            if (!attributeNames.includes(name_3)) {
-                throw new Error("\u9876\u70B9\u5C5E\u6027\u4E0D\u5339\u914D: \u5B58\u5728\u989D\u5916\u5C5E\u6027 ".concat(name_3));
+        for (const name of Object.keys(attrs)) {
+            if (!attributeNames.includes(name)) {
+                throw new Error(`顶点属性不匹配: 存在额外属性 ${name}`);
             }
         }
     }
@@ -19615,33 +19111,33 @@ function interpolateVector4(a, b, c, w, u, v) {
  * 插值4x4矩阵 - 对矩阵的每个元素分别进行插值
  */
 function interpolateMatrix4x4(a, b, c, w, u, v) {
-    var result = new Matrix4x4_1.Matrix4x4();
-    for (var row = 0; row < 4; row++) {
-        for (var col = 0; col < 4; col++) {
+    const result = new Matrix4x4_1.Matrix4x4();
+    for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
             result.matrix[row][col] = a.matrix[row][col] * w + b.matrix[row][col] * u + c.matrix[row][col] * v;
         }
     }
     return result;
 }
 
-},{"./Color":24,"./Matrix4x4":26,"./Vector2":30,"./Vector3":31,"./Vector4":32}],26:[function(require,module,exports){
+},{"./Color":25,"./Matrix4x4":27,"./Vector2":31,"./Vector3":32,"./Vector4":33}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
-var Vector4_1 = require("./Vector4");
-var Vector3_1 = require("./Vector3");
-var Quaternion_1 = require("./Quaternion");
-var Matrix4x4 = /** @class */ (function () {
-    function Matrix4x4() {
+const Vector4_1 = require("./Vector4");
+const Vector3_1 = require("./Vector3");
+const Quaternion_1 = require("./Quaternion");
+class Matrix4x4 {
+    constructor() {
         this.matrix = new Array();
         if (arguments.length == 4) {
-            for (var i = 0; i < 4; i++) {
-                var v = arguments[i];
+            for (let i = 0; i < 4; i++) {
+                let v = arguments[i];
                 this.matrix[i] = new Array(v.x, v.y, v.z, v.w);
             }
         }
         else {
-            for (var i = 0; i < 4; i++) {
+            for (let i = 0; i < 4; i++) {
                 this.matrix[i] = new Array(0, 0, 0, 0);
             }
         }
@@ -19650,33 +19146,33 @@ var Matrix4x4 = /** @class */ (function () {
      *
      * @param index 行
      */
-    Matrix4x4.prototype.getRow = function (index) {
+    getRow(index) {
         var c = this.matrix[index];
         return new Vector4_1.Vector4(c[0], c[1], c[2], c[3]);
-    };
+    }
     /**
      *
      * @param index 列
      */
-    Matrix4x4.prototype.getColumn = function (index) {
+    getColumn(index) {
         return new Vector4_1.Vector4(this.matrix[0][index], this.matrix[1][index], this.matrix[2][index], this.matrix[3][index]);
-    };
-    Matrix4x4.prototype.SetRow = function (index, row) {
+    }
+    SetRow(index, row) {
         this.matrix[index][0] = row.x;
         this.matrix[index][1] = row.y;
         this.matrix[index][2] = row.z;
         this.matrix[index][3] = row.w;
-    };
-    Matrix4x4.prototype.SetColumn = function (index, column) {
+    }
+    SetColumn(index, column) {
         this.matrix[0][index] = column.x;
         this.matrix[1][index] = column.y;
         this.matrix[2][index] = column.z;
         this.matrix[3][index] = column.w;
-    };
-    Matrix4x4.prototype.multiply = function (m) {
-        var lhs = this.matrix;
-        var rhs = m.matrix;
-        var matrix = new Matrix4x4().matrix;
+    }
+    multiply(m) {
+        let lhs = this.matrix;
+        let rhs = m.matrix;
+        let matrix = new Matrix4x4().matrix;
         matrix[0][0] = lhs[0][0] * rhs[0][0] + lhs[0][1] * rhs[1][0] + lhs[0][2] * rhs[2][0] + lhs[0][3] * rhs[3][0];
         matrix[0][1] = lhs[0][0] * rhs[0][1] + lhs[0][1] * rhs[1][1] + lhs[0][2] * rhs[2][1] + lhs[0][3] * rhs[3][1];
         matrix[0][2] = lhs[0][0] * rhs[0][2] + lhs[0][1] * rhs[1][2] + lhs[0][2] * rhs[2][2] + lhs[0][3] * rhs[3][2];
@@ -19695,30 +19191,30 @@ var Matrix4x4 = /** @class */ (function () {
         matrix[3][3] = lhs[3][0] * rhs[0][3] + lhs[3][1] * rhs[1][3] + lhs[3][2] * rhs[2][3] + lhs[3][3] * rhs[3][3];
         this.matrix = matrix;
         return this;
-    };
-    Matrix4x4.prototype.multiplyVector3 = function (v) {
-        var res = new Vector3_1.Vector3();
-        var m = this.matrix;
+    }
+    multiplyVector3(v) {
+        let res = new Vector3_1.Vector3();
+        let m = this.matrix;
         res.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z;
         res.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z;
         res.z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z;
         return res;
-    };
+    }
     // 当w = 1时，齐次坐标(x, y, z, 1)表示 3D 空间中的点(x, y, z)
     // 当w = 0时，齐次坐标(x, y, z, 0)表示 3D 空间中的方向向量（无位置信息）
-    Matrix4x4.prototype.multiplyVector4 = function (v) {
-        var res = new Vector4_1.Vector4();
-        var m = this.matrix;
+    multiplyVector4(v) {
+        let res = new Vector4_1.Vector4();
+        let m = this.matrix;
         res.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * v.w;
         res.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * v.w;
         res.z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * v.w;
         res.w = m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w;
         return res;
-    };
-    Matrix4x4.prototype.getTranslate = function () {
-        var m = this.matrix;
+    }
+    getTranslate() {
+        let m = this.matrix;
         return new Vector3_1.Vector3(m[0][3], m[1][3], m[2][3]);
-    };
+    }
     // public getRotate(): Vector3 {
     //     let mat = this.matrix;
     //     let x = Math.atan2(mat[1][2], mat[2][2]);
@@ -19726,10 +19222,10 @@ var Matrix4x4 = /** @class */ (function () {
     //     let z = Math.atan2(mat[0][1], mat[0][0]);
     //     return new Vector3(x / Math.PI * 180, y / Math.PI * 180, z / Math.PI * 180);
     // }
-    Matrix4x4.prototype.getRotate = function () {
+    getRotate() {
         //一定要获取纯净的旋转矩阵，即去除缩放倍率
-        var mat = this.getRotateMatrix().matrix;
-        var q = new Quaternion_1.Quaternion();
+        let mat = this.getRotateMatrix().matrix;
+        let q = new Quaternion_1.Quaternion();
         var trace = mat[0][0] + mat[1][1] + mat[2][2]; // I removed + 1.0f; see discussion with Ethan
         var s = 0;
         if (trace > 0) { // I changed M_EPSILON to 0
@@ -19763,8 +19259,8 @@ var Matrix4x4 = /** @class */ (function () {
             }
         }
         return q;
-    };
-    Matrix4x4.prototype.getRotateMatrix = function () {
+    }
+    getRotateMatrix() {
         //https://github.com/mrdoob/three.js/blob/dev/src/math/Matrix4.js
         //因为旋转矩阵比较特殊，有时候要单独处理，所有拥有一个提取方法
         //提取方式很简单，先获取缩放值，然后利用获取缩放值的原理，逆向除去缩放值，就得到纯净的旋转矩阵
@@ -19793,8 +19289,8 @@ var Matrix4x4 = /** @class */ (function () {
         te[2][3] = 0;
         te[3][3] = 1;
         return mat;
-    };
-    Matrix4x4.prototype.getEulerAngles = function () {
+    }
+    getEulerAngles() {
         //https://github.com/mrdoob/three.js/blob/dev/src/math/Matrix4.js
         //从旋转矩阵里获取欧拉角
         //必须是纯净的旋转矩阵
@@ -19815,18 +19311,18 @@ var Matrix4x4 = /** @class */ (function () {
             angle.z = 0;
         }
         return new Vector3_1.Vector3(angle.x / Math.PI * 180, angle.y / Math.PI * 180, angle.z / Math.PI * 180);
-    };
-    Matrix4x4.prototype.getScale = function () {
-        var m = this.matrix;
-        var v = new Vector3_1.Vector3();
+    }
+    getScale() {
+        let m = this.matrix;
+        let v = new Vector3_1.Vector3();
         v.x = Math.sqrt(m[0][0] * m[0][0] + m[1][0] * m[1][0] + m[2][0] * m[2][0]);
         v.y = Math.sqrt(m[0][1] * m[0][1] + m[1][1] * m[1][1] + m[2][1] * m[2][1]);
         v.z = Math.sqrt(m[0][2] * m[0][2] + m[1][2] * m[1][2] + m[2][2] * m[2][2]);
         return v;
-    };
+    }
     // 转置矩阵
-    Matrix4x4.prototype.transpose = function () {
-        var m1 = this.matrix;
+    transpose() {
+        let m1 = this.matrix;
         var m2 = new Matrix4x4().matrix;
         m2[0][0] = m1[0][0];
         m2[0][1] = m1[1][0];
@@ -19846,14 +19342,14 @@ var Matrix4x4 = /** @class */ (function () {
         m2[3][3] = m1[3][3];
         this.matrix = m2;
         return this;
-    };
-    Matrix4x4.prototype.translate = function (pos) {
-        var m = Matrix4x4.getTranslateMatrix(pos);
+    }
+    translate(pos) {
+        let m = Matrix4x4.getTranslateMatrix(pos);
         this.matrix = m.multiply(this).matrix;
         return this;
-    };
-    Matrix4x4.prototype.rotate = function () {
-        var m = new Matrix4x4();
+    }
+    rotate() {
+        let m = new Matrix4x4();
         if (arguments[0] instanceof Quaternion_1.Quaternion) {
             m = Matrix4x4.getRotateMatrixByQuaternion(arguments[0]);
         }
@@ -19865,22 +19361,21 @@ var Matrix4x4 = /** @class */ (function () {
         }
         this.matrix = m.multiply(this).matrix;
         return this;
-    };
-    Matrix4x4.prototype.scale = function (s) {
-        var m = Matrix4x4.getScaleMatrix(s);
+    }
+    scale(s) {
+        let m = Matrix4x4.getScaleMatrix(s);
         this.matrix = m.multiply(this).matrix;
         return this;
-    };
-    Matrix4x4.prototype.lookAt = function (target) {
-        // todo
+    }
+    lookAt(target) {
+        //TODO:
         return this;
-    };
+    }
     //转换到摄影机看向的矩阵里
-    Matrix4x4.prototype.transformToLookAtSpace = function (eye, targetPoint, up) {
+    transformToLookAtSpace(eye, targetPoint, up = Vector3_1.Vector3.UP) {
         //从哪里看向哪里，也可以理解为摄影机视角，即观察空间
         //若要变换到摄影机空间，可以假设整个观察空间以摄影机位于世界坐标原点，然后将所有物体朝摄影机原先在世界空间中的位置反向移动即可
         //在纸上画下图就清晰了
-        if (up === void 0) { up = Vector3_1.Vector3.UP; }
         //由于默认矩阵是SRT顺序组成的变换空间，要逆向，则是TRS的顺序，即先移动后旋转
         //1.向反方向平移
         this.translate(new Vector3_1.Vector3(-eye.x, -eye.y, -eye.z));
@@ -19894,62 +19389,62 @@ var Matrix4x4 = /** @class */ (function () {
         var mat = new Matrix4x4(new Vector4_1.Vector4(xAxis), new Vector4_1.Vector4(yAxis), new Vector4_1.Vector4(zAxis), new Vector4_1.Vector4(0, 0, 0, 1));
         this.matrix = mat.multiply(this).matrix;
         return this;
-    };
-    Matrix4x4.prototype.frustum = function (left, right, bottom, top, near, far) {
-        var rl = (right - left);
-        var tb = (top - bottom);
-        var fn = (far - near);
+    }
+    frustum(left, right, bottom, top, near, far) {
+        const rl = (right - left);
+        const tb = (top - bottom);
+        const fn = (far - near);
         var mat = new Matrix4x4(new Vector4_1.Vector4((near * 2) / rl, 0, (right + left) / rl, 0), new Vector4_1.Vector4(0, (near * 2) / tb, (top + bottom) / tb, 0), new Vector4_1.Vector4(0, 0, -(far + near) / fn, -(far * near * 2) / fn), new Vector4_1.Vector4(0, 0, -1, 0));
         this.matrix = mat.multiply(this).matrix;
         return this;
-    };
-    Matrix4x4.prototype.orthographic = function (left, right, bottom, top, near, far) {
-        var rl = (right - left);
-        var tb = (top - bottom);
-        var fn = (far - near);
+    }
+    orthographic(left, right, bottom, top, near, far) {
+        const rl = (right - left);
+        const tb = (top - bottom);
+        const fn = (far - near);
         var mat = new Matrix4x4(new Vector4_1.Vector4(2 / rl, 0, 0, -(left + right) / rl), new Vector4_1.Vector4(0, 2 / tb, 0, -(top + bottom) / tb), new Vector4_1.Vector4(0, 0, -2 / fn, -(far + near) / fn), new Vector4_1.Vector4(0, 0, 0, 1));
         this.matrix = mat.multiply(this).matrix;
         return this;
-    };
-    Matrix4x4.prototype.perspective = function (fov, aspect, near, far) {
-        var hfov = fov / 180 * Math.PI / 2;
-        var tan = Math.tan(hfov);
+    }
+    perspective(fov, aspect, near, far) {
+        const hfov = fov / 180 * Math.PI / 2;
+        const tan = Math.tan(hfov);
         var mat = new Matrix4x4(new Vector4_1.Vector4(1 / (aspect * tan), 0, 0, 0), new Vector4_1.Vector4(0, 1 / tan, 0, 0), new Vector4_1.Vector4(0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near)), new Vector4_1.Vector4(0, 0, -1, 0));
         this.matrix = mat.multiply(this).matrix;
         return this;
-    };
+    }
     // 通过​​代数余子式法（Cofactor Method）​​ 来计算一个 4x4 方阵的逆矩阵
-    Matrix4x4.prototype.invert = function () {
+    invert() {
         var mat = this.matrix;
-        var a00 = mat[0][0];
-        var a01 = mat[0][1];
-        var a02 = mat[0][2];
-        var a03 = mat[0][3];
-        var a10 = mat[1][0];
-        var a11 = mat[1][1];
-        var a12 = mat[1][2];
-        var a13 = mat[1][3];
-        var a20 = mat[2][0];
-        var a21 = mat[2][1];
-        var a22 = mat[2][2];
-        var a23 = mat[2][3];
-        var a30 = mat[3][0];
-        var a31 = mat[3][1];
-        var a32 = mat[3][2];
-        var a33 = mat[3][3];
-        var det00 = a00 * a11 - a01 * a10;
-        var det01 = a00 * a12 - a02 * a10;
-        var det02 = a00 * a13 - a03 * a10;
-        var det03 = a01 * a12 - a02 * a11;
-        var det04 = a01 * a13 - a03 * a11;
-        var det05 = a02 * a13 - a03 * a12;
-        var det06 = a20 * a31 - a21 * a30;
-        var det07 = a20 * a32 - a22 * a30;
-        var det08 = a20 * a33 - a23 * a30;
-        var det09 = a21 * a32 - a22 * a31;
-        var det10 = a21 * a33 - a23 * a31;
-        var det11 = a22 * a33 - a23 * a32;
-        var det = (det00 * det11 - det01 * det10 + det02 * det09 + det03 * det08 - det04 * det07 + det05 * det06);
+        const a00 = mat[0][0];
+        const a01 = mat[0][1];
+        const a02 = mat[0][2];
+        const a03 = mat[0][3];
+        const a10 = mat[1][0];
+        const a11 = mat[1][1];
+        const a12 = mat[1][2];
+        const a13 = mat[1][3];
+        const a20 = mat[2][0];
+        const a21 = mat[2][1];
+        const a22 = mat[2][2];
+        const a23 = mat[2][3];
+        const a30 = mat[3][0];
+        const a31 = mat[3][1];
+        const a32 = mat[3][2];
+        const a33 = mat[3][3];
+        const det00 = a00 * a11 - a01 * a10;
+        const det01 = a00 * a12 - a02 * a10;
+        const det02 = a00 * a13 - a03 * a10;
+        const det03 = a01 * a12 - a02 * a11;
+        const det04 = a01 * a13 - a03 * a11;
+        const det05 = a02 * a13 - a03 * a12;
+        const det06 = a20 * a31 - a21 * a30;
+        const det07 = a20 * a32 - a22 * a30;
+        const det08 = a20 * a33 - a23 * a30;
+        const det09 = a21 * a32 - a22 * a31;
+        const det10 = a21 * a33 - a23 * a31;
+        const det11 = a22 * a33 - a23 * a32;
+        let det = (det00 * det11 - det01 * det10 + det02 * det09 + det03 * det08 - det04 * det07 + det05 * det06);
         if (!det) {
             console.error("Matrix4x4 inverse failed, determinant is 0");
             // return null;
@@ -19972,9 +19467,9 @@ var Matrix4x4 = /** @class */ (function () {
         mat[3][2] = (-a30 * det03 + a31 * det01 - a32 * det00) * det;
         mat[3][3] = (a20 * det03 - a21 * det01 + a22 * det00) * det;
         return this;
-    };
-    Matrix4x4.prototype.toFloat32List = function () {
-        var m = this.matrix;
+    }
+    toFloat32List() {
+        let m = this.matrix;
         //由于OpenGL是列序存储，所以需要转置一下矩阵
         return new Float32Array([
             m[0][0], m[1][0], m[2][0], m[3][0],
@@ -19982,26 +19477,26 @@ var Matrix4x4 = /** @class */ (function () {
             m[0][2], m[1][2], m[2][2], m[3][2],
             m[0][3], m[1][3], m[2][3], m[3][3]
         ]);
-    };
-    Matrix4x4.prototype.clone = function () {
+    }
+    clone() {
         return new Matrix4x4(this.getRow(0), this.getRow(1), this.getRow(2), this.getRow(3));
-    };
+    }
     /*
      STATIC FUNCTIONS
      */
-    Matrix4x4.getTRSMatrix = function (pos, quat, scale) {
-        var tm = Matrix4x4.getTranslateMatrix(pos);
-        var rm = Matrix4x4.getRotateMatrixByQuaternion(quat);
-        var sm = Matrix4x4.getScaleMatrix(scale);
+    static getTRSMatrix(pos, quat, scale) {
+        let tm = Matrix4x4.getTranslateMatrix(pos);
+        let rm = Matrix4x4.getRotateMatrixByQuaternion(quat);
+        let sm = Matrix4x4.getScaleMatrix(scale);
         //必须严格按照先Scale，再Rotate，再Translate的顺序，否则得到的结果肯定是不满意的
         //例如有一个1X1正方形在原点，我们想要得到一个1X2，并且斜向45°，而且离坐标原点1个单位处
         //如果先旋转，再缩放的话，旋转方向是对了，但是我们是将旋转后45°的正方形的Y轴拉伸2倍，得到的是一个被拉长的菱形
         //如果先平移，再旋转的话，因为我们旋转都是绕着坐标原点的，结果自然是正方形不是自身旋转45°，而是绕着原点旋转
         return tm.multiply(rm.multiply(sm));
-    };
-    Matrix4x4.getTranslateMatrix = function (pos) {
-        var result = new Matrix4x4();
-        var m = result.matrix;
+    }
+    static getTranslateMatrix(pos) {
+        let result = new Matrix4x4();
+        let m = result.matrix;
         m[0][0] = 1;
         m[0][1] = 0;
         m[0][2] = 0;
@@ -20019,22 +19514,22 @@ var Matrix4x4 = /** @class */ (function () {
         m[3][2] = 0;
         m[3][3] = 1;
         return result;
-    };
-    Matrix4x4.getRotateMatrixByQuaternion = function (q) {
-        var result = new Matrix4x4();
-        var m = result.matrix;
-        var num = q.x * 2;
-        var num2 = q.y * 2;
-        var num3 = q.z * 2;
-        var num4 = q.x * num;
-        var num5 = q.y * num2;
-        var num6 = q.z * num3;
-        var num7 = q.x * num2;
-        var num8 = q.x * num3;
-        var num9 = q.y * num3;
-        var num10 = q.w * num;
-        var num11 = q.w * num2;
-        var num12 = q.w * num3;
+    }
+    static getRotateMatrixByQuaternion(q) {
+        let result = new Matrix4x4();
+        let m = result.matrix;
+        let num = q.x * 2;
+        let num2 = q.y * 2;
+        let num3 = q.z * 2;
+        let num4 = q.x * num;
+        let num5 = q.y * num2;
+        let num6 = q.z * num3;
+        let num7 = q.x * num2;
+        let num8 = q.x * num3;
+        let num9 = q.y * num3;
+        let num10 = q.w * num;
+        let num11 = q.w * num2;
+        let num12 = q.w * num3;
         m[0][0] = 1 - (num5 + num6);
         m[1][0] = num7 + num12;
         m[2][0] = num8 - num11;
@@ -20052,9 +19547,8 @@ var Matrix4x4 = /** @class */ (function () {
         m[2][3] = 0;
         m[3][3] = 1;
         return result;
-    };
-    Matrix4x4.getRotateMatrixByEulerAngles = function (e, order) {
-        if (order === void 0) { order = "XYZ"; }
+    }
+    static getRotateMatrixByEulerAngles(e, order = "XYZ") {
         //通过欧拉角获取旋转矩阵
         //先分别获取XYZ轴上的旋转矩阵，然后合并起来
         //注意：旋转轴的顺序先后不同，会出现不同的结果，因此必须要指定旋转顺序
@@ -20080,8 +19574,8 @@ var Matrix4x4 = /** @class */ (function () {
                 console.error("Rotation order error, must be similar to 'XYZ'");
                 return z.multiply(y.multiply(x));
         }
-    };
-    Matrix4x4.getRotateMatrixByAxis = function (angle, axis) {
+    }
+    static getRotateMatrixByAxis(angle, axis) {
         var out = new Matrix4x4();
         var m = out.matrix;
         var x = axis.x, y = axis.y, z = axis.z;
@@ -20112,10 +19606,10 @@ var Matrix4x4 = /** @class */ (function () {
         m[2][3] = 0;
         m[3][3] = 1;
         return out;
-    };
-    Matrix4x4.getScaleMatrix = function (s) {
-        var result = new Matrix4x4();
-        var m = result.matrix;
+    }
+    static getScaleMatrix(s) {
+        let result = new Matrix4x4();
+        let m = result.matrix;
         m[0][0] = s.x;
         m[0][1] = 0;
         m[0][2] = 0;
@@ -20133,50 +19627,45 @@ var Matrix4x4 = /** @class */ (function () {
         m[3][2] = 0;
         m[3][3] = 1;
         return result;
-    };
-    Matrix4x4.perspective = function (fov, aspect, near, far) {
-        var fovRad = fov / 180 * Math.PI;
-        var tanHalfFov = Math.tan(fovRad / 2);
-        var mat = new Matrix4x4(new Vector4_1.Vector4(1 / (aspect * tanHalfFov), 0, 0, 0), new Vector4_1.Vector4(0, 1 / tanHalfFov, 0, 0), 
+    }
+    static perspective(fov, aspect, near, far) {
+        const fovRad = fov / 180 * Math.PI;
+        const tanHalfFov = Math.tan(fovRad / 2);
+        const mat = new Matrix4x4(new Vector4_1.Vector4(1 / (aspect * tanHalfFov), 0, 0, 0), new Vector4_1.Vector4(0, 1 / tanHalfFov, 0, 0), 
         // 深度计算符号：对于看向+Z的相机，近裁剪面在 z = near, 远裁剪面在 z = far
         new Vector4_1.Vector4(0, 0, (far + near) / (far - near), -2 * far * near / (far - near)), new Vector4_1.Vector4(0, 0, 1, 0));
         return mat;
-    };
-    Matrix4x4.orthographic = function (left, right, bottom, top, near, far) {
-        var rl = (right - left);
-        var tb = (top - bottom);
-        var fn = (far - near);
+    }
+    static orthographic(left, right, bottom, top, near, far) {
+        const rl = (right - left);
+        const tb = (top - bottom);
+        const fn = (far - near);
         var mat = new Matrix4x4(new Vector4_1.Vector4(2 / rl, 0, 0, -(left + right) / rl), // X轴缩放与平移
         new Vector4_1.Vector4(0, 2 / tb, 0, -(top + bottom) / tb), // Y轴缩放与平移
         new Vector4_1.Vector4(0, 0, 2 / fn, -(far + near) / fn), // Z轴缩放与平移
         new Vector4_1.Vector4(0, 0, 0, 1) // 齐次分量
         );
         return mat;
-    };
-    Object.defineProperty(Matrix4x4, "identity", {
-        get: function () {
-            var m = new Matrix4x4();
-            m.matrix[0][0] = 1;
-            m.matrix[1][1] = 1;
-            m.matrix[2][2] = 1;
-            m.matrix[3][3] = 1;
-            return m;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Matrix4x4;
-}());
+    }
+    static get identity() {
+        let m = new Matrix4x4();
+        m.matrix[0][0] = 1;
+        m.matrix[1][1] = 1;
+        m.matrix[2][2] = 1;
+        m.matrix[3][3] = 1;
+        return m;
+    }
+}
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":27,"./Vector3":31,"./Vector4":32}],27:[function(require,module,exports){
+},{"./Quaternion":28,"./Vector3":32,"./Vector4":33}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
-var Vector3_1 = require("./Vector3");
-var Matrix4x4_1 = require("./Matrix4x4");
-var Quaternion = /** @class */ (function () {
-    function Quaternion() {
+const Vector3_1 = require("./Vector3");
+const Matrix4x4_1 = require("./Matrix4x4");
+class Quaternion {
+    constructor() {
         this.x = 0;
         this.y = 0;
         this.z = 0;
@@ -20198,94 +19687,90 @@ var Quaternion = /** @class */ (function () {
             this.w = 1;
         }
     }
-    Object.defineProperty(Quaternion.prototype, "eulerAngles", {
-        get: function () {
-            return Matrix4x4_1.Matrix4x4.getRotateMatrixByQuaternion(this).getEulerAngles();
-            // 或下面直接通过三角函数公式提取欧拉角，无需矩阵
-            // // 四元数转XYZ顺序欧拉角（roll, pitch, yaw）
-            // // 旋转顺序：先绕X轴(roll)，再绕Y轴(pitch)，最后绕Z轴(yaw)
-            // // 计算各分量平方（用于减少重复计算）
-            // const qx2 = this.x * this.x;
-            // const qy2 = this.y * this.y;
-            // const qz2 = this.z * this.z;
-            // // XYZ顺序的转换公式（结果为弧度）
-            // const roll = Math.atan2(2 * (this.w * this.x + this.y * this.z), 1 - 2 * (qx2 + qy2));
-            // const pitch = Math.asin(2 * (this.w * this.y - this.z * this.x));
-            // const yaw = Math.atan2(2 * (this.w * this.z + this.x * this.y), 1 - 2 * (qy2 + qz2));
-            // // 转换为角度（可选，根据需要保留）
-            // const rollDeg = roll * 180 / Math.PI;
-            // const pitchDeg = pitch * 180 / Math.PI;
-            // const yawDeg = yaw * 180 / Math.PI;
-            // return new Vector3(rollDeg, pitchDeg, yawDeg);
-        },
-        set: function (e) {
-            var q = Matrix4x4_1.Matrix4x4.getRotateMatrixByEulerAngles(e).getRotate();
-            this.w = q.w;
-            this.x = q.x;
-            this.y = q.y;
-            this.z = q.z;
-            // 或下面直接通过三角函数公式计算四元数分量，无需矩阵
-            // // XYZ顺序的欧拉角（roll, pitch, yaw）转四元数
-            // // 旋转顺序：先绕X轴(roll)，再绕Y轴(pitch)，最后绕Z轴(yaw)
-            // const roll = e.x * Math.PI / 180;  // X轴旋转（roll），角度转弧度
-            // const pitch = e.y * Math.PI / 180; // Y轴旋转（pitch），角度转弧度
-            // const yaw = e.z * Math.PI / 180;   // Z轴旋转（yaw），角度转弧度
-            // // 计算半角的三角函数值
-            // const cosRoll = Math.cos(roll / 2);
-            // const sinRoll = Math.sin(roll / 2);
-            // const cosPitch = Math.cos(pitch / 2);
-            // const sinPitch = Math.sin(pitch / 2);
-            // const cosYaw = Math.cos(yaw / 2);
-            // const sinYaw = Math.sin(yaw / 2);
-            // // XYZ顺序的四元数转换公式
-            // this.w = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
-            // this.x = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
-            // this.y = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
-            // this.z = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Quaternion.prototype.rotateAround = function (angle, axis) {
-        var q = Quaternion.angleAxis(angle, axis);
+    get eulerAngles() {
+        return Matrix4x4_1.Matrix4x4.getRotateMatrixByQuaternion(this).getEulerAngles();
+        // 或下面直接通过三角函数公式提取欧拉角，无需矩阵
+        // // 四元数转XYZ顺序欧拉角（roll, pitch, yaw）
+        // // 旋转顺序：先绕X轴(roll)，再绕Y轴(pitch)，最后绕Z轴(yaw)
+        // // 计算各分量平方（用于减少重复计算）
+        // const qx2 = this.x * this.x;
+        // const qy2 = this.y * this.y;
+        // const qz2 = this.z * this.z;
+        // // XYZ顺序的转换公式（结果为弧度）
+        // const roll = Math.atan2(2 * (this.w * this.x + this.y * this.z), 1 - 2 * (qx2 + qy2));
+        // const pitch = Math.asin(2 * (this.w * this.y - this.z * this.x));
+        // const yaw = Math.atan2(2 * (this.w * this.z + this.x * this.y), 1 - 2 * (qy2 + qz2));
+        // // 转换为角度（可选，根据需要保留）
+        // const rollDeg = roll * 180 / Math.PI;
+        // const pitchDeg = pitch * 180 / Math.PI;
+        // const yawDeg = yaw * 180 / Math.PI;
+        // return new Vector3(rollDeg, pitchDeg, yawDeg);
+    }
+    set eulerAngles(e) {
+        var q = Matrix4x4_1.Matrix4x4.getRotateMatrixByEulerAngles(e).getRotate();
+        this.w = q.w;
+        this.x = q.x;
+        this.y = q.y;
+        this.z = q.z;
+        // 或下面直接通过三角函数公式计算四元数分量，无需矩阵
+        // // XYZ顺序的欧拉角（roll, pitch, yaw）转四元数
+        // // 旋转顺序：先绕X轴(roll)，再绕Y轴(pitch)，最后绕Z轴(yaw)
+        // const roll = e.x * Math.PI / 180;  // X轴旋转（roll），角度转弧度
+        // const pitch = e.y * Math.PI / 180; // Y轴旋转（pitch），角度转弧度
+        // const yaw = e.z * Math.PI / 180;   // Z轴旋转（yaw），角度转弧度
+        // // 计算半角的三角函数值
+        // const cosRoll = Math.cos(roll / 2);
+        // const sinRoll = Math.sin(roll / 2);
+        // const cosPitch = Math.cos(pitch / 2);
+        // const sinPitch = Math.sin(pitch / 2);
+        // const cosYaw = Math.cos(yaw / 2);
+        // const sinYaw = Math.sin(yaw / 2);
+        // // XYZ顺序的四元数转换公式
+        // this.w = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
+        // this.x = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
+        // this.y = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
+        // this.z = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
+    }
+    rotateAround(angle, axis) {
+        let q = Quaternion.angleAxis(angle, axis);
         this.x = q.x;
         this.y = q.y;
         this.z = q.z;
         this.w = q.w;
         return this;
-    };
+    }
     /**
     * @zh 向量四元数乘法
     */
-    Quaternion.prototype.transformQuat = function (a) {
+    transformQuat(a) {
         // benchmarks: http://jsperf.com/quaternion-transform-Vec3-implementations
-        var out = new Vector3_1.Vector3();
-        var q = this;
+        let out = new Vector3_1.Vector3();
+        let q = this;
         // calculate quat * vec
-        var ix = q.w * a.x + q.y * a.z - q.z * a.y;
-        var iy = q.w * a.y + q.z * a.x - q.x * a.z;
-        var iz = q.w * a.z + q.x * a.y - q.y * a.x;
-        var iw = -q.x * a.x - q.y * a.y - q.z * a.z;
+        const ix = q.w * a.x + q.y * a.z - q.z * a.y;
+        const iy = q.w * a.y + q.z * a.x - q.x * a.z;
+        const iz = q.w * a.z + q.x * a.y - q.y * a.x;
+        const iw = -q.x * a.x - q.y * a.y - q.z * a.z;
         // calculate result * inverse quat
         out.x = ix * q.w + iw * -q.x + iy * -q.z - iz * -q.y;
         out.y = iy * q.w + iw * -q.y + iz * -q.x - ix * -q.z;
         out.z = iz * q.w + iw * -q.z + ix * -q.y - iy * -q.x;
         return out;
-    };
-    Quaternion.prototype.clone = function () {
+    }
+    clone() {
         return new Quaternion(this.x, this.y, this.z, this.w);
-    };
+    }
     /**
      * @zh 四元数球面插值
      */
-    Quaternion.slerp = function (a, b, t) {
+    static slerp(a, b, t) {
         // benchmarks:
         //    http://jsperf.com/quaternion-slerp-implementations
-        var out = new Quaternion();
-        var scale0 = 0;
-        var scale1 = 0;
+        let out = new Quaternion();
+        let scale0 = 0;
+        let scale1 = 0;
         // calc cosine
-        var cosom = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+        let cosom = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
         // adjust signs (if necessary)
         if (cosom < 0.0) {
             cosom = -cosom;
@@ -20297,8 +19782,8 @@ var Quaternion = /** @class */ (function () {
         // calculate coefficients
         if ((1.0 - cosom) > 0.000001) {
             // standard case (slerp)
-            var omega = Math.acos(cosom);
-            var sinom = Math.sin(omega);
+            const omega = Math.acos(cosom);
+            const sinom = Math.sin(omega);
             scale0 = Math.sin((1.0 - t) * omega) / sinom;
             scale1 = Math.sin(t * omega) / sinom;
         }
@@ -20314,44 +19799,39 @@ var Quaternion = /** @class */ (function () {
         out.z = scale0 * a.z + scale1 * b.z;
         out.w = scale0 * a.w + scale1 * b.w;
         return out;
-    };
-    Quaternion.dot = function (a, b) {
+    }
+    static dot(a, b) {
         return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-    };
-    Quaternion.angleAxis = function (angle, axis) {
-        var res = new Quaternion();
+    }
+    static angleAxis(angle, axis) {
+        let res = new Quaternion();
         angle = Math.PI * angle / 180;
         angle *= 0.5;
-        var sin = Math.sin(angle);
+        const sin = Math.sin(angle);
         res.x = axis.x * sin;
         res.y = axis.y * sin;
         res.z = axis.z * sin;
         res.w = Math.cos(angle);
         return res;
-    };
-    Object.defineProperty(Quaternion, "identity", {
-        get: function () {
-            return new Quaternion(0, 0, 0, 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Quaternion;
-}());
+    }
+    static get identity() {
+        return new Quaternion(0, 0, 0, 1);
+    }
+}
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":26,"./Vector3":31}],28:[function(require,module,exports){
+},{"./Matrix4x4":27,"./Vector3":32}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ray = void 0;
-var Vector3_1 = require("./Vector3"); // 假设的向量类
-var Ray = /** @class */ (function () {
+const Vector3_1 = require("./Vector3"); // 假设的向量类
+class Ray {
     /**
      * 构造一条射线
      * @param origin 射线起点
      * @param direction 射线方向（通常应是归一化的单位向量）
      */
-    function Ray(origin, direction) {
+    constructor(origin, direction) {
         this.origin = origin.clone(); // 使用克隆避免引用问题
         this.direction = direction.clone().normalize(); // 确保方向是单位向量
     }
@@ -20360,142 +19840,138 @@ var Ray = /** @class */ (function () {
      * @param t 沿射线方向的参数距离
      * @returns 射线上对应点的Vector3坐标
      */
-    Ray.prototype.at = function (t) {
+    at(t) {
         // 公式: point = origin + t * direction
         return Vector3_1.Vector3.add(this.origin, Vector3_1.Vector3.multiply(this.direction, t));
-    };
+    }
     /**
      * 克隆当前射线
      * @returns 一条新的Ray实例
      */
-    Ray.prototype.clone = function () {
+    clone() {
         return new Ray(this.origin.clone(), this.direction.clone());
-    };
-    return Ray;
-}());
+    }
+}
 exports.Ray = Ray;
 
-},{"./Vector3":31}],29:[function(require,module,exports){
+},{"./Vector3":32}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransformTools = void 0;
-var Setting_1 = require("../Core/Setting");
-var Ray_1 = require("./Ray");
-var Vector2_1 = require("./Vector2");
-var Vector3_1 = require("./Vector3");
-var Vector4_1 = require("./Vector4");
-var TransformTools = /** @class */ (function () {
-    function TransformTools() {
-    }
-    TransformTools.ClipToNdcPos = function (clipPos) {
+const Setting_1 = require("../Core/Setting");
+const Ray_1 = require("./Ray");
+const Vector2_1 = require("./Vector2");
+const Vector3_1 = require("./Vector3");
+const Vector4_1 = require("./Vector4");
+class TransformTools {
+    static ClipToNdcPos(clipPos) {
         // 透视除法得到NDC坐标 (范围[-1, 1])
-        var w = clipPos.w;
+        const w = clipPos.w;
         // 避免除以0
         if (w === 0) {
             return Vector3_1.Vector3.ZERO;
         }
-        var ndcX = clipPos.x / w;
-        var ndcY = clipPos.y / w;
-        var ndcZ = clipPos.z / w;
+        const ndcX = clipPos.x / w;
+        const ndcY = clipPos.y / w;
+        const ndcZ = clipPos.z / w;
         return new Vector3_1.Vector3(ndcX, ndcY, ndcZ);
-    };
-    TransformTools.NdcToViewportPos = function (ndcPos, viewport) {
-        var startX = viewport.x;
-        var startY = viewport.y;
-        var width = viewport.z;
-        var height = viewport.w;
-        var viewPortX = startX + (ndcPos.x + 1) * 0.5 * width;
+    }
+    static NdcToViewportPos(ndcPos, viewport) {
+        const startX = viewport.x;
+        const startY = viewport.y;
+        const width = viewport.z;
+        const height = viewport.w;
+        const viewPortX = startX + (ndcPos.x + 1) * 0.5 * width;
         // 注意：屏幕坐标系原点通常在左上角，Y轴向下
-        var viewPortY = startY + (1 - ndcPos.y) * 0.5 * height;
+        const viewPortY = startY + (1 - ndcPos.y) * 0.5 * height;
         return new Vector2_1.Vector2(viewPortX, viewPortY);
-    };
-    TransformTools.ViewportToScreenPos = function (vp) {
-        var screenX = vp.x * Setting_1.EngineConfig.canvasWidth;
-        var screenY = vp.y * Setting_1.EngineConfig.canvasHeight;
+    }
+    static ViewportToScreenPos(vp) {
+        const screenX = vp.x * Setting_1.EngineConfig.canvasWidth;
+        const screenY = vp.y * Setting_1.EngineConfig.canvasHeight;
         return new Vector2_1.Vector2(screenX, screenY);
-    };
-    TransformTools.WorldToClipPos = function (pos, camera) {
-        var viewMatrix = camera.getViewMatrix();
-        var projectionMatrix = camera.getProjectionMatrix();
-        var vpMatrix = projectionMatrix.multiply(viewMatrix);
-        var clipPos = vpMatrix.multiplyVector4(new Vector4_1.Vector4(pos, 1));
+    }
+    static WorldToClipPos(pos, camera) {
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        const vpMatrix = projectionMatrix.multiply(viewMatrix);
+        const clipPos = vpMatrix.multiplyVector4(new Vector4_1.Vector4(pos, 1));
         return clipPos;
-    };
+    }
     // 世界坐标转为屏幕坐标
-    TransformTools.WorldToScreenPos = function (pos, camera) {
-        var clipPos = this.WorldToClipPos(pos, camera);
-        var ndc = this.ClipToNdcPos(clipPos);
-        var vp = this.NdcToViewportPos(ndc, camera.viewPort);
-        var screen = this.ViewportToScreenPos(vp);
+    static WorldToScreenPos(pos, camera) {
+        const clipPos = this.WorldToClipPos(pos, camera);
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        const screen = this.ViewportToScreenPos(vp);
         // 深度值：将NDC的z从[-1, 1]映射到[0, 1]的范围，常用于深度缓冲
-        var depth = (ndc.z + 1) / 2;
-        return { screen: screen, depth: depth };
-    };
+        const depth = (ndc.z + 1) / 2;
+        return { screen, depth };
+    }
     // 世界坐标到视口坐标
-    TransformTools.WorldToViewportPos = function (worldPos, camera) {
-        var clipPos = this.WorldToClipPos(worldPos, camera);
-        var ndc = this.ClipToNdcPos(clipPos);
-        var vp = this.NdcToViewportPos(ndc, camera.viewPort);
+    static WorldToViewportPos(worldPos, camera) {
+        const clipPos = this.WorldToClipPos(worldPos, camera);
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
         return vp;
-    };
+    }
     // 视口坐标转换
-    TransformTools.ScreenToViewportPos = function (screenPos) {
+    static ScreenToViewportPos(screenPos) {
         return new Vector2_1.Vector2(screenPos.x / Setting_1.EngineConfig.canvasWidth, screenPos.y / Setting_1.EngineConfig.canvasHeight);
-    };
+    }
     // 屏幕坐标转为世界坐标
-    TransformTools.ScreenToWorldPos = function (screenPos, camera, depth) {
-        if (depth === void 0) { depth = 1.0; }
+    static ScreenToWorldPos(screenPos, camera, depth = 1.0) {
         // 1. 将屏幕坐标转换为NDC坐标（-1到1范围）
-        var ndcX = (screenPos.x / Setting_1.EngineConfig.canvasWidth) * 2 - 1;
-        var ndcY = 1 - (screenPos.y / Setting_1.EngineConfig.canvasHeight) * 2; // Y轴需要翻转
+        const ndcX = (screenPos.x / Setting_1.EngineConfig.canvasWidth) * 2 - 1;
+        const ndcY = 1 - (screenPos.y / Setting_1.EngineConfig.canvasHeight) * 2; // Y轴需要翻转
         // 2. 创建齐次裁剪空间坐标
-        var clipPos = new Vector4_1.Vector4(ndcX, ndcY, depth, 1.0);
+        const clipPos = new Vector4_1.Vector4(ndcX, ndcY, depth, 1.0);
         // 3. 获取视图投影矩阵的逆矩阵
-        var viewMatrix = camera.getViewMatrix();
-        var projectionMatrix = camera.getProjectionMatrix();
-        var vpMatrix = projectionMatrix.multiply(viewMatrix);
-        var inverseVPMatrix = vpMatrix.invert();
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        const vpMatrix = projectionMatrix.multiply(viewMatrix);
+        const inverseVPMatrix = vpMatrix.invert();
         // 4. 将裁剪空间坐标转换到世界空间
-        var worldPos = inverseVPMatrix.multiplyVector4(clipPos);
+        const worldPos = inverseVPMatrix.multiplyVector4(clipPos);
         // 5. 进行透视除法（齐次坐标归一化）
-        var w = worldPos.w;
+        const w = worldPos.w;
         if (w !== 0) {
             return new Vector3_1.Vector3(worldPos.x / w, worldPos.y / w, worldPos.z / w);
         }
         return new Vector3_1.Vector3(worldPos.x, worldPos.y, worldPos.z);
-    };
+    }
     // 使用射线法进行精确的屏幕到世界坐标转换（推荐用于3D拾取）
-    TransformTools.ScreenToWorldPosRaycast = function (screenPos, camera) {
+    static ScreenToWorldPosRaycast(screenPos, camera) {
         // 1. 将屏幕坐标转换为NDC坐标
-        var ndcX = (screenPos.x / Setting_1.EngineConfig.canvasWidth) * 2 - 1;
-        var ndcY = 1 - (screenPos.y / Setting_1.EngineConfig.canvasHeight) * 2;
+        const ndcX = (screenPos.x / Setting_1.EngineConfig.canvasWidth) * 2 - 1;
+        const ndcY = 1 - (screenPos.y / Setting_1.EngineConfig.canvasHeight) * 2;
         // 2. 创建近平面和远平面的点
-        var nearPoint = new Vector4_1.Vector4(ndcX, ndcY, -1, 1);
-        var farPoint = new Vector4_1.Vector4(ndcX, ndcY, 1, 1);
+        const nearPoint = new Vector4_1.Vector4(ndcX, ndcY, -1, 1);
+        const farPoint = new Vector4_1.Vector4(ndcX, ndcY, 1, 1);
         // 3. 获取视图投影矩阵的逆矩阵
-        var viewMatrix = camera.getViewMatrix();
-        var projectionMatrix = camera.getProjectionMatrix();
-        var vpMatrix = projectionMatrix.multiply(viewMatrix);
-        var inverseVPMatrix = vpMatrix.invert();
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        const vpMatrix = projectionMatrix.multiply(viewMatrix);
+        const inverseVPMatrix = vpMatrix.invert();
         // 4. 转换到世界空间
-        var worldNear = inverseVPMatrix.multiplyVector4(nearPoint);
-        var worldFar = inverseVPMatrix.multiplyVector4(farPoint);
+        const worldNear = inverseVPMatrix.multiplyVector4(nearPoint);
+        const worldFar = inverseVPMatrix.multiplyVector4(farPoint);
         // 5. 进行透视除法
-        var nearWorld = new Vector3_1.Vector3(worldNear.x / worldNear.w, worldNear.y / worldNear.w, worldNear.z / worldNear.w);
-        var farWorld = new Vector3_1.Vector3(worldFar.x / worldFar.w, worldFar.y / worldFar.w, worldFar.z / worldFar.w);
+        const nearWorld = new Vector3_1.Vector3(worldNear.x / worldNear.w, worldNear.y / worldNear.w, worldNear.z / worldNear.w);
+        const farWorld = new Vector3_1.Vector3(worldFar.x / worldFar.w, worldFar.y / worldFar.w, worldFar.z / worldFar.w);
         // 6. 创建射线
-        var rayDirection = farWorld.subtract(nearWorld).normalize();
-        var rayOrigin = nearWorld;
+        const rayDirection = farWorld.subtract(nearWorld).normalize();
+        const rayOrigin = nearWorld;
         return new Ray_1.Ray(rayOrigin, rayDirection);
-    };
+    }
     // 模型坐标转为裁剪坐标
-    TransformTools.ModelToClipPos = function (vertex, transform, camera) {
+    static ModelToClipPos(vertex, transform, camera) {
         // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
         // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
-        var modelMatrix = transform.localToWorldMatrix;
-        var viewMatrix = camera.getViewMatrix();
-        var projectionMatrix = camera.getProjectionMatrix();
-        var mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        const modelMatrix = transform.localToWorldMatrix;
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
         // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
         // const cameraForward = camera.transform.forward;
         // const cameraUp = camera.transform.up;
@@ -20503,67 +19979,70 @@ var TransformTools = /** @class */ (function () {
         // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
         // 要把Vec3转为齐次坐标点，即w=1
         return mvpMatrix.multiplyVector4(new Vector4_1.Vector4(vertex, 1));
-    };
+    }
     // 模型坐标转为屏幕坐标
-    TransformTools.ModelToScreenPos = function (vertex, transform, camera) {
-        var clipPos = this.ModelToClipPos(vertex, transform, camera);
-        var ndc = this.ClipToNdcPos(clipPos);
-        var vp = this.NdcToViewportPos(ndc, camera.viewPort);
-        var screen = this.ViewportToScreenPos(vp);
-        var depth = (ndc.z + 1) / 2;
-        return { screen: screen, depth: depth };
-    };
+    static ModelToScreenPos(vertex, transform, camera) {
+        const clipPos = this.ModelToClipPos(vertex, transform, camera);
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        const screen = this.ViewportToScreenPos(vp);
+        const depth = (ndc.z + 1) / 2;
+        return { screen, depth };
+    }
     // 模型法线转为世界法线
-    TransformTools.ModelToWorldNormal = function (normal, transform) {
+    static ModelToWorldNormal(normal, transform) {
         // 获取模型矩阵（局部到世界空间的变换矩阵）
-        var modelMatrix = transform.localToWorldMatrix;
+        const modelMatrix = transform.localToWorldMatrix;
         // 计算模型矩阵的逆转置矩阵
         // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
-        var inverseTransposeModel = modelMatrix.clone().invert().transpose();
+        const inverseTransposeModel = modelMatrix.clone().invert().transpose();
         // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
-        var worldNormal = inverseTransposeModel.multiplyVector3(normal);
+        const worldNormal = inverseTransposeModel.multiplyVector3(normal);
         // 归一化结果，确保法线保持单位长度
         return worldNormal.normalize();
-    };
-    TransformTools.ApplyScaleToVertex = function (vertex, transform) {
+    }
+    static ApplyScaleToVertex(vertex, transform) {
         vertex.x *= transform.scale.x;
         vertex.y *= transform.scale.y;
         vertex.z *= transform.scale.z;
-    };
-    TransformTools.ApplyRotationToVertex = function (vertex, quaternion) {
+    }
+    static ApplyRotationToVertex(vertex, quaternion) {
         // 四元数旋转公式: v' = q * v * q⁻¹
-        var qx = quaternion.x, qy = quaternion.y, qz = quaternion.z, qw = quaternion.w;
-        var x = vertex.x, y = vertex.y, z = vertex.z;
+        const qx = quaternion.x, qy = quaternion.y, qz = quaternion.z, qw = quaternion.w;
+        const x = vertex.x, y = vertex.y, z = vertex.z;
         // 计算 q * v
-        var ix = qw * x + qy * z - qz * y;
-        var iy = qw * y + qz * x - qx * z;
-        var iz = qw * z + qx * y - qy * x;
-        var iw = -qx * x - qy * y - qz * z;
+        const ix = qw * x + qy * z - qz * y;
+        const iy = qw * y + qz * x - qx * z;
+        const iz = qw * z + qx * y - qy * x;
+        const iw = -qx * x - qy * y - qz * z;
         // 计算 (q * v) * q⁻¹ (q⁻¹ 是 q的共轭)
-        var rx = ix * qw + iw * (-qx) + iy * (-qz) - iz * (-qy);
-        var ry = iy * qw + iw * (-qy) + iz * (-qx) - ix * (-qz);
-        var rz = iz * qw + iw * (-qz) + ix * (-qy) - iy * (-qx);
+        const rx = ix * qw + iw * (-qx) + iy * (-qz) - iz * (-qy);
+        const ry = iy * qw + iw * (-qy) + iz * (-qx) - ix * (-qz);
+        const rz = iz * qw + iw * (-qz) + ix * (-qy) - iy * (-qx);
         vertex.x = rx;
         vertex.y = ry;
         vertex.z = rz;
-    };
-    TransformTools.ApplyTranslationToVertex = function (vertex, transform) {
+    }
+    static ApplyTranslationToVertex(vertex, transform) {
         vertex.x += transform.position.x;
         vertex.y += transform.position.y;
         vertex.z += transform.position.z;
-    };
-    return TransformTools;
-}());
+    }
+}
 exports.TransformTools = TransformTools;
 
-},{"../Core/Setting":17,"./Ray":28,"./Vector2":30,"./Vector3":31,"./Vector4":32}],30:[function(require,module,exports){
+},{"../Core/Setting":18,"./Ray":29,"./Vector2":31,"./Vector3":32,"./Vector4":33}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
-var Vector3_1 = require("./Vector3");
-var Vector4_1 = require("./Vector4");
-var Vector2 = /** @class */ (function () {
-    function Vector2() {
+const Vector3_1 = require("./Vector3");
+const Vector4_1 = require("./Vector4");
+class Vector2 {
+    get u() { return this.x; }
+    get v() { return this.y; }
+    get width() { return this.x; }
+    get height() { return this.y; }
+    constructor() {
         if (arguments[0] instanceof Vector3_1.Vector3) {
             this.x = arguments[0].x;
             this.y = arguments[0].y;
@@ -20580,27 +20059,7 @@ var Vector2 = /** @class */ (function () {
             this.x = this.y = 0;
         }
     }
-    Object.defineProperty(Vector2.prototype, "u", {
-        get: function () { return this.x; },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2.prototype, "v", {
-        get: function () { return this.y; },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2.prototype, "width", {
-        get: function () { return this.x; },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2.prototype, "height", {
-        get: function () { return this.y; },
-        enumerable: false,
-        configurable: true
-    });
-    Vector2.prototype.add = function () {
+    add() {
         if (arguments[0] instanceof Vector2) {
             this.x += arguments[0].x;
             this.y += arguments[0].y;
@@ -20610,8 +20069,8 @@ var Vector2 = /** @class */ (function () {
             this.y += arguments[1];
         }
         return this;
-    };
-    Vector2.prototype.subtract = function () {
+    }
+    subtract() {
         if (arguments[0] instanceof Vector2) {
             this.x -= arguments[0].x;
             this.y -= arguments[0].y;
@@ -20621,183 +20080,111 @@ var Vector2 = /** @class */ (function () {
             this.y -= arguments[1];
         }
         return this;
-    };
-    Vector2.prototype.multiply = function (d) {
+    }
+    multiply(d) {
         this.x *= d;
         this.y *= d;
         return this;
-    };
-    Vector2.prototype.divide = function (d) {
+    }
+    divide(d) {
         this.x /= d;
         this.y /= d;
         return this;
-    };
-    Vector2.prototype.scale = function (v) {
+    }
+    scale(v) {
         this.x *= v.x;
         this.y *= v.y;
         return this;
-    };
-    Vector2.prototype.dot = function (v) {
+    }
+    dot(v) {
         return (this.x * v.x + this.y * v.y);
-    };
-    Vector2.prototype.negate = function () {
+    }
+    negate() {
         return this.multiply(-1);
-    };
-    Vector2.prototype.normalize = function () {
+    }
+    normalize() {
         var length = this.magnitude;
         if (length === 0)
             return new Vector2();
         return this.divide(length);
-    };
-    Object.defineProperty(Vector2.prototype, "magnitude", {
-        get: function () {
-            return Math.sqrt(Vector2.dot(this, this));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2.prototype, "sqrMagnitude", {
-        get: function () {
-            return Vector2.dot(this, this);
-        },
-        enumerable: false,
-        configurable: true
-    });
+    }
+    get magnitude() {
+        return Math.sqrt(Vector2.dot(this, this));
+    }
+    get sqrMagnitude() {
+        return Vector2.dot(this, this);
+    }
     /*
         ADDITIONAL FUNCTIONS
      */
-    Vector2.prototype.clone = function () {
+    clone() {
         return new Vector2(this.x, this.y);
-    };
-    Vector2.prototype.equals = function (v) {
+    }
+    equals(v) {
         return v.x == this.x && v.y == this.y;
-    };
-    Vector2.prototype.toString = function () {
+    }
+    toString() {
         return "[" + this.x + ", " + this.y + "]";
-    };
+    }
     /*
         STATIC FUNCTIONS
      */
-    Vector2.lerp = function (v1, v2, t) {
+    static lerp(v1, v2, t) {
         var v = new Vector2();
         v.x = v1.x + t * (v2.x - v1.x);
         v.y = v1.y + t * (v2.y - v1.y);
         return v;
-    };
-    Vector2.dot = function (v1, v2) {
+    }
+    static dot(v1, v2) {
         return (v1.x * v2.x + v1.y * v2.y);
-    };
-    Vector2.cross = function (v1, v2) {
+    }
+    static cross(v1, v2) {
         return (v1.x * v2.y - v1.y * v2.x);
-    };
-    Vector2.distance = function (v1, v2) {
+    }
+    static distance(v1, v2) {
         var x = v2.x - v1.x;
         var y = v2.y - v1.y;
         return Math.sqrt(x * x + y * y);
-    };
-    Vector2.angle = function (v1, v2) {
+    }
+    static angle(v1, v2) {
         return Math.acos(Vector2.dot(v1, v2) / (v1.magnitude * v2.magnitude));
-    };
-    Object.defineProperty(Vector2, "ZERO", {
-        /*
-            STATIC VARIABLES
-         */
-        get: function () {
-            return new Vector2(0, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2, "ONE", {
-        get: function () {
-            return new Vector2(1, 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2, "RIGHT", {
-        get: function () {
-            return new Vector2(1, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2, "LEFT", {
-        get: function () {
-            return new Vector2(-1, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2, "UP", {
-        get: function () {
-            return new Vector2(0, 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector2, "DOWN", {
-        get: function () {
-            return new Vector2(0, -1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Vector2;
-}());
+    }
+    /*
+        STATIC VARIABLES
+     */
+    static get ZERO() {
+        return new Vector2(0, 0);
+    }
+    static get ONE() {
+        return new Vector2(1, 1);
+    }
+    static get RIGHT() {
+        return new Vector2(1, 0);
+    }
+    static get LEFT() {
+        return new Vector2(-1, 0);
+    }
+    static get UP() {
+        return new Vector2(0, 1);
+    }
+    static get DOWN() {
+        return new Vector2(0, -1);
+    }
+}
 exports.Vector2 = Vector2;
 
-},{"./Vector3":31,"./Vector4":32}],31:[function(require,module,exports){
+},{"./Vector3":32,"./Vector4":33}],32:[function(require,module,exports){
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
-var Vector2_1 = require("./Vector2");
-var Vector4_1 = require("./Vector4");
-var CANNON = __importStar(require("cannon"));
-var Vector3 = /** @class */ (function () {
-    function Vector3() {
+const Vector2_1 = require("./Vector2");
+const Vector4_1 = require("./Vector4");
+class Vector3 {
+    constructor() {
         if (arguments[0] instanceof Vector2_1.Vector2) {
             this.x = arguments[0].x;
             this.y = arguments[0].y;
             this.z = 0;
-        }
-        else if (arguments[0] instanceof CANNON.Vec3) {
-            this.x = arguments[0].x;
-            this.y = arguments[0].y;
-            this.z = arguments[0].z;
         }
         else if (arguments[0] instanceof Vector4_1.Vector4) {
             this.x = arguments[0].x;
@@ -20813,7 +20200,7 @@ var Vector3 = /** @class */ (function () {
             this.x = this.y = this.z = 0;
         }
     }
-    Vector3.prototype.add = function () {
+    add() {
         if (arguments[0] instanceof Vector3) {
             this.x += arguments[0].x;
             this.y += arguments[0].y;
@@ -20825,8 +20212,8 @@ var Vector3 = /** @class */ (function () {
             this.z += arguments[2];
         }
         return this;
-    };
-    Vector3.prototype.subtract = function () {
+    }
+    subtract() {
         if (arguments[0] instanceof Vector3) {
             this.x -= arguments[0].x;
             this.y -= arguments[0].y;
@@ -20838,74 +20225,66 @@ var Vector3 = /** @class */ (function () {
             this.z -= arguments[2];
         }
         return this;
-    };
-    Vector3.prototype.multiply = function (d) {
+    }
+    multiply(d) {
         this.x *= d;
         this.y *= d;
         this.z *= d;
         return this;
-    };
-    Vector3.prototype.divide = function (d) {
+    }
+    divide(d) {
         this.x /= d;
         this.y /= d;
         this.z /= d;
         return this;
-    };
-    Vector3.prototype.scale = function (v) {
+    }
+    scale(v) {
         this.x *= v.x;
         this.y *= v.y;
         this.z *= v.z;
         return this;
-    };
-    Vector3.prototype.negate = function () {
+    }
+    negate() {
         return this.multiply(-1);
-    };
-    Vector3.prototype.normalize = function () {
+    }
+    normalize() {
         var length = this.magnitude;
         if (length === 0)
             return new Vector3();
         return this.divide(length);
-    };
-    Vector3.prototype.dot = function (v) {
+    }
+    dot(v) {
         return Vector3.dot(this, v);
-    };
-    Vector3.prototype.cross = function (v) {
+    }
+    cross(v) {
         return Vector3.cross(this, v);
-    };
-    Object.defineProperty(Vector3.prototype, "magnitude", {
-        get: function () {
-            return Math.sqrt(Vector3.dot(this, this));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3.prototype, "sqrMagnitude", {
-        get: function () {
-            return Vector3.dot(this, this);
-        },
-        enumerable: false,
-        configurable: true
-    });
+    }
+    get magnitude() {
+        return Math.sqrt(Vector3.dot(this, this));
+    }
+    get sqrMagnitude() {
+        return Vector3.dot(this, this);
+    }
     /**
      * 获取向量的指定分量
      * @param index 分量索引 (0=x, 1=y, 2=z)
      * @returns 对应分量的值
      */
-    Vector3.prototype.getComponent = function (index) {
+    getComponent(index) {
         switch (index) {
             case 0: return this.x;
             case 1: return this.y;
             case 2: return this.z;
             default:
-                throw new Error("Invalid component index: ".concat(index, ". Must be 0, 1, or 2."));
+                throw new Error(`Invalid component index: ${index}. Must be 0, 1, or 2.`);
         }
-    };
+    }
     /**
      * 设置向量的指定分量
      * @param index 分量索引 (0=x, 1=y, 2=z)
      * @param value 要设置的值
      */
-    Vector3.prototype.setComponent = function (index, value) {
+    setComponent(index, value) {
         switch (index) {
             case 0:
                 this.x = value;
@@ -20917,157 +20296,126 @@ var Vector3 = /** @class */ (function () {
                 this.z = value;
                 break;
             default:
-                throw new Error("Invalid component index: ".concat(index, ". Must be 0, 1, or 2."));
+                throw new Error(`Invalid component index: ${index}. Must be 0, 1, or 2.`);
         }
-    };
+    }
     /*
      ADDITIONAL FUNCTIONS
      */
-    Vector3.prototype.clone = function () {
+    clone() {
         return new Vector3(this.x, this.y, this.z);
-    };
-    Vector3.prototype.equals = function (v) {
+    }
+    equals(v) {
         return v.x == this.x && v.y == this.y && v.z == this.z;
-    };
-    Vector3.prototype.toString = function () {
+    }
+    toString() {
         return "[" + this.x + ", " + this.y + ", " + this.z + "]";
-    };
-    Vector3.prototype.toVec3 = function () {
-        return new CANNON.Vec3(this.x, this.y, this.z);
-    };
+    }
     /*
      STATIC FUNCTIONS
      */
-    Vector3.lerp = function (v1, v2, t) {
+    static lerp(v1, v2, t) {
         var v = new Vector3();
         v.x = v1.x + t * (v2.x - v1.x);
         v.y = v1.y + t * (v2.y - v1.y);
         v.z = v1.z + t * (v2.z - v1.z);
         return v;
-    };
-    Vector3.multiply = function (v, s) {
+    }
+    static multiply(v, s) {
         return new Vector3(v.x * s, v.y * s, v.z * s);
-    };
-    Vector3.add = function (v1, v2) {
+    }
+    static add(v1, v2) {
         return new Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
-    };
-    Vector3.subtract = function (v1, v2) {
+    }
+    static subtract(v1, v2) {
         return new Vector3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
-    };
-    Vector3.dot = function (v1, v2) {
+    }
+    static dot(v1, v2) {
         return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
-    };
-    Vector3.cross = function (v1, v2) {
+    }
+    static cross(v1, v2) {
         var x = v1.y * v2.z - v1.z * v2.y;
         var y = v1.z * v2.x - v1.x * v2.z;
         var z = v1.x * v2.y - v1.y * v2.x;
         return new Vector3(x, y, z);
-    };
-    Vector3.distance = function (v1, v2) {
+    }
+    static distance(v1, v2) {
         var x = v2.x - v1.x;
         var y = v2.y - v1.y;
         var z = v2.z - v1.z;
         return Math.sqrt(x * x + y * y + z * z);
-    };
-    Vector3.difference = function (v1, v2) {
+    }
+    static difference(v1, v2) {
         var dest = new Vector3();
         dest.x = v1.x - v2.x;
         dest.y = v1.y - v2.y;
         dest.z = v1.z - v2.z;
         return dest;
-    };
-    Vector3.angle = function (v1, v2) {
+    }
+    static angle(v1, v2) {
         return Math.acos(Vector3.dot(v1, v2) / (v1.magnitude * v2.magnitude));
-    };
+    }
     /**
      * 返回两个向量中每对分量的较小值组成的新向量[1,2](@ref)
      * @param a 第一个向量
      * @param b 第二个向量
      * @returns 由各分量较小值组成的新向量
      */
-    Vector3.min = function (a, b) {
+    static min(a, b) {
         return new Vector3(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.min(a.z, b.z));
-    };
+    }
     /**
      * 返回两个向量中每对分量的较大值组成的新向量[3,4](@ref)
      * @param a 第一个向量
      * @param b 第二个向量
      * @returns 由各分量较大值组成的新向量
      */
-    Vector3.max = function (a, b) {
+    static max(a, b) {
         return new Vector3(Math.max(a.x, b.x), Math.max(a.y, b.y), Math.max(a.z, b.z));
-    };
-    Object.defineProperty(Vector3, "ZERO", {
-        /*
-         STATIC VARIABLES
-         */
-        get: function () {
-            return new Vector3(0, 0, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3, "ONE", {
-        get: function () {
-            return new Vector3(1, 1, 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3, "RIGHT", {
-        get: function () {
-            return new Vector3(1, 0, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3, "LEFT", {
-        get: function () {
-            return new Vector3(-1, 0, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3, "UP", {
-        get: function () {
-            return new Vector3(0, 1, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3, "DOWN", {
-        get: function () {
-            return new Vector3(0, -1, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3, "FORWARD", {
-        get: function () {
-            return new Vector3(0, 0, 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector3, "BACK", {
-        get: function () {
-            return new Vector3(0, 0, -1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Vector3;
-}());
+    }
+    /*
+     STATIC VARIABLES
+     */
+    static get ZERO() {
+        return new Vector3(0, 0, 0);
+    }
+    static get ONE() {
+        return new Vector3(1, 1, 1);
+    }
+    static get RIGHT() {
+        return new Vector3(1, 0, 0);
+    }
+    static get LEFT() {
+        return new Vector3(-1, 0, 0);
+    }
+    static get UP() {
+        return new Vector3(0, 1, 0);
+    }
+    static get DOWN() {
+        return new Vector3(0, -1, 0);
+    }
+    static get FORWARD() {
+        return new Vector3(0, 0, 1);
+    }
+    static get BACK() {
+        return new Vector3(0, 0, -1);
+    }
+}
 exports.Vector3 = Vector3;
 
-},{"./Vector2":30,"./Vector4":32,"cannon":2}],32:[function(require,module,exports){
+},{"./Vector2":31,"./Vector4":33}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
-var Vector3_1 = require("./Vector3");
-var Vector2_1 = require("./Vector2");
-var Vector4 = /** @class */ (function () {
-    function Vector4() {
+const Vector3_1 = require("./Vector3");
+const Vector2_1 = require("./Vector2");
+class Vector4 {
+    get r() { return this.x; }
+    get g() { return this.y; }
+    get b() { return this.z; }
+    get a() { return this.w; }
+    get vector3() { return new Vector3_1.Vector3(this); }
+    constructor() {
         if (arguments[0] instanceof Vector2_1.Vector2) {
             this.x = arguments[0].x;
             this.y = arguments[0].y;
@@ -21089,32 +20437,7 @@ var Vector4 = /** @class */ (function () {
             this.x = this.y = this.z = this.w = 0;
         }
     }
-    Object.defineProperty(Vector4.prototype, "r", {
-        get: function () { return this.x; },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector4.prototype, "g", {
-        get: function () { return this.y; },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector4.prototype, "b", {
-        get: function () { return this.z; },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector4.prototype, "a", {
-        get: function () { return this.w; },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector4.prototype, "vector3", {
-        get: function () { return new Vector3_1.Vector3(this); },
-        enumerable: false,
-        configurable: true
-    });
-    Vector4.prototype.add = function () {
+    add() {
         if (arguments[0] instanceof Vector4) {
             this.x += arguments[0].x;
             this.y += arguments[0].y;
@@ -21128,8 +20451,8 @@ var Vector4 = /** @class */ (function () {
             this.w += arguments[3];
         }
         return this;
-    };
-    Vector4.prototype.subtract = function () {
+    }
+    subtract() {
         if (arguments[0] instanceof Vector4) {
             this.x -= arguments[0].x;
             this.y -= arguments[0].y;
@@ -21143,102 +20466,85 @@ var Vector4 = /** @class */ (function () {
             this.w -= arguments[3];
         }
         return this;
-    };
-    Vector4.prototype.multiply = function (d) {
+    }
+    multiply(d) {
         this.x *= d;
         this.y *= d;
         this.z *= d;
         this.w *= d;
         return this;
-    };
-    Vector4.prototype.divide = function (d) {
+    }
+    divide(d) {
         this.x /= d;
         this.y /= d;
         this.z /= d;
         this.w /= d;
         return this;
-    };
-    Vector4.prototype.scale = function (v) {
+    }
+    scale(v) {
         this.x *= v.x;
         this.y *= v.y;
         this.z *= v.z;
         this.w *= v.w;
         return this;
-    };
-    Vector4.prototype.negate = function () {
+    }
+    negate() {
         return this.multiply(-1);
-    };
-    Vector4.prototype.normalize = function () {
+    }
+    normalize() {
         var length = this.magnitude;
         if (length === 0)
             return new Vector4();
         return this.divide(length);
-    };
-    Object.defineProperty(Vector4.prototype, "magnitude", {
-        get: function () {
-            return Math.sqrt(Vector4.dot(this, this));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector4.prototype, "sqrMagnitude", {
-        get: function () {
-            return Vector4.dot(this, this);
-        },
-        enumerable: false,
-        configurable: true
-    });
+    }
+    get magnitude() {
+        return Math.sqrt(Vector4.dot(this, this));
+    }
+    get sqrMagnitude() {
+        return Vector4.dot(this, this);
+    }
     /*
      ADDITIONAL FUNCTIONS
      */
-    Vector4.prototype.clone = function () {
+    clone() {
         return new Vector4(this.x, this.y, this.z, this.w);
-    };
-    Vector4.prototype.equals = function (v) {
+    }
+    equals(v) {
         return v.x == this.x && v.y == this.y && v.z == this.z && v.w == this.w;
-    };
-    Vector4.prototype.toString = function () {
+    }
+    toString() {
         return "[" + this.x + ", " + this.y + ", " + this.z + ", " + this.w + "]";
-    };
+    }
     /*
      STATIC FUNCTIONS
      */
-    Vector4.lerp = function (v1, v2, t) {
+    static lerp(v1, v2, t) {
         var v = new Vector4();
         v.x = v1.x + t * (v2.x - v1.x);
         v.y = v1.y + t * (v2.y - v1.y);
         v.z = v1.z + t * (v2.z - v1.z);
         v.w = v1.w + t * (v2.w - v1.w);
         return v;
-    };
-    Vector4.dot = function (v1, v2) {
+    }
+    static dot(v1, v2) {
         return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w);
-    };
-    Vector4.distance = function (v1, v2) {
+    }
+    static distance(v1, v2) {
         return Math.sqrt(Vector4.dot(v1, v2));
-    };
-    Object.defineProperty(Vector4, "ZERO", {
-        /*
-         STATIC VARIABLES
-         */
-        get: function () {
-            return new Vector4(0, 0, 0, 0);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vector4, "ONE", {
-        get: function () {
-            return new Vector4(1, 1, 1, 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Vector4;
-}());
+    }
+    /*
+     STATIC VARIABLES
+     */
+    static get ZERO() {
+        return new Vector4(0, 0, 0, 0);
+    }
+    static get ONE() {
+        return new Vector4(1, 1, 1, 1);
+    }
+}
 exports.Vector4 = Vector4;
 
-},{"./Vector2":30,"./Vector3":31}],33:[function(require,module,exports){
+},{"./Vector2":31,"./Vector3":32}],34:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -21275,15 +20581,19 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Physics = void 0;
-var CANNON = __importStar(require("cannon"));
-var Time_1 = require("../Core/Time");
-var RaycastHit_1 = require("./RaycastHit");
-var Vector3_1 = require("../Math/Vector3");
-var Physics = /** @class */ (function () {
-    function Physics() {
-        this.bodies = new Map();
-        this.shapes = new Map();
-        this.colliders = new Map();
+const CANNON = __importStar(require("cannon"));
+const Time_1 = require("../Core/Time");
+const RaycastHit_1 = require("./RaycastHit");
+const Vector3_1 = require("../Math/Vector3");
+const Quaternion_1 = require("../Math/Quaternion");
+const BoxCollider_1 = require("../Component/BoxCollider");
+const SphereCollider_1 = require("../Component/SphereCollider");
+class Physics {
+    constructor() {
+        this.rigidbodies = new Map(); // 刚体和物理体的映射
+        this.colliders = new Map(); // 碰撞体和物理形状的映射
+        this.shapes = new Map(); // 物理形状和物理体的映射
+        this.shapeIdToColliderMap = new Map(); // 形状ID和碰撞体的映射
         // 物理参数
         this.minPenetrationForPenalty = 0.05;
         this.bounceThreshold = 0.5;
@@ -21292,70 +20602,107 @@ var Physics = /** @class */ (function () {
         this.maxAngularVelocity = 7;
         this.solverIterationCount = 6;
     }
-    Object.defineProperty(Physics.prototype, "gravity", {
-        // 重力
-        get: function () {
-            return new Vector3_1.Vector3(this.world.gravity);
-        },
-        set: function (value) {
-            this.world.gravity = value.toVec3();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Physics.prototype.init = function () {
+    // 重力
+    get gravity() {
+        return new Vector3_1.Vector3(this.world.gravity.x, this.world.gravity.y, this.world.gravity.z);
+    }
+    set gravity(value) {
+        this.world.gravity.set(value.x, value.y, value.z);
+    }
+    init() {
         // 创建物理世界
         this.world = new CANNON.World();
         this.world.gravity.set(0, -9.82, 0);
-        this.world.broadphase = new CANNON.NaiveBroadphase(); // 碰撞检测算法
-        this.world.solver.iterations = 10; // 约束求解迭代次数，影响精度
-        this.world.allowSleep = true; // 允许物体进入睡眠状态
-    };
-    Physics.prototype.update = function () {
+        // this.world.broadphase = new CANNON.NaiveBroadphase();      // 碰撞检测算法
+        // this.world.solver.iterations = 10;                         // 约束求解迭代次数，影响精度
+        this.world.allowSleep = true; // 允许物体进入睡眠状态 
+    }
+    update() {
         if (!this.world)
             return;
         // 更新物理世界
         this.world.step(Time_1.Time.fixedDeltaTime);
-    };
-    Physics.prototype.onDestroy = function () {
-    };
-    Physics.prototype.AddRigidbody = function (rigidbody, body) {
-        if (this.bodies.has(rigidbody)) {
-            console.error('Rigidbody already added:', rigidbody);
+        // 更新刚体位置和旋转
+        for (const [rigidbody, body] of this.rigidbodies) {
+            const pos = body.position;
+            const rot = body.quaternion;
+            rigidbody.transform.position = new Vector3_1.Vector3(pos.x, pos.y, pos.z);
+            rigidbody.transform.rotation = new Quaternion_1.Quaternion(rot.x, rot.y, rot.z, rot.w);
+        }
+    }
+    onDestroy() {
+    }
+    CreateRigidbody(rigidbody) {
+        if (this.rigidbodies.has(rigidbody)) {
+            console.warn('Rigidbody already added:', rigidbody);
             return;
         }
-        this.world.addBody(body);
-        this.bodies.set(rigidbody, body);
-    };
-    Physics.prototype.RemoveRigidbody = function (rigidbody) {
-        var body = this.bodies.get(rigidbody);
+        const body = new CANNON.Body({
+            mass: rigidbody.isKinematic ? 0 : rigidbody.mass,
+            position: new CANNON.Vec3(rigidbody.transform.position.x, rigidbody.transform.position.y, rigidbody.transform.position.z),
+            quaternion: new CANNON.Quaternion(rigidbody.transform.rotation.x, rigidbody.transform.rotation.y, rigidbody.transform.rotation.z, rigidbody.transform.rotation.w),
+        });
+        if (body) {
+            this.world.addBody(body);
+            this.rigidbodies.set(rigidbody, body);
+        }
+    }
+    RemoveRigidbody(rigidbody) {
+        const body = this.rigidbodies.get(rigidbody);
         if (body) {
             this.world.remove(body);
-            this.bodies.delete(rigidbody);
+            this.rigidbodies.delete(rigidbody);
         }
-    };
-    Physics.prototype.AddCollider = function (collider, shape) {
-        var rigidbody = collider.attachedRigidbody;
+    }
+    CreateCollider(collider) {
+        const rigidbody = collider.attachedRigidbody;
         if (!rigidbody) {
             console.error('Collider not attached to a Rigidbody:', collider);
             return;
         }
-        var body = this.bodies.get(rigidbody);
+        // 如果已经存在，则先销毁旧的再新建
+        if (this.colliders.has(collider)) {
+            this.RemoveCollider(collider);
+        }
+        const body = this.rigidbodies.get(rigidbody);
         if (body) {
-            body.addShape(shape);
-            this.shapes.set(shape, body);
-            this.colliders.set(shape, collider);
+            let shape = null;
+            const colliderData = collider.getColliderData();
+            if (collider instanceof BoxCollider_1.BoxCollider) {
+                const boxData = colliderData;
+                shape = new CANNON.Box(new CANNON.Vec3(boxData.size.x / 2, boxData.size.y / 2, boxData.size.z / 2));
+            }
+            else if (collider instanceof SphereCollider_1.SphereCollider) {
+                const sphereData = colliderData;
+                shape = new CANNON.Sphere(sphereData.radius);
+            }
+            if (shape != null) {
+                const offset = new CANNON.Vec3(collider.center.x, collider.center.y, collider.center.z);
+                body.addShape(shape, offset);
+                this.shapes.set(shape, body);
+                this.colliders.set(collider, shape);
+                // 这里需要特别注意，碰撞或射线检测的形状，并不一定是现在添加的Shape，例如Box，会有一个凸多边形代理，射线检测是以它为目标计算的
+                if (shape instanceof CANNON.Box) {
+                    this.shapeIdToColliderMap.set(shape.convexPolyhedronRepresentation.id, collider);
+                }
+                else {
+                    this.shapeIdToColliderMap.set(shape.id, collider);
+                }
+            }
         }
         else {
             console.error('Rigidbody not found:', rigidbody);
         }
-    };
-    Physics.prototype.RemoveCollider = function (shape) {
-        var body = this.shapes.get(shape);
+    }
+    RemoveCollider(collider) {
+        const shape = this.colliders.get(collider);
+        if (shape == null)
+            return;
+        const body = this.shapes.get(shape);
         if (body == null)
             return;
         // 1. 找到目标形状的索引
-        var index = body.shapes.indexOf(shape);
+        const index = body.shapes.indexOf(shape);
         if (index === -1)
             return; // 形状不存在则退出
         // 2. 移除形状及对应的偏移和旋转信息
@@ -21364,125 +20711,358 @@ var Physics = /** @class */ (function () {
         body.shapeOrientations.splice(index, 1); // 移除对应的旋转
         // 3. 如果是动态刚体，重新计算惯性
         if (body.mass > 0) {
-            //body.updateInertiaFromShapes();
         }
         // 4. 强制更新碰撞检测信息
-        body.aabbNeedsUpdate = true;
+        // body.aabbNeedsUpdate = true;
+        //TODO:移除形状后，与它相邻的物体不会被激活，这不符合常理，暂时不知道怎么解决，这里手动唤醒下全部的物体
+        this.world.bodies.forEach(body => {
+            body.wakeUp();
+        });
         this.shapes.delete(shape);
-        this.colliders.delete(shape);
-    };
-    Physics.prototype.Raycast = function (ray, hitInfo, distance, layerMask) {
-        if (distance === void 0) { distance = 10; }
-        var result = new CANNON.RaycastResult();
-        this.world.rayTest(ray.origin.toVec3(), ray.at(distance).toVec3(), result);
-        if (result.hasHit) {
-            var collider = this.colliders.get(result.shape);
+        this.colliders.delete(collider);
+    }
+    Raycast(ray, distance = 10, layerMask) {
+        const result = new CANNON.RaycastResult();
+        const from = new CANNON.Vec3(ray.origin.x, ray.origin.y, ray.origin.z);
+        const to = new CANNON.Vec3(ray.at(distance).x, ray.at(distance).y, ray.at(distance).z);
+        this.world.rayTest(from, to, result);
+        // this.world.raycastAll(from, to, {
+        // }, (r) => {
+        //     const re = r as CANNON.RaycastResult;
+        //     console.log(re.shape?.id);
+        // });
+        if (result.hasHit && result.shape) {
+            // 注意，result.shape并不一定会是原来添加的Shape，例如Box，会有一个凸多边形代理，先前创建Box的时候已经在shapeIdToColliderMap里缓冲这个代理的ID了
+            const collider = this.shapeIdToColliderMap.get(result.shape.id);
             if (!collider) {
                 console.error('Collider not found for shape:', result.shape);
-                return false;
+                return null;
             }
-            var hit = RaycastHit_1.RaycastHit.create(new Vector3_1.Vector3(result.hitPointWorld.x, result.hitPointWorld.y, result.hitPointWorld.z), new Vector3_1.Vector3(result.hitNormalWorld.x, result.hitNormalWorld.y, result.hitNormalWorld.z), result.distance, collider);
-            hitInfo(hit);
-            return true;
+            const hit = RaycastHit_1.RaycastHit.create(new Vector3_1.Vector3(result.hitPointWorld.x, result.hitPointWorld.y, result.hitPointWorld.z), new Vector3_1.Vector3(result.hitNormalWorld.x, result.hitNormalWorld.y, result.hitNormalWorld.z), result.distance, collider);
+            return hit;
         }
-        return false;
-    };
+        return null;
+    }
     // 通过 Ray 对象检测所有射线碰撞
-    Physics.prototype.RaycastAll = function (ray, distance, layerMask) {
-        if (distance === void 0) { distance = Infinity; }
+    RaycastAll(ray, distance = Infinity, layerMask) {
         return [];
-    };
-    return Physics;
-}());
+    }
+}
 exports.Physics = Physics;
 
-},{"../Core/Time":18,"../Math/Vector3":31,"./RaycastHit":34,"cannon":2}],34:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/SphereCollider":13,"../Core/Time":19,"../Math/Quaternion":28,"../Math/Vector3":32,"./RaycastHit":36,"cannon":2}],35:[function(require,module,exports){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PhysicsDebugDraw = void 0;
+const CANNON = __importStar(require("cannon"));
+const Color_1 = require("../Math/Color");
+const Camera_1 = require("../Component/Camera");
+const TransformTools_1 = require("../Math/TransformTools");
+const Vector3_1 = require("../Math/Vector3");
+const Quaternion_1 = require("../Math/Quaternion");
+const Engine_1 = require("../Core/Engine");
+class PhysicsDebugDraw {
+    static setColor(body) {
+        let color = Color_1.Color.FromUint32(Color_1.Color.GRAY);
+        // 根据物体类型设置基础颜色
+        if (body.type === CANNON.Body.DYNAMIC) {
+            // 动态物体 - 红色系
+            color = Color_1.Color.FromUint32(Color_1.Color.RED);
+        }
+        else if (body.type === CANNON.Body.STATIC) {
+            // 静态物体 - 绿色系
+            color = Color_1.Color.FromUint32(Color_1.Color.GREEN);
+        }
+        else if (body.type === CANNON.Body.KINEMATIC) {
+            // 运动学物体 - 蓝色系
+            color = Color_1.Color.FromUint32(Color_1.Color.BLUE);
+        }
+        // 根据睡眠状态调整颜色
+        if (body.sleepState === CANNON.Body.AWAKE) {
+            // 清醒状态 - 原色
+        }
+        else if (body.sleepState === CANNON.Body.SLEEPY) {
+            // 困倦状态 - 半暗淡
+            color.r *= 0.7;
+            color.g *= 0.7;
+            color.b *= 0.7;
+        }
+        else if (body.sleepState === CANNON.Body.SLEEPING) {
+            // 睡眠状态 - 全暗淡
+            color.r *= 0.4;
+            color.g *= 0.4;
+            color.b *= 0.4;
+        }
+        return color.ToUint32();
+    }
+    // 绘制单个刚体的所有碰撞形状
+    static drawRigidBody(body) {
+        const color = this.setColor(body);
+        body.shapes.forEach((shape, i) => {
+            const offset = body.shapeOffsets[i];
+            const orientation = body.shapeOrientations[i];
+            // 根据形状类型绘制不同的调试线框
+            if (shape instanceof CANNON.Box) {
+                this.drawBox(body, shape, offset, orientation, color);
+            }
+            else if (shape instanceof CANNON.Sphere) {
+                this.drawSphere(body, shape, offset, orientation, color);
+            }
+            else if (shape instanceof CANNON.Plane) {
+                this.drawPlane(body, shape, offset, orientation, color);
+            }
+        });
+    }
+    // 绘制盒子形状
+    static drawBox(body, shape, offset, orientation, color) {
+        // 计算盒子的8个顶点
+        const halfExtents = shape.halfExtents;
+        const vertices = [
+            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
+            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
+            new CANNON.Vec3(halfExtents.x, halfExtents.y, halfExtents.z),
+            new CANNON.Vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
+        ];
+        // 应用偏移和旋转，并转换到屏幕空间
+        const screenVertices = vertices.map(v => {
+            // 应用形状自身的旋转
+            const rotated = this.rotateVector(v, orientation);
+            // 应用形状偏移
+            const offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
+            // 应用刚体旋转
+            const bodyRotated = this.rotateVector(offsetApplied, body.quaternion);
+            // 应用刚体位置
+            const worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
+            // 转换到屏幕坐标
+            return this.WorldToScreenPos(worldPos);
+        });
+        // 定义盒子的边
+        const edges = [
+            [0, 1], [1, 2], [2, 3], [3, 0], // 前面
+            [4, 5], [5, 6], [6, 7], [7, 4], // 后面
+            [0, 4], [1, 5], [2, 6], [3, 7] // 连接前后
+        ];
+        // 绘制所有边
+        edges.forEach(([i1, i2]) => {
+            const v1 = screenVertices[i1];
+            const v2 = screenVertices[i2];
+            // 确保转换后的顶点有效
+            if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
+                this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
+            }
+        });
+    }
+    // 绘制球体形状
+    static drawSphere(body, shape, offset, orientation, color) {
+        const radius = shape.radius;
+        const segments = 16; // 球体分段数
+        // 计算球体中心在世界空间中的位置
+        const center = new CANNON.Vec3(offset.x, offset.y, offset.z);
+        const rotatedCenter = this.rotateVector(center, body.quaternion);
+        const worldCenter = new CANNON.Vec3(rotatedCenter.x + body.position.x, rotatedCenter.y + body.position.y, rotatedCenter.z + body.position.z);
+        const screenCenter = this.WorldToScreenPos(worldCenter);
+        if (!screenCenter)
+            return;
+        // 绘制球体的赤道圆
+        for (let i = 0; i < segments; i++) {
+            const angle1 = (i / segments) * Math.PI * 2;
+            const angle2 = ((i + 1) / segments) * Math.PI * 2;
+            // 计算圆上两点
+            const p1 = new CANNON.Vec3(Math.cos(angle1) * radius, 0, Math.sin(angle1) * radius);
+            const p2 = new CANNON.Vec3(Math.cos(angle2) * radius, 0, Math.sin(angle2) * radius);
+            // 应用旋转和位置
+            const rotatedP1 = this.rotateVector(p1, orientation);
+            const rotatedP2 = this.rotateVector(p2, orientation);
+            const offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
+            const offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
+            const bodyP1 = this.rotateVector(offsetP1, body.quaternion);
+            const bodyP2 = this.rotateVector(offsetP2, body.quaternion);
+            const worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
+            const worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
+            // 转换到屏幕坐标
+            const screenP1 = this.WorldToScreenPos(worldP1);
+            const screenP2 = this.WorldToScreenPos(worldP2);
+            if (screenP1 && screenP2) {
+                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
+            }
+        }
+        // 绘制球体的子午线（垂直方向）
+        for (let i = 0; i < segments / 2; i++) {
+            const angle1 = (i / (segments / 2)) * Math.PI;
+            const angle2 = ((i + 1) / (segments / 2)) * Math.PI;
+            const p1 = new CANNON.Vec3(0, Math.cos(angle1) * radius, Math.sin(angle1) * radius);
+            const p2 = new CANNON.Vec3(0, Math.cos(angle2) * radius, Math.sin(angle2) * radius);
+            // 应用旋转和位置（与赤道圆处理相同）
+            const rotatedP1 = this.rotateVector(p1, orientation);
+            const rotatedP2 = this.rotateVector(p2, orientation);
+            const offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
+            const offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
+            const bodyP1 = this.rotateVector(offsetP1, body.quaternion);
+            const bodyP2 = this.rotateVector(offsetP2, body.quaternion);
+            const worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
+            const worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
+            const screenP1 = this.WorldToScreenPos(worldP1);
+            const screenP2 = this.WorldToScreenPos(worldP2);
+            if (screenP1 && screenP2) {
+                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
+            }
+        }
+    }
+    // 绘制平面形状
+    static drawPlane(body, shape, offset, orientation, color) {
+        const size = 5; // 平面可视大小
+        const vertices = [
+            new CANNON.Vec3(-size, 0, -size),
+            new CANNON.Vec3(size, 0, -size),
+            new CANNON.Vec3(size, 0, size),
+            new CANNON.Vec3(-size, 0, size),
+        ];
+        // 应用变换并转换到屏幕坐标
+        const screenVertices = vertices.map(v => {
+            const rotated = this.rotateVector(v, orientation);
+            const offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
+            const bodyRotated = this.rotateVector(offsetApplied, body.quaternion);
+            const worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
+            return this.WorldToScreenPos(worldPos);
+        });
+        // 定义平面的边和对角线
+        const edges = [
+            [0, 1], [1, 2], [2, 3], [3, 0], // 四边形边框
+            [0, 2], [1, 3] // 对角线
+        ];
+        // 绘制所有边
+        edges.forEach(([i1, i2]) => {
+            const v1 = screenVertices[i1];
+            const v2 = screenVertices[i2];
+            if (v1 && v2) {
+                this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
+            }
+        });
+    }
+    // 将3D世界坐标转换为2D屏幕坐标
+    static WorldToScreenPos(pos) {
+        return TransformTools_1.TransformTools.WorldToScreenPos(new Vector3_1.Vector3(pos.x, pos.y, pos.z), Camera_1.Camera.mainCamera).screen;
+    }
+    // 用四元数旋转向量（不依赖内置方法）
+    static rotateVector(v, q) {
+        const v2 = new Vector3_1.Vector3(v.x, v.y, v.z);
+        const q2 = new Quaternion_1.Quaternion(q.x, q.y, q.z, q.w);
+        TransformTools_1.TransformTools.ApplyRotationToVertex(v2, q2);
+        return new CANNON.Vec3(v2.x, v2.y, v2.z);
+    }
+    // 完善的物理调试绘制入口
+    static DrawPhysicsDebug(DrawLine) {
+        // @ts-ignore
+        const world = Engine_1.Engine.physics.world;
+        this.drawLineFunc = DrawLine;
+        // 遍历所有刚体并绘制
+        world.bodies.forEach(body => {
+            this.drawRigidBody(body);
+        });
+    }
+}
+exports.PhysicsDebugDraw = PhysicsDebugDraw;
+
+},{"../Component/Camera":5,"../Core/Engine":15,"../Math/Color":25,"../Math/Quaternion":28,"../Math/TransformTools":30,"../Math/Vector3":32,"cannon":2}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RaycastHit = void 0;
-var Vector3_1 = require("../Math/Vector3");
+const Vector3_1 = require("../Math/Vector3");
 /**
  * Structure used to get information back from a raycast.
  */
-var RaycastHit = /** @class */ (function () {
+class RaycastHit {
+    /**
+     * The Collider that was hit.
+     */
+    get collider() {
+        return this.m_Collider;
+    }
+    /**
+     * The impact point in world space where the ray hit the collider.
+     */
+    get point() {
+        return this.m_Point;
+    }
+    /**
+     * The normal of the surface the ray hit.
+     */
+    get normal() {
+        return this.m_Normal;
+    }
+    /**
+     * The distance from the ray's origin to the impact point.
+     */
+    get distance() {
+        return this.m_Distance;
+    }
+    /**
+     * The Transform of the rigidbody or collider that was hit.
+     */
+    get transform() {
+        const rb = this.rigidbody;
+        if (rb !== null) {
+            return rb.transform;
+        }
+        const col = this.collider;
+        if (col !== null) {
+            return col.transform;
+        }
+        return null;
+    }
+    /**
+     * The Rigidbody of the collider that was hit. If the collider is not attached to
+     * a rigidbody then it is null.
+     */
+    get rigidbody() {
+        var _a;
+        return (_a = this.m_Collider) === null || _a === void 0 ? void 0 : _a.attachedRigidbody;
+    }
     /**
      * Creates a new RaycastHit with default values.
      */
-    function RaycastHit() {
+    constructor() {
         this.m_Point = Vector3_1.Vector3.ZERO;
         this.m_Normal = Vector3_1.Vector3.ZERO;
         this.m_Distance = 0;
     }
-    Object.defineProperty(RaycastHit.prototype, "collider", {
-        /**
-         * The Collider that was hit.
-         */
-        get: function () {
-            return this.m_Collider;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(RaycastHit.prototype, "point", {
-        /**
-         * The impact point in world space where the ray hit the collider.
-         */
-        get: function () {
-            return this.m_Point;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(RaycastHit.prototype, "normal", {
-        /**
-         * The normal of the surface the ray hit.
-         */
-        get: function () {
-            return this.m_Normal;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(RaycastHit.prototype, "distance", {
-        /**
-         * The distance from the ray's origin to the impact point.
-         */
-        get: function () {
-            return this.m_Distance;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(RaycastHit.prototype, "transform", {
-        /**
-         * The Transform of the rigidbody or collider that was hit.
-         */
-        get: function () {
-            var rb = this.rigidbody;
-            if (rb !== null) {
-                return rb.transform;
-            }
-            var col = this.collider;
-            if (col !== null) {
-                return col.transform;
-            }
-            return null;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(RaycastHit.prototype, "rigidbody", {
-        /**
-         * The Rigidbody of the collider that was hit. If the collider is not attached to
-         * a rigidbody then it is null.
-         */
-        get: function () {
-            var _a;
-            return (_a = this.m_Collider) === null || _a === void 0 ? void 0 : _a.attachedRigidbody;
-        },
-        enumerable: false,
-        configurable: true
-    });
     /**
      * Creates a new RaycastHit with the specified values.
      * @param point The impact point
@@ -21490,32 +21070,31 @@ var RaycastHit = /** @class */ (function () {
      * @param distance The distance from origin
      * @param colliderInstanceID The collider instance ID
      */
-    RaycastHit.create = function (point, normal, distance, collider) {
-        var hit = new RaycastHit();
+    static create(point, normal, distance, collider) {
+        const hit = new RaycastHit();
         hit.m_Point = point;
         hit.m_Normal = normal;
         hit.m_Distance = distance;
         hit.m_Collider = collider;
         return hit;
-    };
+    }
     /**
      * Returns a string representation of the RaycastHit.
      */
-    RaycastHit.prototype.toString = function () {
+    toString() {
         var _a, _b;
-        return "RaycastHit(point: ".concat(this.point, ", normal: ").concat(this.normal, ", distance: ").concat(this.distance, ", collider: ").concat(((_b = (_a = this.collider) === null || _a === void 0 ? void 0 : _a.gameObject) === null || _b === void 0 ? void 0 : _b.name) || 'null', ")");
-    };
-    return RaycastHit;
-}());
+        return `RaycastHit(point: ${this.point}, normal: ${this.normal}, distance: ${this.distance}, collider: ${((_b = (_a = this.collider) === null || _a === void 0 ? void 0 : _a.gameObject) === null || _b === void 0 ? void 0 : _b.name) || 'null'})`;
+    }
+}
 exports.RaycastHit = RaycastHit;
 
-},{"../Math/Vector3":31}],35:[function(require,module,exports){
+},{"../Math/Vector3":32}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Line = exports.SubMesh = exports.Mesh = void 0;
-var Bounds_1 = require("../Math/Bounds");
-var Mesh = /** @class */ (function () {
-    function Mesh() {
+const Bounds_1 = require("../Math/Bounds");
+class Mesh {
+    constructor() {
         this.bounds = [];
         this.material = [];
         this.triangles = [];
@@ -21527,7 +21106,7 @@ var Mesh = /** @class */ (function () {
         this.subMeshes = [];
     }
     // 检查网格是否有效
-    Mesh.prototype.checkValid = function () {
+    checkValid() {
         // 检查定点数、uv数、法线数量是否不为零并且相等，同时三角形数量应该是三的倍数
         return this.vertices.length !== 0
             && this.vertices.length === this.uv.length
@@ -21536,16 +21115,15 @@ var Mesh = /** @class */ (function () {
             && this.triangles.length % 3 === 0
             && this.faceNormals.length === this.faceCenters.length
             && this.faceNormals.length * 3 === this.triangles.length;
-    };
+    }
     // 重新计算包围盒
-    Mesh.prototype.recalculateBounds = function () {
+    recalculateBounds() {
         //TODO
-    };
-    return Mesh;
-}());
+    }
+}
 exports.Mesh = Mesh;
-var SubMesh = /** @class */ (function () {
-    function SubMesh() {
+class SubMesh {
+    constructor() {
         this.vertexCount = 0;
         this.firstVertex = 0;
         this.indexCount = 0;
@@ -21553,61 +21131,59 @@ var SubMesh = /** @class */ (function () {
         this.bounds = new Bounds_1.Bounds();
         this.material = "";
     }
-    return SubMesh;
-}());
+}
 exports.SubMesh = SubMesh;
-var Line = /** @class */ (function () {
-    function Line(start, end) {
+class Line {
+    constructor(start, end) {
         this.start = start;
         this.end = end;
     }
-    return Line;
-}());
+}
 exports.Line = Line;
 
-},{"../Math/Bounds":23}],36:[function(require,module,exports){
+},{"../Math/Bounds":24}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
-var Color_1 = require("../Math/Color");
-var Vector3_1 = require("../Math/Vector3");
-var Vector4_1 = require("../Math/Vector4");
-var Renderer_1 = require("../Component/Renderer");
-var Camera_1 = require("../Component/Camera");
-var Engine_1 = require("../Core/Engine");
-var Setting_1 = require("../Core/Setting");
-var Lerp_1 = require("../Math/Lerp");
-var TransformTools_1 = require("../Math/TransformTools");
-var Debug_1 = require("../Utils/Debug");
+const Color_1 = require("../Math/Color");
+const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
+const Renderer_1 = require("../Component/Renderer");
+const Camera_1 = require("../Component/Camera");
+const Engine_1 = require("../Core/Engine");
+const Setting_1 = require("../Core/Setting");
+const PhysicsDebugDraw_1 = require("../Physics/PhysicsDebugDraw");
+const Lerp_1 = require("../Math/Lerp");
+const TransformTools_1 = require("../Math/TransformTools");
+const Debug_1 = require("../Utils/Debug");
 var DrawMode;
 (function (DrawMode) {
     DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
     DrawMode[DrawMode["Point"] = 2] = "Point";
     DrawMode[DrawMode["Shader"] = 4] = "Shader";
 })(DrawMode || (DrawMode = {}));
-var RasterizationPipeline = /** @class */ (function () {
-    function RasterizationPipeline(frameBuffer) {
+class RasterizationPipeline {
+    constructor(frameBuffer) {
         this.drawMode = DrawMode.Shader;
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Float32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
         this.overdrawBuffer = new Uint32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
     }
-    RasterizationPipeline.prototype.Render = function () {
+    Render() {
         var _a;
-        var rootObject = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObject();
+        const rootObject = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObject();
         if (rootObject) {
-            var cameras = Camera_1.Camera.cameras;
+            const cameras = Camera_1.Camera.cameras;
             // depth越低越早渲染
-            cameras.sort(function (a, b) { return a.depth - b.depth; });
+            cameras.sort((a, b) => a.depth - b.depth);
             // 每个相机渲染一遍
-            for (var i = 0, len = cameras.length; i < len; i++) {
+            for (let i = 0, len = cameras.length; i < len; i++) {
                 this.currentCamera = cameras[i];
                 this.Clear(this.currentCamera);
-                var renders = rootObject.getComponentsInChildren(Renderer_1.Renderer);
+                const renders = rootObject.getComponentsInChildren(Renderer_1.Renderer);
                 // 渲染管线1.排序场景物体，按照相机空间进行Z轴排序，先绘制近的
                 // 渲染管线2.视锥体剔除
-                for (var _i = 0, renders_1 = renders; _i < renders_1.length; _i++) {
-                    var render = renders_1[_i];
+                for (const render of renders) {
                     this.DrawObject(render);
                     Debug_1.Debug.Log(render.gameObject.name);
                 }
@@ -21615,17 +21191,17 @@ var RasterizationPipeline = /** @class */ (function () {
             // 调试信息
             this.DebugDraw();
         }
-    };
+    }
     //#region 基础绘制接口
-    RasterizationPipeline.prototype.Clear = function (camera) {
-        var clearFlags = camera.clearFlags;
-        var viewport = camera.viewPort;
-        var backgroundColor = camera.backGroundColor;
+    Clear(camera) {
+        const clearFlags = camera.clearFlags;
+        const viewport = camera.viewPort;
+        const backgroundColor = camera.backGroundColor;
         // 1. 计算视口在屏幕缓冲区中的像素范围
-        var viewportPixelX = Math.floor(viewport.x * Setting_1.EngineConfig.canvasWidth);
-        var viewportPixelY = Math.floor(viewport.y * Setting_1.EngineConfig.canvasHeight);
-        var viewportPixelWidth = Math.floor(viewport.z * Setting_1.EngineConfig.canvasWidth);
-        var viewportPixelHeight = Math.floor(viewport.w * Setting_1.EngineConfig.canvasHeight);
+        const viewportPixelX = Math.floor(viewport.x * Setting_1.EngineConfig.canvasWidth);
+        const viewportPixelY = Math.floor(viewport.y * Setting_1.EngineConfig.canvasHeight);
+        const viewportPixelWidth = Math.floor(viewport.z * Setting_1.EngineConfig.canvasWidth);
+        const viewportPixelHeight = Math.floor(viewport.w * Setting_1.EngineConfig.canvasHeight);
         // 2. 根据清除标志，清除视口对应的区域
         if (camera.clearFlags == Camera_1.CameraClearFlags.Skybox) {
             // 绘制天空盒
@@ -21637,7 +21213,7 @@ var RasterizationPipeline = /** @class */ (function () {
             this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
         }
         this.clearViewportRegion(this.overdrawBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
-    };
+    }
     /**
      * 清除缓冲区中指定矩形区域的辅助方法
      * @param buffer 目标缓冲区 (Uint32Array 或 Float32Array 等)
@@ -21647,23 +21223,21 @@ var RasterizationPipeline = /** @class */ (function () {
      * @param height 区域高度 (像素)
      * @param value 要填充的值
      */
-    RasterizationPipeline.prototype.clearViewportRegion = function (buffer, x, y, width, height, value) {
+    clearViewportRegion(buffer, x, y, width, height, value) {
         // 如果是满屏幕，则快速填充
         if (x == 0 && y == 0 && width == Setting_1.EngineConfig.canvasWidth && height == Setting_1.EngineConfig.canvasHeight) {
             buffer.fill(value);
             return;
         }
-        var canvasWidth = Setting_1.EngineConfig.canvasWidth;
-        for (var row = y; row < y + height; row++) {
-            var startIndex = row * canvasWidth + x;
-            var endIndex = startIndex + width;
+        const canvasWidth = Setting_1.EngineConfig.canvasWidth;
+        for (let row = y; row < y + height; row++) {
+            const startIndex = row * canvasWidth + x;
+            const endIndex = startIndex + width;
             // 使用 subarray 和 fill 来填充一行中的连续区域，比逐个像素设置更快
             buffer.subarray(startIndex, endIndex).fill(value);
         }
-    };
-    RasterizationPipeline.prototype.DrawPixel = function (x, y, color, countOverdraw, blendMode) {
-        if (countOverdraw === void 0) { countOverdraw = false; }
-        if (blendMode === void 0) { blendMode = Color_1.BlendMode.replace; }
+    }
+    DrawPixel(x, y, color, countOverdraw = false, blendMode = Color_1.BlendMode.replace) {
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -21673,11 +21247,11 @@ var RasterizationPipeline = /** @class */ (function () {
         if (x < 0 || x >= Setting_1.EngineConfig.canvasWidth || y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
             return;
         }
-        var index = y * Setting_1.EngineConfig.canvasWidth + x;
+        const index = y * Setting_1.EngineConfig.canvasWidth + x;
         // 颜色混合处理
         if (blendMode !== Color_1.BlendMode.replace) {
-            var existingColor = this.frameBuffer[index];
-            var blendedColor = Color_1.Color.blendColors(existingColor, color, blendMode);
+            const existingColor = this.frameBuffer[index];
+            const blendedColor = Color_1.Color.blendColors(existingColor, color, blendMode);
             this.frameBuffer[index] = blendedColor;
         }
         else {
@@ -21687,13 +21261,12 @@ var RasterizationPipeline = /** @class */ (function () {
         // Overdraw计数
         if (countOverdraw)
             this.overdrawBuffer[index]++;
-    };
-    RasterizationPipeline.prototype.DrawLine = function (x1, y1, x2, y2, color1, color2) {
-        var _a, _b, _c, _d;
+    }
+    DrawLine(x1, y1, x2, y2, color1, color2) {
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
-        var w = Setting_1.EngineConfig.canvasWidth;
-        var h = Setting_1.EngineConfig.canvasHeight;
+        const w = Setting_1.EngineConfig.canvasWidth;
+        const h = Setting_1.EngineConfig.canvasHeight;
         if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h)) {
             //TODO:裁剪掉超出屏幕的部分
             return;
@@ -21703,9 +21276,9 @@ var RasterizationPipeline = /** @class */ (function () {
         y1 = y1 | 0;
         x2 = x2 | 0;
         y2 = y2 | 0;
-        var dx = x2 - x1;
-        var dy = y2 - y1;
-        var length = Math.max(Math.abs(dx), Math.abs(dy));
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.max(Math.abs(dx), Math.abs(dy));
         // 为何要区分斜率是否偏水平还是垂直呢？因为如果不区分，例如当斜率大于1时，会导致直线绘制不连续，因为y会跳变，而不是连续的增加。
         // 只有斜率刚好为1时，x跟y才是连续同步自增的，x+1，则y也+1
         // 所以，当斜率大于1时，我们需要使用y作为循环变量，而当斜率小于1时，我们需要使用x作为循环变量。
@@ -21714,22 +21287,22 @@ var RasterizationPipeline = /** @class */ (function () {
         if (Math.abs(dx) > Math.abs(dy)) {
             // 下面的循环绘制函数是从左往右的，这里要确保结束点在开始点的右边
             if (x2 < x1) {
-                _a = [x2, y2, x1, y1], x1 = _a[0], y1 = _a[1], x2 = _a[2], y2 = _a[3];
+                [x1, y1, x2, y2] = [x2, y2, x1, y1];
                 // 同时交换颜色
                 if (color2 !== undefined)
-                    _b = [color2, color1], color1 = _b[0], color2 = _b[1];
+                    [color1, color2] = [color2, color1];
             }
             // 斜率
-            var a = dy / dx;
+            const a = dy / dx;
             // 截距（y=ax+b，b=y-ax）
             // const b = y1 - a * x1;
-            var y = y1;
+            let y = y1;
             // 绘制直线
-            for (var x = x1; x <= x2; x++) {
+            for (let x = x1; x <= x2; x++) {
                 // 计算插值因子 (0 到 1)
-                var t = length > 0 ? (x - x1) / length : 0;
+                const t = length > 0 ? (x - x1) / length : 0;
                 // 根据是否有第二个颜色决定使用单一颜色还是插值
-                var color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
+                const color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
                 this.DrawPixel(x, y, color);
                 // 直线公式y=ax+b，这里不必计算这个公式，因为当x加1自增时，y也会加a，所以可以直接用y+a代替ax+b，算是一个性能优化点
                 // y = a * x + b;
@@ -21744,18 +21317,18 @@ var RasterizationPipeline = /** @class */ (function () {
         // 斜率大于1，直线偏垂直情况，使用y作为循环变量
         else {
             if (y2 < y1) {
-                _c = [x2, y2, x1, y1], x1 = _c[0], y1 = _c[1], x2 = _c[2], y2 = _c[3];
+                [x1, y1, x2, y2] = [x2, y2, x1, y1];
                 // 同时交换颜色
                 if (color2 !== undefined)
-                    _d = [color2, color1], color1 = _d[0], color2 = _d[1];
+                    [color1, color2] = [color2, color1];
             }
-            var a = dx / dy;
-            var x = x1;
-            for (var y = y1; y <= y2; y++) {
+            const a = dx / dy;
+            let x = x1;
+            for (let y = y1; y <= y2; y++) {
                 // 计算插值因子 (0 到 1)
-                var t = length > 0 ? (y - y1) / length : 0;
+                const t = length > 0 ? (y - y1) / length : 0;
                 // 根据是否有第二个颜色决定使用单一颜色还是插值
-                var color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
+                const color = color2 !== undefined ? this.interpolateColor(color1, color2, t) : color1;
                 this.DrawPixel(x, y, color);
                 x = x + a;
             }
@@ -21765,18 +21338,17 @@ var RasterizationPipeline = /** @class */ (function () {
             //     this.DrawPixel(xs[y - y1], y, color);
             // }
         }
-    };
-    RasterizationPipeline.prototype.DrawTriangle = function (x1, y1, x2, y2, x3, y3, color) {
+    }
+    DrawTriangle(x1, y1, x2, y2, x3, y3, color) {
         this.DrawLine(x1, y1, x2, y2, color);
         this.DrawLine(x2, y2, x3, y3, color);
         this.DrawLine(x3, y3, x1, y1, color);
-    };
-    RasterizationPipeline.prototype.DrawTriangleFilled = function (x1, y1, x2, y2, x3, y3, color) {
+    }
+    DrawTriangleFilled(x1, y1, x2, y2, x3, y3, color) {
         // 注：以下提到的长边，特指y轴跨度最长的边，而不是实际上的边长
-        var _a, _b, _c;
         // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-        var w = Setting_1.EngineConfig.canvasWidth;
-        var h = Setting_1.EngineConfig.canvasHeight;
+        const w = Setting_1.EngineConfig.canvasWidth;
+        const h = Setting_1.EngineConfig.canvasHeight;
         if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
             //TODO:裁剪掉超出屏幕的部分
             return;
@@ -21790,41 +21362,40 @@ var RasterizationPipeline = /** @class */ (function () {
         y3 = y3 | 0;
         // 对点进行排序，使得y1<=y2<=y3，即可确定三角形的长边为L13，L12和L23则是另外两条短边
         if (y1 > y2)
-            _a = [x2, y2, x1, y1], x1 = _a[0], y1 = _a[1], x2 = _a[2], y2 = _a[3];
+            [x1, y1, x2, y2] = [x2, y2, x1, y1];
         if (y1 > y3)
-            _b = [x3, y3, x1, y1], x1 = _b[0], y1 = _b[1], x3 = _b[2], y3 = _b[3];
+            [x1, y1, x3, y3] = [x3, y3, x1, y1];
         if (y2 > y3)
-            _c = [x3, y3, x2, y2], x2 = _c[0], y2 = _c[1], x3 = _c[2], y3 = _c[3];
+            [x2, y2, x3, y3] = [x3, y3, x2, y2];
         // 获取3条边的点坐标合集
-        var p12 = this.Interpolate(y1, x1, y2, x2);
-        var p23 = this.Interpolate(y2, x2, y3, x3);
-        var p13 = this.Interpolate(y1, x1, y3, x3);
+        const p12 = this.Interpolate(y1, x1, y2, x2);
+        const p23 = this.Interpolate(y2, x2, y3, x3);
+        const p13 = this.Interpolate(y1, x1, y3, x3);
         // 拼合两条短边为一条长边（先移除第一条边的最后一个数据，避免重复）
         // 现在变成2条长边，L13和L123
         p12.pop();
-        var p123 = p12.concat(p23);
+        const p123 = p12.concat(p23);
         // 判断L13和L123哪条长边是左哪条是右，都取数组中间的点，判断谁左谁右即可。
         // 使用位运算代替Math.floor，提升性能
         // const m = Math.floor(p123.length / 2);
-        var m = (p123.length >> 1) | 0;
-        var pLeft = p123;
-        var pRight = p13;
+        const m = (p123.length >> 1) | 0;
+        let pLeft = p123;
+        let pRight = p13;
         if (p13[m] < p123[m]) {
             pLeft = p13;
             pRight = p123;
         }
         // 绘制水平线段
-        for (var y = y1; y <= y3; y++) {
-            for (var x = pLeft[y - y1]; x <= pRight[y - y1]; x++) {
+        for (let y = y1; y <= y3; y++) {
+            for (let x = pLeft[y - y1]; x <= pRight[y - y1]; x++) {
                 this.DrawPixel(x, y, color);
             }
         }
-    };
-    RasterizationPipeline.prototype.DrawTriangleFilledWithVertexColor = function (x1, y1, x2, y2, x3, y3, color1, color2, color3) {
-        var _a, _b, _c;
+    }
+    DrawTriangleFilledWithVertexColor(x1, y1, x2, y2, x3, y3, color1, color2, color3) {
         // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-        var w = Setting_1.EngineConfig.canvasWidth;
-        var h = Setting_1.EngineConfig.canvasHeight;
+        const w = Setting_1.EngineConfig.canvasWidth;
+        const h = Setting_1.EngineConfig.canvasHeight;
         if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
             //TODO:裁剪掉超出屏幕的部分
             return;
@@ -21838,31 +21409,31 @@ var RasterizationPipeline = /** @class */ (function () {
         y3 = y3 | 0;
         // 对点按Y坐标排序，确保y1 <= y2 <= y3
         if (y1 > y2)
-            _a = [x2, y2, x1, y1, color2, color1], x1 = _a[0], y1 = _a[1], x2 = _a[2], y2 = _a[3], color1 = _a[4], color2 = _a[5];
+            [x1, y1, x2, y2, color1, color2] = [x2, y2, x1, y1, color2, color1];
         if (y1 > y3)
-            _b = [x3, y3, x1, y1, color3, color1], x1 = _b[0], y1 = _b[1], x3 = _b[2], y3 = _b[3], color1 = _b[4], color3 = _b[5];
+            [x1, y1, x3, y3, color1, color3] = [x3, y3, x1, y1, color3, color1];
         if (y2 > y3)
-            _c = [x3, y3, x2, y2, color3, color2], x2 = _c[0], y2 = _c[1], x3 = _c[2], y3 = _c[3], color2 = _c[4], color3 = _c[5];
+            [x2, y2, x3, y3, color2, color3] = [x3, y3, x2, y2, color3, color2];
         // 提取RGB分量
-        var c1 = Color_1.Color.FromUint32(color1);
-        var c2 = Color_1.Color.FromUint32(color2);
-        var c3 = Color_1.Color.FromUint32(color3);
+        const c1 = Color_1.Color.FromUint32(color1);
+        const c2 = Color_1.Color.FromUint32(color2);
+        const c3 = Color_1.Color.FromUint32(color3);
         // 插值函数，颜色1与颜色2在d1-d2的范围内均匀插值
-        var interpolateColor = function (d1, r1, g1, b1, a1, d2, r2, g2, b2, a2) {
+        const interpolateColor = (d1, r1, g1, b1, a1, d2, r2, g2, b2, a2) => {
             // 预分配数组大小
             // 使用位运算代替Math.floor和Math.abs，提升性能
             // const dx = Math.abs(Math.floor(d2 - d1));
-            var dx = ((d2 > d1 ? d2 - d1 : d1 - d2) | 0);
-            var result = new Array(dx + 1);
+            const dx = ((d2 > d1 ? d2 - d1 : d1 - d2) | 0);
+            const result = new Array(dx + 1);
             // 计算步长
-            var invDelta = 1 / (d2 - d1);
-            var rStep = (r2 - r1) * invDelta;
-            var gStep = (g2 - g1) * invDelta;
-            var bStep = (b2 - b1) * invDelta;
-            var aStep = (a2 - a1) * invDelta;
-            var r = r1, g = g1, b = b1, a = a1;
-            for (var i = 0; i <= dx; i++) {
-                result[i] = { r: r, g: g, b: b, a: a };
+            const invDelta = 1 / (d2 - d1);
+            const rStep = (r2 - r1) * invDelta;
+            const gStep = (g2 - g1) * invDelta;
+            const bStep = (b2 - b1) * invDelta;
+            const aStep = (a2 - a1) * invDelta;
+            let r = r1, g = g1, b = b1, a = a1;
+            for (let i = 0; i <= dx; i++) {
+                result[i] = { r, g, b, a };
                 r += rStep;
                 g += gStep;
                 b += bStep;
@@ -21871,23 +21442,23 @@ var RasterizationPipeline = /** @class */ (function () {
             return result;
         };
         // 插值三条边的坐标和颜色
-        var p12 = this.Interpolate(y1, x1, y2, x2);
-        var p12Colors = interpolateColor(y1, c1.r, c1.g, c1.b, c1.a, y2, c2.r, c2.g, c2.b, c2.a);
-        var p23 = this.Interpolate(y2, x2, y3, x3);
-        var p23Colors = interpolateColor(y2, c2.r, c2.g, c2.b, c2.a, y3, c3.r, c3.g, c3.b, c3.a);
-        var p13 = this.Interpolate(y1, x1, y3, x3);
-        var p13Colors = interpolateColor(y1, c1.r, c1.g, c1.b, c1.a, y3, c3.r, c3.g, c3.b, c3.a);
+        const p12 = this.Interpolate(y1, x1, y2, x2);
+        const p12Colors = interpolateColor(y1, c1.r, c1.g, c1.b, c1.a, y2, c2.r, c2.g, c2.b, c2.a);
+        const p23 = this.Interpolate(y2, x2, y3, x3);
+        const p23Colors = interpolateColor(y2, c2.r, c2.g, c2.b, c2.a, y3, c3.r, c3.g, c3.b, c3.a);
+        const p13 = this.Interpolate(y1, x1, y3, x3);
+        const p13Colors = interpolateColor(y1, c1.r, c1.g, c1.b, c1.a, y3, c3.r, c3.g, c3.b, c3.a);
         // 合并两条短边
         p12.pop();
-        var p123 = p12.concat(p23);
-        var p123Colors = p12Colors.concat(p23Colors);
+        const p123 = p12.concat(p23);
+        const p123Colors = p12Colors.concat(p23Colors);
         // 确定左右边界
         // const m = Math.floor(p123.length / 2);
-        var m = (p123.length >> 1) | 0;
-        var leftPoints = p123;
-        var rightPoints = p13;
-        var leftColors = p123Colors;
-        var rightColors = p13Colors;
+        const m = (p123.length >> 1) | 0;
+        let leftPoints = p123;
+        let rightPoints = p13;
+        let leftColors = p123Colors;
+        let rightColors = p13Colors;
         if (p13[m] < p123[m]) {
             leftPoints = p13;
             rightPoints = p123;
@@ -21895,31 +21466,31 @@ var RasterizationPipeline = /** @class */ (function () {
             rightColors = p123Colors;
         }
         // 绘制水平线段，并进行颜色插值
-        for (var y = y1; y <= y3; y++) {
-            var idx = y - y1;
-            var xStart = leftPoints[idx];
-            var xEnd = rightPoints[idx];
-            var leftColor = leftColors[idx];
-            var rightColor = rightColors[idx];
+        for (let y = y1; y <= y3; y++) {
+            const idx = y - y1;
+            const xStart = leftPoints[idx];
+            const xEnd = rightPoints[idx];
+            const leftColor = leftColors[idx];
+            const rightColor = rightColors[idx];
             // 预计算颜色差值
-            var rDiff = rightColor.r - leftColor.r;
-            var gDiff = rightColor.g - leftColor.g;
-            var bDiff = rightColor.b - leftColor.b;
-            var aDiff = rightColor.a - leftColor.a;
+            const rDiff = rightColor.r - leftColor.r;
+            const gDiff = rightColor.g - leftColor.g;
+            const bDiff = rightColor.b - leftColor.b;
+            const aDiff = rightColor.a - leftColor.a;
             // 步长和颜色增量
-            var invLength = 1 / ((xEnd - xStart) + 1);
-            var rStep = rDiff * invLength;
-            var gStep = gDiff * invLength;
-            var bStep = bDiff * invLength;
-            var aStep = aDiff * invLength;
+            const invLength = 1 / ((xEnd - xStart) + 1);
+            const rStep = rDiff * invLength;
+            const gStep = gDiff * invLength;
+            const bStep = bDiff * invLength;
+            const aStep = aDiff * invLength;
             // 初始颜色值
-            var r = leftColor.r;
-            var g = leftColor.g;
-            var b = leftColor.b;
-            var a = leftColor.a;
+            let r = leftColor.r;
+            let g = leftColor.g;
+            let b = leftColor.b;
+            let a = leftColor.a;
             // 水平方向颜色插值
-            for (var x = xStart; x <= xEnd; x++) {
-                var finalColor = ((a | 0) << 24) | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0);
+            for (let x = xStart; x <= xEnd; x++) {
+                const finalColor = ((a | 0) << 24) | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0);
                 this.DrawPixel(x, y, finalColor);
                 // 累加颜色值
                 r += rStep;
@@ -21928,96 +21499,96 @@ var RasterizationPipeline = /** @class */ (function () {
                 a += aStep;
             }
         }
-    };
+    }
     //#endregion
     //#region 变换
     /*
      * 顶点处理阶段：模型空间 →（模型矩阵）→ 世界空间 →（视图矩阵）→ 观察空间 →（投影矩阵）→ 裁剪空间 →（透视除法）→ NDC 空间 →（视口变换）→ 屏幕空间 → 光栅化渲染
      */
-    RasterizationPipeline.prototype.VertexProcessingStage = function (vertices, transform) {
-        var outVertices = new Array(vertices.length);
+    VertexProcessingStage(vertices, transform) {
+        const outVertices = new Array(vertices.length);
         // 1. MVP变换到裁剪空间
         // 模型空间 -> 世界空间 -> 观察空间 -> 裁剪空间
         // 2. 透视除法：将裁剪空间坐标转换为标准设备坐标（NDC）
         // 裁剪空间 -> 标准化设备坐标（NDC 空间）
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
-        for (var i = 0; i < vertices.length; i += 1) {
-            var out = TransformTools_1.TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
+        for (let i = 0; i < vertices.length; i += 1) {
+            const out = TransformTools_1.TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
             outVertices[i] = new Vector3_1.Vector3(out.screen.x, out.screen.y, out.depth);
         }
         return outVertices;
-    };
+    }
     //#endregion
     //#region 剔除裁剪
     // 视锥体剔除
-    RasterizationPipeline.prototype.FrustumCulling = function () {
-    };
+    FrustumCulling() {
+    }
     // 背面剔除
-    RasterizationPipeline.prototype.BackfaceCulling = function (triangles, mesh, renderer) {
-        var visibleTriangles = [];
-        var faceNormals = mesh.faceNormals;
-        var faceCenters = mesh.faceCenters;
-        var cameraPosition = this.currentCamera.transform.position;
+    BackfaceCulling(triangles, mesh, renderer) {
+        const visibleTriangles = [];
+        const faceNormals = mesh.faceNormals;
+        const faceCenters = mesh.faceCenters;
+        const cameraPosition = this.currentCamera.transform.position;
         // 获取模型矩阵（模型本地空间到世界空间的变换矩阵）
-        var modelMatrix = renderer.transform.localToWorldMatrix;
+        const modelMatrix = renderer.transform.localToWorldMatrix;
         // 计算法线矩阵：模型矩阵的逆矩阵的转置
-        var normalMatrix = modelMatrix.clone().invert().transpose();
-        for (var i = 0; i < faceNormals.length; i++) {
+        const normalMatrix = modelMatrix.clone().invert().transpose();
+        for (let i = 0; i < faceNormals.length; i++) {
             // 要把Vec3转为齐次坐标点，即w=1
-            var world_center = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(faceCenters[i], 1)));
+            const world_center = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(faceCenters[i], 1)));
             // 要把Vec3转为齐次坐向量，即w=0
-            var world_normal = new Vector3_1.Vector3(normalMatrix.multiplyVector4(new Vector4_1.Vector4(faceNormals[i], 0)));
+            const world_normal = new Vector3_1.Vector3(normalMatrix.multiplyVector4(new Vector4_1.Vector4(faceNormals[i], 0)));
             // 2.获取面的中心到摄像机的向量
-            var centerToCamera = Vector3_1.Vector3.subtract(cameraPosition, world_center);
+            const centerToCamera = Vector3_1.Vector3.subtract(cameraPosition, world_center);
             // 3.计算这2个向量的夹角
-            var dot = world_normal.dot(centerToCamera);
+            const dot = world_normal.dot(centerToCamera);
             // 4.判断夹角是否大于等于0°小于90°
             if (dot > 0) {
                 visibleTriangles.push(triangles[i * 3 + 0], triangles[i * 3 + 1], triangles[i * 3 + 2]);
             }
         }
         return visibleTriangles;
-    };
+    }
     // 遮挡剔除
-    RasterizationPipeline.prototype.OcclusionCulling = function () {
-    };
-    RasterizationPipeline.prototype.ClipTriangle = function (triangle) {
-    };
+    OcclusionCulling() {
+    }
+    ClipTriangle(triangle) {
+    }
     //#endregion
     //#region 绘制物体
-    RasterizationPipeline.prototype.DrawObject = function (renderer) {
-        var mesh = renderer.mesh;
+    DrawObject(renderer) {
+        const mesh = renderer.mesh;
         if (!mesh) {
             return;
         }
-        var triangles = mesh.triangles;
+        let triangles = mesh.triangles;
         // 渲染管线3.背面剔除
         triangles = this.BackfaceCulling(triangles, mesh, renderer);
         // 渲染管线4.遮挡剔除
         this.OcclusionCulling();
         // 渲染管线5.MVP变换
-        var screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
+        const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
         // 渲染管线6.裁剪
-        for (var i = 0; i < triangles.length; i += 3) {
-            var p1 = screenVertices[triangles[i]];
-            var p2 = screenVertices[triangles[i + 1]];
-            var p3 = screenVertices[triangles[i + 2]];
-            var p1_uv = mesh.uv[triangles[i]];
-            var p2_uv = mesh.uv[triangles[i + 1]];
-            var p3_uv = mesh.uv[triangles[i + 2]];
-            var p1_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-            var p2_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-            var p3_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
-            var attrs1 = {
+        for (let i = 0; i < triangles.length; i += 3) {
+            const p1 = screenVertices[triangles[i]];
+            const p2 = screenVertices[triangles[i + 1]];
+            const p3 = screenVertices[triangles[i + 2]];
+            const p1_uv = mesh.uv[triangles[i]];
+            const p2_uv = mesh.uv[triangles[i + 1]];
+            const p3_uv = mesh.uv[triangles[i + 2]];
+            const p1_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
+            const p2_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
+            const p3_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
+            const attrs1 = {
                 uv: p1_uv,
                 normal: p1_normal,
             };
-            var attrs2 = {
+            const attrs2 = {
                 uv: p2_uv,
                 normal: p2_normal,
             };
-            var attrs3 = {
+            const attrs3 = {
                 uv: p3_uv,
                 normal: p3_normal,
             };
@@ -22031,27 +21602,27 @@ var RasterizationPipeline = /** @class */ (function () {
             }
             if (this.drawMode & DrawMode.Shader) {
                 // 渲染管线7.光栅化
-                var fragments = (0, Lerp_1.interpolateOverTriangle)(p1, p2, p3, attrs1, attrs2, attrs3);
-                for (var i_1 = 0; i_1 < fragments.length; i_1++) {
-                    var fragment = fragments[i_1];
-                    var x = fragment.x;
-                    var y = fragment.y;
-                    var z = fragment.z;
+                const fragments = (0, Lerp_1.interpolateOverTriangle)(p1, p2, p3, attrs1, attrs2, attrs3);
+                for (let i = 0; i < fragments.length; i++) {
+                    const fragment = fragments[i];
+                    const x = fragment.x;
+                    const y = fragment.y;
+                    const z = fragment.z;
                     // 检查坐标是否在屏幕范围内
                     if (x < 0 || x >= Setting_1.EngineConfig.canvasWidth ||
                         y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
                         return;
                     }
                     // 计算深度缓冲区索引
-                    var index = y * Setting_1.EngineConfig.canvasWidth + x;
-                    var currentDepth = this.depthBuffer[index];
+                    const index = y * Setting_1.EngineConfig.canvasWidth + x;
+                    const currentDepth = this.depthBuffer[index];
                     // 渲染管线8.早期深度测试
                     // 深度测试：只有当前像素更近（z值更小）时才绘制
                     if (z < currentDepth) {
                         this.depthBuffer[index] = z;
                         // uv
-                        var uv = fragment.attributes.uv;
-                        var color = new Color_1.Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
+                        const uv = fragment.attributes.uv;
+                        const color = new Color_1.Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
                         // nroaml
                         // const normal = fragment.attributes.normal as Vector3;
                         // const color = new Color(Math.floor((normal.x + 1) * 0.5 * 255), Math.floor((normal.y + 1) * 0.5 * 255), Math.floor((normal.z + 1) * 0.5 * 255)).ToUint32();
@@ -22061,13 +21632,12 @@ var RasterizationPipeline = /** @class */ (function () {
                 }
             }
         }
-    };
+    }
     //#endregion
     //#region 工具函数
-    RasterizationPipeline.prototype.DebugDraw = function () {
+    DebugDraw() {
         // 绘制包围盒
         // this.DrawBounds(mesh, renderer);
-        var _this = this;
         // 调试：绘制面法线
         // this.DrawFaceNormal(mesh, renderer);
         // 绘制深度纹理
@@ -22075,82 +21645,78 @@ var RasterizationPipeline = /** @class */ (function () {
         // 绘制Overdarw
         // this.DrawOverdraw();
         // 绘制物理调试信息
-        // PhysicsDebugDraw.DrawPhysicsDebug(Engine.physicsEngine.world, this.DrawLine.bind(this));
+        PhysicsDebugDraw_1.PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
         // 绘制调试线
-        var lines = Debug_1.Debug.GetDebugLines();
-        lines.forEach(function (line) {
-            _this.DrawLine(line.start.x, line.start.y, line.end.x, line.end.y, line.color);
+        const lines = Debug_1.Debug.GetDebugLines();
+        lines.forEach(line => {
+            this.DrawLine(line.start.x, line.start.y, line.end.x, line.end.y, line.color);
         });
-    };
-    RasterizationPipeline.prototype.DrawFaceNormal = function (mesh, renderer) {
-        for (var i = 0; i < mesh.faceNormals.length; i++) {
-            var normal = mesh.faceNormals[i];
-            var center = mesh.faceCenters[i];
-            var start = TransformTools_1.TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
-            var end = TransformTools_1.TransformTools.ModelToScreenPos(Vector3_1.Vector3.add(center, normal), renderer.transform, this.currentCamera).screen;
+    }
+    DrawFaceNormal(mesh, renderer) {
+        for (let i = 0; i < mesh.faceNormals.length; i++) {
+            const normal = mesh.faceNormals[i];
+            const center = mesh.faceCenters[i];
+            const start = TransformTools_1.TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
+            const end = TransformTools_1.TransformTools.ModelToScreenPos(Vector3_1.Vector3.add(center, normal), renderer.transform, this.currentCamera).screen;
             this.DrawLine(start.x, start.y, end.x, end.y, Color_1.Color.RED, Color_1.Color.GREEN);
         }
-    };
-    RasterizationPipeline.prototype.DrawDepthBuffer = function () {
-        for (var x = 0; x < Setting_1.EngineConfig.canvasWidth; x++) {
-            for (var y = 0; y < Setting_1.EngineConfig.canvasHeight; y++) {
-                var index = y * Setting_1.EngineConfig.canvasWidth + x;
-                var currentDepth = this.depthBuffer[index];
+    }
+    DrawDepthBuffer() {
+        for (let x = 0; x < Setting_1.EngineConfig.canvasWidth; x++) {
+            for (let y = 0; y < Setting_1.EngineConfig.canvasHeight; y++) {
+                const index = y * Setting_1.EngineConfig.canvasWidth + x;
+                const currentDepth = this.depthBuffer[index];
                 // 将深度值(0-1)转换为灰度值(0-255)
-                var grayValue = Math.floor(currentDepth * 255);
+                const grayValue = Math.floor(currentDepth * 255);
                 // 创建灰度颜色对象
-                var depthColor = new Color_1.Color(grayValue, grayValue, grayValue);
+                const depthColor = new Color_1.Color(grayValue, grayValue, grayValue);
                 this.DrawPixel(x, y, depthColor.ToUint32());
             }
         }
-    };
-    RasterizationPipeline.prototype.DrawOverdraw = function () {
+    }
+    DrawOverdraw() {
         this.frameBuffer.fill(Color_1.Color.BLACK);
         // 使用预设的最大可视化范围来归一化 Overdraw 计数
-        var MAX_VISUALIZATION_RANGE = 8;
-        for (var x = 0; x < Setting_1.EngineConfig.canvasWidth; x++) {
-            for (var y = 0; y < Setting_1.EngineConfig.canvasHeight; y++) {
-                var index = y * Setting_1.EngineConfig.canvasWidth + x;
-                var overdrawCount = this.overdrawBuffer[index];
+        const MAX_VISUALIZATION_RANGE = 8;
+        for (let x = 0; x < Setting_1.EngineConfig.canvasWidth; x++) {
+            for (let y = 0; y < Setting_1.EngineConfig.canvasHeight; y++) {
+                const index = y * Setting_1.EngineConfig.canvasWidth + x;
+                const overdrawCount = this.overdrawBuffer[index];
                 if (overdrawCount > 0) {
                     // 将 Overdraw 计数限制在可视化范围内并归一化
-                    var normalizedCount = Math.min(overdrawCount, MAX_VISUALIZATION_RANGE) / MAX_VISUALIZATION_RANGE;
+                    const normalizedCount = Math.min(overdrawCount, MAX_VISUALIZATION_RANGE) / MAX_VISUALIZATION_RANGE;
                     // 计算透明度：Overdraw 越多，越不透明
-                    var alpha = Math.floor(normalizedCount * 255);
+                    const alpha = Math.floor(normalizedCount * 255);
                     // 组合颜色（ARGB格式）
-                    var color = Color_1.Color.FromUint32(Color_1.Color.ORANGE);
+                    const color = Color_1.Color.FromUint32(Color_1.Color.ORANGE);
                     color.a = alpha;
                     this.DrawPixel(x, y, color.ToUint32(), false);
                 }
             }
         }
-    };
-    RasterizationPipeline.prototype.DrawBound = function (bounds, transform, color) {
-        var _this = this;
+    }
+    DrawBound(bounds, transform, color) {
         // 将所有顶点转换到屏幕空间
-        var screenVertices = bounds.vertices.map(function (v) {
-            return TransformTools_1.TransformTools.ModelToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform, _this.currentCamera).screen;
-        });
+        const screenVertices = bounds.vertices.map(v => TransformTools_1.TransformTools.ModelToScreenPos(new Vector3_1.Vector3(v.x, v.y, v.z), transform, this.currentCamera).screen);
         // 绘制所有边
-        bounds.edges.forEach(function (_a) {
-            var i1 = _a[0], i2 = _a[1];
-            var v1 = screenVertices[i1];
-            var v2 = screenVertices[i2];
+        bounds.edges.forEach(([i1, i2]) => {
+            const v1 = screenVertices[i1];
+            const v2 = screenVertices[i2];
             // 确保转换后的顶点有效
             if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
-                _this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
+                this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
             }
         });
         // 绘制中心点
-        var center = bounds.center;
-        var screenCenter = TransformTools_1.TransformTools.ModelToScreenPos(center, transform, this.currentCamera).screen;
+        const center = bounds.center;
+        const screenCenter = TransformTools_1.TransformTools.ModelToScreenPos(center, transform, this.currentCamera).screen;
         if (screenCenter) {
             // 绘制一个小十字作为中心点标记
-            var size = 5;
+            const size = 5;
             this.DrawLine(screenCenter.x - size, screenCenter.y, screenCenter.x + size, screenCenter.y, Color_1.Color.RED);
             this.DrawLine(screenCenter.x, screenCenter.y - size, screenCenter.x, screenCenter.y + size, Color_1.Color.RED);
         }
-    };
+    }
     /// <summary>
     /// 线性插值
     /// 传入2个点，返回它们组成线段的插值。
@@ -22160,19 +21726,19 @@ var RasterizationPipeline = /** @class */ (function () {
     /// 举个例子：
     /// 点(0, 0)和(2,1)，传入的参数是(0, 0, 2, 1)，返回的是((2-0)+1=3)个值，这些值是从(0-1)中间插值的，即(0, 0.5, 1)
     /// </summary>
-    RasterizationPipeline.prototype.Interpolate = function (a1, b1, a2, b2) {
+    Interpolate(a1, b1, a2, b2) {
         // 预分配数组大小以避免动态扩容
         // const dx = Math.abs(Math.floor(a2 - a1));
-        var dx = ((a2 > a1 ? a2 - a1 : a1 - a2) | 0);
-        var value = new Array(dx + 1);
-        var a = (b2 - b1) / (a2 - a1);
-        var d = b1;
-        for (var i = 0; i <= dx; i++) {
+        const dx = ((a2 > a1 ? a2 - a1 : a1 - a2) | 0);
+        const value = new Array(dx + 1);
+        const a = (b2 - b1) / (a2 - a1);
+        let d = b1;
+        for (let i = 0; i <= dx; i++) {
             value[i] = d;
             d += a;
         }
         return value;
-    };
+    }
     /**
      * 颜色插值辅助函数
      * @param color1 起始颜色 (32位整数，格式为0xAARRGGBB)
@@ -22180,51 +21746,52 @@ var RasterizationPipeline = /** @class */ (function () {
      * @param t 插值因子 (0 到 1)
      * @returns 插值后的颜色
      */
-    RasterizationPipeline.prototype.interpolateColor = function (color1, color2, t) {
+    interpolateColor(color1, color2, t) {
         // 提取ARGB分量
-        var a1 = (color1 >> 24) & 0xFF;
-        var r1 = (color1 >> 16) & 0xFF;
-        var g1 = (color1 >> 8) & 0xFF;
-        var b1 = color1 & 0xFF;
-        var a2 = (color2 >> 24) & 0xFF;
-        var r2 = (color2 >> 16) & 0xFF;
-        var g2 = (color2 >> 8) & 0xFF;
-        var b2 = color2 & 0xFF;
+        const a1 = (color1 >> 24) & 0xFF;
+        const r1 = (color1 >> 16) & 0xFF;
+        const g1 = (color1 >> 8) & 0xFF;
+        const b1 = color1 & 0xFF;
+        const a2 = (color2 >> 24) & 0xFF;
+        const r2 = (color2 >> 16) & 0xFF;
+        const g2 = (color2 >> 8) & 0xFF;
+        const b2 = color2 & 0xFF;
         // 线性插值每个分量
-        var a = Math.round(a1 + (a2 - a1) * t);
-        var r = Math.round(r1 + (r2 - r1) * t);
-        var g = Math.round(g1 + (g2 - g1) * t);
-        var b = Math.round(b1 + (b2 - b1) * t);
+        const a = Math.round(a1 + (a2 - a1) * t);
+        const r = Math.round(r1 + (r2 - r1) * t);
+        const g = Math.round(g1 + (g2 - g1) * t);
+        const b = Math.round(b1 + (b2 - b1) * t);
         // 组合成32位颜色值
         return (a << 24) | (r << 16) | (g << 8) | b;
-    };
-    return RasterizationPipeline;
-}());
+    }
+}
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":14,"../Core/Setting":17,"../Math/Color":24,"../Math/Lerp":25,"../Math/TransformTools":29,"../Math/Vector3":31,"../Math/Vector4":32,"../Utils/Debug":41}],37:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":11,"../Core/Engine":15,"../Core/Setting":18,"../Math/Color":25,"../Math/Lerp":26,"../Math/TransformTools":30,"../Math/Vector3":32,"../Math/Vector4":33,"../Physics/PhysicsDebugDraw":35,"../Utils/Debug":43}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
-var BoxCollider_1 = require("../Component/BoxCollider");
-var Camera_1 = require("../Component/Camera");
-var CameraController_1 = require("../Component/CameraController");
-var MeshRenderer_1 = require("../Component/MeshRenderer");
-var RigidBody_1 = require("../Component/RigidBody");
-var SphereCollider_1 = require("../Component/SphereCollider");
-var GameObject_1 = require("../Core/GameObject");
-var Quaternion_1 = require("../Math/Quaternion");
-var Vector3_1 = require("../Math/Vector3");
-var AssetLoader_1 = require("../Utils/AssetLoader");
+const BoxCollider_1 = require("../Component/BoxCollider");
+const Camera_1 = require("../Component/Camera");
+const CameraController_1 = require("../Component/CameraController");
+const MeshRenderer_1 = require("../Component/MeshRenderer");
+const RayTest_1 = require("../Component/RayTest");
+const RigidBody_1 = require("../Component/RigidBody");
+const SphereCollider_1 = require("../Component/SphereCollider");
+const GameObject_1 = require("../Core/GameObject");
+const Quaternion_1 = require("../Math/Quaternion");
+const Vector3_1 = require("../Math/Vector3");
+const AssetLoader_1 = require("../Utils/AssetLoader");
 exports.MainScene = {
     name: "MainScene",
-    initfun: function (scene) {
+    initfun: (scene) => {
         // 相机
-        var camera1 = new GameObject_1.GameObject("camera");
+        const camera1 = new GameObject_1.GameObject("camera");
         camera1.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(30, 0, 0));
         camera1.transform.position = new Vector3_1.Vector3(0, 3, -5);
-        var cma1 = camera1.addComponent(Camera_1.Camera);
+        const cma1 = camera1.addComponent(Camera_1.Camera);
         camera1.addComponent(CameraController_1.CameraController);
+        camera1.addComponent(RayTest_1.RayTest);
         if (cma1) {
             cma1.clearFlags = Camera_1.CameraClearFlags.Color;
             cma1.depth = 0;
@@ -22246,38 +21813,48 @@ exports.MainScene = {
         //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
-        var p_obj;
-        AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then(function (model) {
-            var obj = new GameObject_1.GameObject("cube");
-            obj.transform.position = new Vector3_1.Vector3(1.3, 2, 0);
+        let p_obj;
+        AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then((model) => {
+            const obj = new GameObject_1.GameObject("cube");
+            obj.transform.position = new Vector3_1.Vector3(0, 1, 0);
             obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
             obj.transform.scale = Vector3_1.Vector3.ONE.multiply(0.5);
             obj.addComponent(RigidBody_1.Rigidbody);
             obj.addComponent(BoxCollider_1.BoxCollider);
             //obj.addComponent(ObjRotate);
-            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
             p_obj = obj;
         });
-        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then(function (model) {
-            var obj = new GameObject_1.GameObject("spheres");
+        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+            const obj = new GameObject_1.GameObject("spheres");
             obj.transform.position = new Vector3_1.Vector3(0, 1.5, 1.5);
-            var body = obj.addComponent(RigidBody_1.Rigidbody);
+            obj.addComponent(RigidBody_1.Rigidbody);
             obj.addComponent(SphereCollider_1.SphereCollider);
-            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
             //obj.transform.setParent(p_obj.transform);
         });
-        AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then(function (model) {
-            var obj = new GameObject_1.GameObject("panel");
+        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+            const obj = new GameObject_1.GameObject("spheres");
+            obj.transform.position = new Vector3_1.Vector3(0, 1.5, 0);
+            obj.addComponent(RigidBody_1.Rigidbody);
+            obj.addComponent(SphereCollider_1.SphereCollider);
+            const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            if (renderer)
+                renderer.mesh = model;
+            //obj.transform.setParent(p_obj.transform);
+        });
+        AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then((model) => {
+            const obj = new GameObject_1.GameObject("panel");
             obj.transform.scale = Vector3_1.Vector3.ONE.multiply(1.5);
-            var collider = obj.addComponent(BoxCollider_1.BoxCollider);
-            var body = obj.addComponent(RigidBody_1.Rigidbody);
+            obj.addComponent(BoxCollider_1.BoxCollider);
+            const body = obj.addComponent(RigidBody_1.Rigidbody);
             if (body)
                 body.isKinematic = true;
-            var renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
             if (renderer)
                 renderer.mesh = model;
         });
@@ -22297,26 +21874,26 @@ exports.MainScene = {
     }
 };
 
-},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/SphereCollider":12,"../Core/GameObject":15,"../Math/Quaternion":27,"../Math/Vector3":31,"../Utils/AssetLoader":40}],38:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RayTest":10,"../Component/RigidBody":12,"../Component/SphereCollider":13,"../Core/GameObject":16,"../Math/Quaternion":28,"../Math/Vector3":32,"../Utils/AssetLoader":42}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
-var Renderer_1 = require("../Component/Renderer");
-var GameObject_1 = require("../Core/GameObject");
-var BVHTree_1 = require("../Math/BVHTree");
-var TransformTools_1 = require("../Math/TransformTools");
-var Vector2_1 = require("../Math/Vector2");
-var Scene = /** @class */ (function () {
-    function Scene(name) {
+const Renderer_1 = require("../Component/Renderer");
+const GameObject_1 = require("../Core/GameObject");
+const BVHTree_1 = require("../Math/BVHTree");
+const TransformTools_1 = require("../Math/TransformTools");
+const Vector2_1 = require("../Math/Vector2");
+class Scene {
+    constructor(name) {
         this.needsRebuild = true;
         this.name = name;
         this.rootGameObject = new GameObject_1.GameObject("root");
         this.bvhTree = new BVHTree_1.BVHTree();
     }
-    Scene.prototype.getRootGameObject = function () {
+    getRootGameObject() {
         return this.rootGameObject;
-    };
-    Scene.prototype.update = function () {
+    }
+    update() {
         if (this.rootGameObject) {
             this.rootGameObject.startComponents();
             this.rootGameObject.updateComponents();
@@ -22326,109 +21903,105 @@ var Scene = /** @class */ (function () {
             this.rebuildBVH();
             this.needsRebuild = false;
         }
-    };
+    }
     /**
      * 标记需要重建BVH
      */
-    Scene.prototype.markDirty = function () {
+    markDirty() {
         this.needsRebuild = true;
-    };
+    }
     /**
      * 重建BVH树
      */
-    Scene.prototype.rebuildBVH = function () {
-        var allObjects = this.collectAllObjects(this.rootGameObject);
+    rebuildBVH() {
+        const allObjects = this.collectAllObjects(this.rootGameObject);
         this.bvhTree.build(allObjects);
-    };
+    }
     /**
      * 收集场景中所有对象
      */
-    Scene.prototype.collectAllObjects = function (root) {
-        var objects = [];
+    collectAllObjects(root) {
+        const objects = [];
         this.traverseGameObjects(root, objects);
         return objects;
-    };
+    }
     /**
      * 遍历游戏对象树
      */
-    Scene.prototype.traverseGameObjects = function (node, collection) {
+    traverseGameObjects(node, collection) {
         if (node.getComponent(Renderer_1.Renderer)) {
             collection.push(node);
         }
-        var children = node.transform.children;
-        for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
-            var child = children_1[_i];
+        const children = node.transform.children;
+        for (const child of children) {
             this.traverseGameObjects(child.gameObject, collection);
         }
-    };
+    }
     /**
      * 射线检测接口
      */
-    Scene.prototype.raycast = function (rayOrigin, rayDirection, maxDistance) {
-        if (maxDistance === void 0) { maxDistance = Infinity; }
+    raycast(rayOrigin, rayDirection, maxDistance = Infinity) {
         return this.bvhTree.raycast(rayOrigin, rayDirection, maxDistance);
-    };
+    }
     /**
      * 点击屏幕选取最前面对象
      */
-    Scene.prototype.pickObject = function (screenX, screenY, camera) {
+    pickObject(screenX, screenY, camera) {
         // 将屏幕坐标转换为世界空间射线
-        var ray = TransformTools_1.TransformTools.ScreenToWorldPosRaycast(new Vector2_1.Vector2(screenX, screenY), camera);
+        const ray = TransformTools_1.TransformTools.ScreenToWorldPosRaycast(new Vector2_1.Vector2(screenX, screenY), camera);
         // 进行射线检测
-        var hitObjects = this.raycast(ray.origin, ray.direction);
+        const hitObjects = this.raycast(ray.origin, ray.direction);
         if (hitObjects.length === 0) {
             return null;
         }
         // 找到距离最近的对象
-        var closestObject = null;
-        var closestDistance = Infinity;
-        for (var _i = 0, hitObjects_1 = hitObjects; _i < hitObjects_1.length; _i++) {
-            var obj = hitObjects_1[_i];
-            var distance = this.calculateHitDistance(obj, ray.origin, ray.direction);
+        let closestObject = null;
+        let closestDistance = Infinity;
+        for (const obj of hitObjects) {
+            const distance = this.calculateHitDistance(obj, ray.origin, ray.direction);
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestObject = obj;
             }
         }
         return closestObject;
-    };
+    }
     /**
      * 计算命中距离（需要根据具体对象形状实现）
      */
-    Scene.prototype.calculateHitDistance = function (obj, rayOrigin, rayDirection) {
+    calculateHitDistance(obj, rayOrigin, rayDirection) {
         // 这里需要实现具体的射线与对象相交检测
         // 可以使用对象的包围盒或更精确的网格相交检测
-        var bounds = this.bvhTree.calculateObjectBounds(obj);
+        const bounds = this.bvhTree.calculateObjectBounds(obj);
         if (bounds) {
             return bounds.rayIntersectDistance(rayOrigin, rayDirection);
         }
         return Infinity;
-    };
-    return Scene;
-}());
+    }
+}
 exports.Scene = Scene;
 
-},{"../Component/Renderer":10,"../Core/GameObject":15,"../Math/BVHTree":22,"../Math/TransformTools":29,"../Math/Vector2":30}],39:[function(require,module,exports){
+},{"../Component/Renderer":11,"../Core/GameObject":16,"../Math/BVHTree":23,"../Math/TransformTools":30,"../Math/Vector2":31}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
-var Scene_1 = require("./Scene");
-var SceneManager = /** @class */ (function () {
-    function SceneManager() {
+const Scene_1 = require("./Scene");
+class SceneManager {
+    constructor() {
         this.scenes = new Map();
         this.activeScene = null;
     }
-    SceneManager.prototype.createScene = function (name) {
-        var scene = new Scene_1.Scene(name);
+    createScene(name) {
+        const scene = new Scene_1.Scene(name);
         this.scenes.set(name, scene);
         return scene;
-    };
-    SceneManager.prototype.getScene = function (name) {
+    }
+    getScene(name) {
         return this.scenes.get(name);
-    };
-    SceneManager.prototype.setActiveScene = function (scene) {
+    }
+    setActiveScene(scene) {
         if (typeof scene === 'string') {
-            var foundScene = this.scenes.get(scene);
+            const foundScene = this.scenes.get(scene);
             if (foundScene) {
                 this.activeScene = foundScene;
             }
@@ -22436,29 +22009,28 @@ var SceneManager = /** @class */ (function () {
         else {
             this.activeScene = scene;
         }
-    };
-    SceneManager.prototype.getActiveScene = function () {
+    }
+    getActiveScene() {
         return this.activeScene;
-    };
-    SceneManager.prototype.updateActiveScene = function () {
+    }
+    updateActiveScene() {
         if (this.activeScene) {
             this.activeScene.update();
         }
-    };
-    SceneManager.prototype.loadScene = function (data) {
+    }
+    loadScene(data) {
         if (!data.name || !data.initfun) {
             return;
         }
         // 初始化场景
-        var mainScene = this.createScene(data.name);
+        const mainScene = this.createScene(data.name);
         this.setActiveScene(mainScene);
         data.initfun(mainScene);
-    };
-    return SceneManager;
-}());
+    }
+}
 exports.SceneManager = SceneManager;
 
-},{"./Scene":38}],40:[function(require,module,exports){
+},{"./Scene":40}],42:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22469,42 +22041,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
-    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssetLoader = void 0;
-var Dictionary_1 = require("./Dictionary");
-var ObjParser_1 = require("./ObjParser");
-var AssetLoader = /** @class */ (function () {
-    function AssetLoader() {
-    }
-    AssetLoader.loadImageFile = function (fileName) {
-        return new Promise(function (resolve) {
+const Dictionary_1 = require("./Dictionary");
+const ObjParser_1 = require("./ObjParser");
+class AssetLoader {
+    static loadImageFile(fileName) {
+        return new Promise((resolve) => {
             if (AssetLoader.fileCache.has(fileName)) {
                 resolve(AssetLoader.fileCache.get(fileName));
             }
@@ -22525,8 +22068,8 @@ var AssetLoader = /** @class */ (function () {
                 image.src = fileName;
             }
         });
-    };
-    AssetLoader.loadTextFile = function (fileName) {
+    }
+    static loadTextFile(fileName) {
         return new Promise(function (resolve) {
             if (AssetLoader.fileCache.has(fileName)) {
                 resolve(AssetLoader.fileCache.get(fileName));
@@ -22549,185 +22092,163 @@ var AssetLoader = /** @class */ (function () {
                 request.send();
             }
         });
-    };
-    AssetLoader.loadModel = function (modelPath_1) {
-        return __awaiter(this, arguments, void 0, function (modelPath, scale) {
-            var model, objDoc;
-            if (scale === void 0) { scale = 1; }
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        model = null;
-                        return [4 /*yield*/, AssetLoader.loadTextFile(modelPath)];
-                    case 1:
-                        objDoc = _a.sent();
-                        if (objDoc != null) {
-                            model = ObjParser_1.OBJParser.parse(objDoc, scale);
-                        }
-                        return [2 /*return*/, model];
-                }
-            });
+    }
+    static loadModel(modelPath_1) {
+        return __awaiter(this, arguments, void 0, function* (modelPath, scale = 1) {
+            let model = null;
+            var objDoc = yield AssetLoader.loadTextFile(modelPath);
+            if (objDoc != null) {
+                model = ObjParser_1.OBJParser.parse(objDoc, scale);
+            }
+            return model;
         });
-    };
-    AssetLoader.fileCache = new Dictionary_1.Dictionary();
-    return AssetLoader;
-}());
+    }
+}
 exports.AssetLoader = AssetLoader;
+AssetLoader.fileCache = new Dictionary_1.Dictionary();
 
-},{"./Dictionary":42,"./ObjParser":43}],41:[function(require,module,exports){
+},{"./Dictionary":44,"./ObjParser":45}],43:[function(require,module,exports){
 "use strict";
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
-var Camera_1 = require("../Component/Camera");
-var Engine_1 = require("../Core/Engine");
-var TransformTools_1 = require("../Math/TransformTools");
+const Camera_1 = require("../Component/Camera");
+const Engine_1 = require("../Core/Engine");
+const TransformTools_1 = require("../Math/TransformTools");
 var LogType;
 (function (LogType) {
     LogType[LogType["Info"] = 0] = "Info";
     LogType[LogType["Warning"] = 1] = "Warning";
     LogType[LogType["Error"] = 2] = "Error";
 })(LogType || (LogType = {}));
-var Debug = /** @class */ (function () {
-    function Debug() {
-    }
-    Debug.PrintLogs = function () {
-        for (var i = 0; i < this.logs.length; i++) {
-            var log = this.logs[i];
+class Debug {
+    static PrintLogs() {
+        for (let i = 0; i < this.logs.length; i++) {
+            const log = this.logs[i];
             Engine_1.Engine.context.fillStyle = Debug.logColors[log.type];
             Engine_1.Engine.context.fillText(log.message, 10, 20 + i * 15);
         }
         this.logs = [];
-    };
-    Debug.GetDebugLines = function () {
-        var lines = this.lines;
+    }
+    static GetDebugLines() {
+        const lines = this.lines;
         this.lines = [];
         return lines;
-    };
-    Debug.Log = function (message, duration) {
+    }
+    static Log(message, duration) {
         this.push(message, LogType.Info, duration);
-    };
-    Debug.LogWarning = function (message, duration) {
+    }
+    static LogWarning(message, duration) {
         this.push(message, LogType.Warning, duration);
-    };
-    Debug.LogError = function (message, duration) {
+    }
+    static LogError(message, duration) {
         this.push(message, LogType.Error, duration);
-    };
-    Debug.DrawLine = function (start, end, color, duration) {
-        var line = {
-            start: start,
-            end: end,
-            color: color,
+    }
+    static DrawLine(start, end, color, duration) {
+        const line = {
+            start,
+            end,
+            color,
             duration: duration !== null && duration !== void 0 ? duration : 0,
         };
         this.lines.push(line);
-    };
-    Debug.DrawLine3D = function (start, end, color, duration) {
-        var a = TransformTools_1.TransformTools.WorldToScreenPos(start, Camera_1.Camera.mainCamera).screen;
-        var b = TransformTools_1.TransformTools.WorldToScreenPos(end, Camera_1.Camera.mainCamera).screen;
+    }
+    static DrawLine3D(start, end, color, duration) {
+        const a = TransformTools_1.TransformTools.WorldToScreenPos(start, Camera_1.Camera.mainCamera).screen;
+        const b = TransformTools_1.TransformTools.WorldToScreenPos(end, Camera_1.Camera.mainCamera).screen;
         this.DrawLine(a, b, color, duration);
-    };
-    Debug.push = function (message, type, duration) {
-        var log = {
-            message: message,
-            type: type,
+    }
+    static push(message, type, duration) {
+        const log = {
+            message,
+            type,
             duration: duration !== null && duration !== void 0 ? duration : 0,
         };
         this.logs.push(log);
-    };
-    Debug.logs = [];
-    Debug.lines = [];
-    Debug.logColors = (_a = {},
-        _a[LogType.Info] = 'white',
-        _a[LogType.Warning] = 'orange',
-        _a[LogType.Error] = 'red',
-        _a);
-    return Debug;
-}());
+    }
+}
 exports.Debug = Debug;
+Debug.logs = [];
+Debug.lines = [];
+Debug.logColors = {
+    [LogType.Info]: 'white',
+    [LogType.Warning]: 'orange',
+    [LogType.Error]: 'red'
+};
 
-},{"../Component/Camera":5,"../Core/Engine":14,"../Math/TransformTools":29}],42:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":15,"../Math/TransformTools":30}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dictionary = void 0;
-var Dictionary = /** @class */ (function () {
-    function Dictionary() {
+class Dictionary {
+    constructor() {
         // 关键修复：添加索引签名 { [key: string]: any }，允许用 string 类型索引
         this.items = {}; // 直接初始化，避免“未赋值”隐患
         // 无需重复赋值，已在声明时初始化
     }
-    Object.defineProperty(Dictionary.prototype, "count", {
-        get: function () {
-            return Object.keys(this.items).length;
-        },
-        enumerable: false,
-        configurable: true
-    });
+    get count() {
+        return Object.keys(this.items).length;
+    }
     // 键类型统一为 string（更符合对象索引的实际场景）
-    Dictionary.prototype.has = function (key) {
+    has(key) {
         // 推荐用 Object.prototype.hasOwnProperty，避免原型链污染
         return Object.prototype.hasOwnProperty.call(this.items, key);
-    };
-    Dictionary.prototype.set = function (key, val) {
+    }
+    set(key, val) {
         this.items[key] = val; // 现在 TS 能识别 key 是合法索引
-    };
+    }
     // 修复逻辑：删除成功返回 true
-    Dictionary.prototype.delete = function (key) {
+    delete(key) {
         if (this.has(key)) {
             delete this.items[key];
             return true; // 关键修正：删除成功返回 true
         }
         return false;
-    };
-    Dictionary.prototype.get = function (key) {
+    }
+    get(key) {
         return this.has(key) ? this.items[key] : undefined;
-    };
-    Dictionary.prototype.clear = function () {
+    }
+    clear() {
         this.items = {};
-    };
-    Dictionary.prototype.values = function () {
-        var values = [];
-        for (var k in this.items) {
+    }
+    values() {
+        let values = [];
+        for (let k in this.items) {
             if (this.has(k)) {
                 values.push(this.items[k]);
             }
         }
         return values;
-    };
+    }
     // 关键修复：定义 fun 的类型（key 为 string，val 为 any）
-    Dictionary.prototype.forEach = function (fun) {
-        for (var k in this.items) {
+    forEach(fun) {
+        for (let k in this.items) {
             if (this.has(k)) {
                 fun(k, this.items[k]);
             }
         }
-    };
-    return Dictionary;
-}());
+    }
+}
 exports.Dictionary = Dictionary;
 
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
-var Mesh_1 = require("../Renderer/Mesh");
-var Mesh_2 = require("../Renderer/Mesh");
-var Vector2_1 = require("../Math/Vector2");
-var Vector3_1 = require("../Math/Vector3");
-var Vector4_1 = require("../Math/Vector4");
-var Bounds_1 = require("../Math/Bounds");
-var OBJParser = /** @class */ (function () {
-    function OBJParser() {
-    }
+const Mesh_1 = require("../Renderer/Mesh");
+const Mesh_2 = require("../Renderer/Mesh");
+const Vector2_1 = require("../Math/Vector2");
+const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
+const Bounds_1 = require("../Math/Bounds");
+class OBJParser {
     /**
      * 解析OBJ文件内容并生成Mesh对象
      * @param content OBJ文件的文本内容
      * @param scale 模型缩放比例，默认1.0
      * @returns 解析后的Mesh对象
      */
-    OBJParser.parse = function (content, scale) {
-        if (scale === void 0) { scale = 1; }
-        var mesh = new Mesh_1.Mesh();
+    static parse(content, scale = 1) {
+        const mesh = new Mesh_1.Mesh();
         mesh.vertices = [];
         mesh.uv = [];
         mesh.normals = [];
@@ -22737,25 +22258,25 @@ var OBJParser = /** @class */ (function () {
         mesh.subMeshes = [];
         mesh.material = []; // 初始化材质数组
         // 临时存储OBJ文件中的原始数据（索引从1开始）
-        var tempVertices = [];
-        var tempUvs = [];
-        var tempNormals = [];
+        const tempVertices = [];
+        const tempUvs = [];
+        const tempNormals = [];
         // 顶点索引映射表：用于去重 (格式: "vIndex/vtIndex/vnIndex" => 合并后的索引)
-        var vertexMap = new Map();
+        const vertexMap = new Map();
         // 材质相关变量
-        var currentMaterial = ""; // 当前使用的材质名称
-        var materialSet = new Set(); // 用于收集所有唯一材质
+        let currentMaterial = ""; // 当前使用的材质名称
+        const materialSet = new Set(); // 用于收集所有唯一材质
         // 按行分割内容并处理
-        var lines = content.split(/\r?\n/);
-        var currentSubMesh = null;
-        var _loop_1 = function (line) {
-            var trimmedLine = line.trim();
+        const lines = content.split(/\r?\n/);
+        let currentSubMesh = null;
+        for (const line of lines) {
+            const trimmedLine = line.trim();
             if (!trimmedLine || trimmedLine.startsWith('#')) {
-                return "continue";
+                continue; // 跳过空行和注释
             }
-            var parts = trimmedLine.split(/\s+/);
-            var type = parts[0];
-            var data = parts.slice(1);
+            const parts = trimmedLine.split(/\s+/);
+            const type = parts[0];
+            const data = parts.slice(1);
             switch (type) {
                 case 'v': // 顶点坐标 (x, y, z) - 应用缩放
                     if (data.length >= 3) {
@@ -22817,8 +22338,8 @@ var OBJParser = /** @class */ (function () {
                         mesh.subMeshes.push(currentSubMesh);
                     }
                     // 处理面的顶点数据
-                    var faceVertices_1 = data.map(function (vertexStr) {
-                        var indices = vertexStr.split('/').map(function (idx) { return parseInt(idx) || 0; });
+                    const faceVertices = data.map(vertexStr => {
+                        const indices = vertexStr.split('/').map(idx => parseInt(idx) || 0);
                         return {
                             v: indices[0] - 1, // 转换为0基索引
                             vt: indices[1] - 1,
@@ -22826,18 +22347,18 @@ var OBJParser = /** @class */ (function () {
                         };
                     });
                     // 处理三角形化和顶点去重
-                    for (var i = 2; i < faceVertices_1.length; i++) {
-                        [0, i - 1, i].forEach(function (idx) {
-                            var _a = faceVertices_1[idx], v = _a.v, vt = _a.vt, vn = _a.vn;
+                    for (let i = 2; i < faceVertices.length; i++) {
+                        [0, i - 1, i].forEach(idx => {
+                            const { v, vt, vn } = faceVertices[idx];
                             // 创建唯一标识键 (处理可能的负数索引和默认值)
-                            var key = "".concat(v >= 0 ? v : -1, "/").concat(vt >= 0 ? vt : -1, "/").concat(vn >= 0 ? vn : -1);
+                            const key = `${v >= 0 ? v : -1}/${vt >= 0 ? vt : -1}/${vn >= 0 ? vn : -1}`;
                             if (vertexMap.has(key)) {
                                 // 复用已存在的顶点索引
                                 mesh.triangles.push(vertexMap.get(key));
                             }
                             else {
                                 // 添加新顶点数据
-                                var newIndex = mesh.vertices.length;
+                                const newIndex = mesh.vertices.length;
                                 vertexMap.set(key, newIndex);
                                 // 顶点数据
                                 mesh.vertices.push(v >= 0 && v < tempVertices.length ? tempVertices[v] : new Vector3_1.Vector3(0, 0, 0));
@@ -22854,17 +22375,13 @@ var OBJParser = /** @class */ (function () {
                     }
                     break;
             }
-        };
-        for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
-            var line = lines_1[_i];
-            _loop_1(line);
         }
         // 更新子网格信息
-        mesh.subMeshes.forEach(function (subMesh) {
+        mesh.subMeshes.forEach(subMesh => {
             subMesh.vertexCount = mesh.vertices.length - subMesh.firstVertex;
             subMesh.indexCount = mesh.triangles.length - subMesh.indexStart;
             // 计算子网格包围盒
-            var subVertices = mesh.vertices.slice(subMesh.firstVertex, subMesh.firstVertex + subMesh.vertexCount);
+            const subVertices = mesh.vertices.slice(subMesh.firstVertex, subMesh.firstVertex + subMesh.vertexCount);
             subMesh.bounds = Bounds_1.Bounds.fromPoints(subVertices);
         });
         // 收集所有材质到mesh.material数组
@@ -22872,74 +22389,74 @@ var OBJParser = /** @class */ (function () {
         // 计算切线向量
         this.calculateTangents(mesh);
         // 计算整体包围盒
-        mesh.bounds = mesh.subMeshes.map(function (sm) { return sm.bounds; });
+        mesh.bounds = mesh.subMeshes.map(sm => sm.bounds);
         // 计算三角面的法向量
         this.calculateFaceNormals(mesh);
         if (!mesh.checkValid()) {
             console.error("Mesh check valid faild.");
         }
         return mesh;
-    };
-    OBJParser.calculateFaceNormals = function (mesh) {
+    }
+    static calculateFaceNormals(mesh) {
         if (mesh.vertices.length === 0 || mesh.triangles.length === 0)
             return;
         mesh.faceNormals = [];
         mesh.faceCenters = [];
-        for (var i = 0; i < mesh.triangles.length; i += 3) {
-            var i0 = mesh.triangles[i];
-            var i1 = mesh.triangles[i + 1];
-            var i2 = mesh.triangles[i + 2];
-            var v0 = mesh.vertices[i0];
-            var v1 = mesh.vertices[i1];
-            var v2 = mesh.vertices[i2];
-            var e1 = Vector3_1.Vector3.subtract(v1, v0);
-            var e2 = Vector3_1.Vector3.subtract(v2, v0);
-            var faceNormal = Vector3_1.Vector3.cross(e1, e2).normalize();
+        for (let i = 0; i < mesh.triangles.length; i += 3) {
+            const i0 = mesh.triangles[i];
+            const i1 = mesh.triangles[i + 1];
+            const i2 = mesh.triangles[i + 2];
+            const v0 = mesh.vertices[i0];
+            const v1 = mesh.vertices[i1];
+            const v2 = mesh.vertices[i2];
+            const e1 = Vector3_1.Vector3.subtract(v1, v0);
+            const e2 = Vector3_1.Vector3.subtract(v2, v0);
+            const faceNormal = Vector3_1.Vector3.cross(e1, e2).normalize();
             mesh.faceNormals.push(faceNormal);
-            var center = Vector3_1.Vector3.add(v0, v1).add(v2).divide(3);
+            const center = Vector3_1.Vector3.add(v0, v1).add(v2).divide(3);
             mesh.faceCenters.push(center);
         }
-    };
+    }
     /**
      * 计算网格的切线向量
      * 基于顶点位置、UV和三角形索引计算
      */
-    OBJParser.calculateTangents = function (mesh) {
+    static calculateTangents(mesh) {
         if (mesh.vertices.length === 0 || mesh.triangles.length === 0)
             return;
         // 临时数组存储每个顶点的切线计算数据
-        var tan1 = new Array(mesh.vertices.length).fill(0).map(function () { return new Vector3_1.Vector3(0, 0, 0); });
-        var tan2 = new Array(mesh.vertices.length).fill(0).map(function () { return new Vector3_1.Vector3(0, 0, 0); });
+        const tan1 = new Array(mesh.vertices.length).fill(0).map(() => new Vector3_1.Vector3(0, 0, 0));
+        const tan2 = new Array(mesh.vertices.length).fill(0).map(() => new Vector3_1.Vector3(0, 0, 0));
         // 遍历所有三角形
-        for (var i = 0; i < mesh.triangles.length; i += 3) {
-            var i0 = mesh.triangles[i];
-            var i1 = mesh.triangles[i + 1];
-            var i2 = mesh.triangles[i + 2];
+        for (let i = 0; i < mesh.triangles.length; i += 3) {
+            const i0 = mesh.triangles[i];
+            const i1 = mesh.triangles[i + 1];
+            const i2 = mesh.triangles[i + 2];
             // 获取三角形的三个顶点
-            var v0 = mesh.vertices[i0];
-            var v1 = mesh.vertices[i1];
-            var v2 = mesh.vertices[i2];
+            const v0 = mesh.vertices[i0];
+            const v1 = mesh.vertices[i1];
+            const v2 = mesh.vertices[i2];
             // 获取对应的UV坐标
-            var w0 = mesh.uv[i0];
-            var w1 = mesh.uv[i1];
-            var w2 = mesh.uv[i2];
+            const w0 = mesh.uv[i0];
+            const w1 = mesh.uv[i1];
+            const w2 = mesh.uv[i2];
             // 计算边向量
-            var x1 = v1.x - v0.x;
-            var y1 = v1.y - v0.y;
-            var z1 = v1.z - v0.z;
-            var x2 = v2.x - v0.x;
-            var y2 = v2.y - v0.y;
-            var z2 = v2.z - v0.z;
+            const x1 = v1.x - v0.x;
+            const y1 = v1.y - v0.y;
+            const z1 = v1.z - v0.z;
+            const x2 = v2.x - v0.x;
+            const y2 = v2.y - v0.y;
+            const z2 = v2.z - v0.z;
             // 计算UV差值
-            var s1 = w1.x - w0.x;
-            var t1 = w1.y - w0.y;
-            var s2 = w2.x - w0.x;
-            var t2 = w2.y - w0.y;
+            const s1 = w1.x - w0.x;
+            const t1 = w1.y - w0.y;
+            const s2 = w2.x - w0.x;
+            const t2 = w2.y - w0.y;
             // 计算切线向量
-            var r = 1.0 / (s1 * t2 - s2 * t1);
-            var tx = (t2 * x1 - t1 * x2) * r;
-            var ty = (t2 * y1 - t1 * y2) * r;
-            var tz = (t2 * z1 - t1 * z2) * r;
+            const r = 1.0 / (s1 * t2 - s2 * t1);
+            const tx = (t2 * x1 - t1 * x2) * r;
+            const ty = (t2 * y1 - t1 * y2) * r;
+            const tz = (t2 * z1 - t1 * z2) * r;
             // 累加切线数据
             tan1[i0].x += tx;
             tan1[i0].y += ty;
@@ -22951,9 +22468,9 @@ var OBJParser = /** @class */ (function () {
             tan1[i2].y += ty;
             tan1[i2].z += tz;
             // 计算副切线向量
-            var bx = (s1 * x2 - s2 * x1) * r;
-            var by = (s1 * y2 - s2 * y1) * r;
-            var bz = (s1 * z2 - s2 * z1) * r;
+            const bx = (s1 * x2 - s2 * x1) * r;
+            const by = (s1 * y2 - s2 * y1) * r;
+            const bz = (s1 * z2 - s2 * z1) * r;
             tan2[i0].x += bx;
             tan2[i0].y += by;
             tan2[i0].z += bz;
@@ -22965,27 +22482,26 @@ var OBJParser = /** @class */ (function () {
             tan2[i2].z += bz;
         }
         // 计算最终切线并规范化
-        for (var i = 0; i < mesh.vertices.length; i++) {
-            var n = mesh.normals[i];
-            var t = tan1[i];
+        for (let i = 0; i < mesh.vertices.length; i++) {
+            const n = mesh.normals[i];
+            const t = tan1[i];
             // 正交化切线（Gram-Schmidt过程）
-            var tangent = Vector3_1.Vector3.subtract(t, Vector3_1.Vector3.multiply(n, Vector3_1.Vector3.dot(n, t))).normalize();
+            const tangent = Vector3_1.Vector3.subtract(t, Vector3_1.Vector3.multiply(n, Vector3_1.Vector3.dot(n, t))).normalize();
             // 计算切线方向（ handedness ）
-            var handedness = Vector3_1.Vector3.dot(Vector3_1.Vector3.cross(n, t), tan2[i]) < 0.0 ? -1 : 1;
+            const handedness = Vector3_1.Vector3.dot(Vector3_1.Vector3.cross(n, t), tan2[i]) < 0.0 ? -1 : 1;
             // 存储切线（w分量表示方向）
             mesh.tangents[i] = new Vector4_1.Vector4(tangent.x, tangent.y, tangent.z, handedness);
         }
-    };
-    return OBJParser;
-}());
+    }
+}
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":23,"../Math/Vector2":30,"../Math/Vector3":31,"../Math/Vector4":32,"../Renderer/Mesh":35}],44:[function(require,module,exports){
+},{"../Math/Bounds":24,"../Math/Vector2":31,"../Math/Vector3":32,"../Math/Vector4":33,"../Renderer/Mesh":37}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var Engine_1 = require("./Core/Engine");
+const Engine_1 = require("./Core/Engine");
 // 当DOM内容加载完成后执行
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     // 初始化引擎
     Engine_1.Engine.Init();
     // 主循环
@@ -22998,6 +22514,6 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":14}]},{},[44])
+},{"./Core/Engine":15}]},{},[46])
 
 //# sourceMappingURL=bundle.js.map
