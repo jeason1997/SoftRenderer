@@ -7,7 +7,7 @@ import { MeshRenderer } from "../Component/MeshRenderer";
 import { Camera, CameraClearFlags } from "../Component/Camera";
 import { Engine } from "../Core/Engine";
 import { EngineConfig } from "../Core/Setting";
-import { Mesh } from "./Mesh";
+import { Mesh } from "../Resources/Mesh";
 import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
 import { interpolateOverTriangle } from "../Math/Lerp"
@@ -611,7 +611,7 @@ export class RasterizationPipeline {
         // this.DrawOverdraw();
 
         // 绘制物理调试信息
-        PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
+        // PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
 
         // 绘制调试线
         const lines = Debug.GetDebugLines();

@@ -17586,7 +17586,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":34,"../Renderer/RasterizationPipeline":38,"../Scene/MainScene":39,"../Scene/SceneManager":41,"../Utils/Debug":43,"./Input":17,"./Setting":18,"./Time":19,"./TweenManager":21}],16:[function(require,module,exports){
+},{"../Physics/Physics":34,"../Renderer/RasterizationPipeline":36,"../Scene/MainScene":40,"../Scene/SceneManager":42,"../Utils/Debug":43,"./Input":17,"./Setting":18,"./Time":19,"./TweenManager":21}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -20750,257 +20750,7 @@ class Physics {
 }
 exports.Physics = Physics;
 
-},{"../Component/BoxCollider":4,"../Component/SphereCollider":13,"../Core/Time":19,"../Math/Quaternion":28,"../Math/Vector3":32,"./RaycastHit":36,"cannon":2}],35:[function(require,module,exports){
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PhysicsDebugDraw = void 0;
-const CANNON = __importStar(require("cannon"));
-const Color_1 = require("../Math/Color");
-const Camera_1 = require("../Component/Camera");
-const TransformTools_1 = require("../Math/TransformTools");
-const Vector3_1 = require("../Math/Vector3");
-const Quaternion_1 = require("../Math/Quaternion");
-const Engine_1 = require("../Core/Engine");
-class PhysicsDebugDraw {
-    static setColor(body) {
-        let color = Color_1.Color.FromUint32(Color_1.Color.GRAY);
-        // 根据物体类型设置基础颜色
-        if (body.type === CANNON.Body.DYNAMIC) {
-            // 动态物体 - 红色系
-            color = Color_1.Color.FromUint32(Color_1.Color.RED);
-        }
-        else if (body.type === CANNON.Body.STATIC) {
-            // 静态物体 - 绿色系
-            color = Color_1.Color.FromUint32(Color_1.Color.GREEN);
-        }
-        else if (body.type === CANNON.Body.KINEMATIC) {
-            // 运动学物体 - 蓝色系
-            color = Color_1.Color.FromUint32(Color_1.Color.BLUE);
-        }
-        // 根据睡眠状态调整颜色
-        if (body.sleepState === CANNON.Body.AWAKE) {
-            // 清醒状态 - 原色
-        }
-        else if (body.sleepState === CANNON.Body.SLEEPY) {
-            // 困倦状态 - 半暗淡
-            color.r *= 0.7;
-            color.g *= 0.7;
-            color.b *= 0.7;
-        }
-        else if (body.sleepState === CANNON.Body.SLEEPING) {
-            // 睡眠状态 - 全暗淡
-            color.r *= 0.4;
-            color.g *= 0.4;
-            color.b *= 0.4;
-        }
-        return color.ToUint32();
-    }
-    // 绘制单个刚体的所有碰撞形状
-    static drawRigidBody(body) {
-        const color = this.setColor(body);
-        body.shapes.forEach((shape, i) => {
-            const offset = body.shapeOffsets[i];
-            const orientation = body.shapeOrientations[i];
-            // 根据形状类型绘制不同的调试线框
-            if (shape instanceof CANNON.Box) {
-                this.drawBox(body, shape, offset, orientation, color);
-            }
-            else if (shape instanceof CANNON.Sphere) {
-                this.drawSphere(body, shape, offset, orientation, color);
-            }
-            else if (shape instanceof CANNON.Plane) {
-                this.drawPlane(body, shape, offset, orientation, color);
-            }
-        });
-    }
-    // 绘制盒子形状
-    static drawBox(body, shape, offset, orientation, color) {
-        // 计算盒子的8个顶点
-        const halfExtents = shape.halfExtents;
-        const vertices = [
-            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, halfExtents.y, halfExtents.z),
-            new CANNON.Vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
-        ];
-        // 应用偏移和旋转，并转换到屏幕空间
-        const screenVertices = vertices.map(v => {
-            // 应用形状自身的旋转
-            const rotated = this.rotateVector(v, orientation);
-            // 应用形状偏移
-            const offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
-            // 应用刚体旋转
-            const bodyRotated = this.rotateVector(offsetApplied, body.quaternion);
-            // 应用刚体位置
-            const worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
-            // 转换到屏幕坐标
-            return this.WorldToScreenPos(worldPos);
-        });
-        // 定义盒子的边
-        const edges = [
-            [0, 1], [1, 2], [2, 3], [3, 0], // 前面
-            [4, 5], [5, 6], [6, 7], [7, 4], // 后面
-            [0, 4], [1, 5], [2, 6], [3, 7] // 连接前后
-        ];
-        // 绘制所有边
-        edges.forEach(([i1, i2]) => {
-            const v1 = screenVertices[i1];
-            const v2 = screenVertices[i2];
-            // 确保转换后的顶点有效
-            if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
-                this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
-            }
-        });
-    }
-    // 绘制球体形状
-    static drawSphere(body, shape, offset, orientation, color) {
-        const radius = shape.radius;
-        const segments = 16; // 球体分段数
-        // 计算球体中心在世界空间中的位置
-        const center = new CANNON.Vec3(offset.x, offset.y, offset.z);
-        const rotatedCenter = this.rotateVector(center, body.quaternion);
-        const worldCenter = new CANNON.Vec3(rotatedCenter.x + body.position.x, rotatedCenter.y + body.position.y, rotatedCenter.z + body.position.z);
-        const screenCenter = this.WorldToScreenPos(worldCenter);
-        if (!screenCenter)
-            return;
-        // 绘制球体的赤道圆
-        for (let i = 0; i < segments; i++) {
-            const angle1 = (i / segments) * Math.PI * 2;
-            const angle2 = ((i + 1) / segments) * Math.PI * 2;
-            // 计算圆上两点
-            const p1 = new CANNON.Vec3(Math.cos(angle1) * radius, 0, Math.sin(angle1) * radius);
-            const p2 = new CANNON.Vec3(Math.cos(angle2) * radius, 0, Math.sin(angle2) * radius);
-            // 应用旋转和位置
-            const rotatedP1 = this.rotateVector(p1, orientation);
-            const rotatedP2 = this.rotateVector(p2, orientation);
-            const offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
-            const offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
-            const bodyP1 = this.rotateVector(offsetP1, body.quaternion);
-            const bodyP2 = this.rotateVector(offsetP2, body.quaternion);
-            const worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
-            const worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
-            // 转换到屏幕坐标
-            const screenP1 = this.WorldToScreenPos(worldP1);
-            const screenP2 = this.WorldToScreenPos(worldP2);
-            if (screenP1 && screenP2) {
-                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
-            }
-        }
-        // 绘制球体的子午线（垂直方向）
-        for (let i = 0; i < segments / 2; i++) {
-            const angle1 = (i / (segments / 2)) * Math.PI;
-            const angle2 = ((i + 1) / (segments / 2)) * Math.PI;
-            const p1 = new CANNON.Vec3(0, Math.cos(angle1) * radius, Math.sin(angle1) * radius);
-            const p2 = new CANNON.Vec3(0, Math.cos(angle2) * radius, Math.sin(angle2) * radius);
-            // 应用旋转和位置（与赤道圆处理相同）
-            const rotatedP1 = this.rotateVector(p1, orientation);
-            const rotatedP2 = this.rotateVector(p2, orientation);
-            const offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
-            const offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
-            const bodyP1 = this.rotateVector(offsetP1, body.quaternion);
-            const bodyP2 = this.rotateVector(offsetP2, body.quaternion);
-            const worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
-            const worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
-            const screenP1 = this.WorldToScreenPos(worldP1);
-            const screenP2 = this.WorldToScreenPos(worldP2);
-            if (screenP1 && screenP2) {
-                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
-            }
-        }
-    }
-    // 绘制平面形状
-    static drawPlane(body, shape, offset, orientation, color) {
-        const size = 5; // 平面可视大小
-        const vertices = [
-            new CANNON.Vec3(-size, 0, -size),
-            new CANNON.Vec3(size, 0, -size),
-            new CANNON.Vec3(size, 0, size),
-            new CANNON.Vec3(-size, 0, size),
-        ];
-        // 应用变换并转换到屏幕坐标
-        const screenVertices = vertices.map(v => {
-            const rotated = this.rotateVector(v, orientation);
-            const offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
-            const bodyRotated = this.rotateVector(offsetApplied, body.quaternion);
-            const worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
-            return this.WorldToScreenPos(worldPos);
-        });
-        // 定义平面的边和对角线
-        const edges = [
-            [0, 1], [1, 2], [2, 3], [3, 0], // 四边形边框
-            [0, 2], [1, 3] // 对角线
-        ];
-        // 绘制所有边
-        edges.forEach(([i1, i2]) => {
-            const v1 = screenVertices[i1];
-            const v2 = screenVertices[i2];
-            if (v1 && v2) {
-                this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
-            }
-        });
-    }
-    // 将3D世界坐标转换为2D屏幕坐标
-    static WorldToScreenPos(pos) {
-        return TransformTools_1.TransformTools.WorldToScreenPos(new Vector3_1.Vector3(pos.x, pos.y, pos.z), Camera_1.Camera.mainCamera).screen;
-    }
-    // 用四元数旋转向量（不依赖内置方法）
-    static rotateVector(v, q) {
-        const v2 = new Vector3_1.Vector3(v.x, v.y, v.z);
-        const q2 = new Quaternion_1.Quaternion(q.x, q.y, q.z, q.w);
-        TransformTools_1.TransformTools.ApplyRotationToVertex(v2, q2);
-        return new CANNON.Vec3(v2.x, v2.y, v2.z);
-    }
-    // 完善的物理调试绘制入口
-    static DrawPhysicsDebug(DrawLine) {
-        // @ts-ignore
-        const world = Engine_1.Engine.physics.world;
-        this.drawLineFunc = DrawLine;
-        // 遍历所有刚体并绘制
-        world.bodies.forEach(body => {
-            this.drawRigidBody(body);
-        });
-    }
-}
-exports.PhysicsDebugDraw = PhysicsDebugDraw;
-
-},{"../Component/Camera":5,"../Core/Engine":15,"../Math/Color":25,"../Math/Quaternion":28,"../Math/TransformTools":30,"../Math/Vector3":32,"cannon":2}],36:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/SphereCollider":13,"../Core/Time":19,"../Math/Quaternion":28,"../Math/Vector3":32,"./RaycastHit":35,"cannon":2}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RaycastHit = void 0;
@@ -21088,60 +20838,7 @@ class RaycastHit {
 }
 exports.RaycastHit = RaycastHit;
 
-},{"../Math/Vector3":32}],37:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Line = exports.SubMesh = exports.Mesh = void 0;
-const Bounds_1 = require("../Math/Bounds");
-class Mesh {
-    constructor() {
-        this.bounds = [];
-        this.material = [];
-        this.triangles = [];
-        this.faceNormals = [];
-        this.vertices = [];
-        this.uv = [];
-        this.normals = [];
-        this.tangents = [];
-        this.subMeshes = [];
-    }
-    // 检查网格是否有效
-    checkValid() {
-        // 检查定点数、uv数、法线数量是否不为零并且相等，同时三角形数量应该是三的倍数
-        return this.vertices.length !== 0
-            && this.vertices.length === this.uv.length
-            && this.vertices.length === this.normals.length
-            && this.triangles.length !== 0
-            && this.triangles.length % 3 === 0
-            && this.faceNormals.length === this.faceCenters.length
-            && this.faceNormals.length * 3 === this.triangles.length;
-    }
-    // 重新计算包围盒
-    recalculateBounds() {
-        //TODO
-    }
-}
-exports.Mesh = Mesh;
-class SubMesh {
-    constructor() {
-        this.vertexCount = 0;
-        this.firstVertex = 0;
-        this.indexCount = 0;
-        this.indexStart = 0;
-        this.bounds = new Bounds_1.Bounds();
-        this.material = "";
-    }
-}
-exports.SubMesh = SubMesh;
-class Line {
-    constructor(start, end) {
-        this.start = start;
-        this.end = end;
-    }
-}
-exports.Line = Line;
-
-},{"../Math/Bounds":24}],38:[function(require,module,exports){
+},{"../Math/Vector3":32}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -21152,7 +20849,6 @@ const Renderer_1 = require("../Component/Renderer");
 const Camera_1 = require("../Component/Camera");
 const Engine_1 = require("../Core/Engine");
 const Setting_1 = require("../Core/Setting");
-const PhysicsDebugDraw_1 = require("../Physics/PhysicsDebugDraw");
 const Lerp_1 = require("../Math/Lerp");
 const TransformTools_1 = require("../Math/TransformTools");
 const Debug_1 = require("../Utils/Debug");
@@ -21645,7 +21341,7 @@ class RasterizationPipeline {
         // 绘制Overdarw
         // this.DrawOverdraw();
         // 绘制物理调试信息
-        PhysicsDebugDraw_1.PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
+        // PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
         // 绘制调试线
         const lines = Debug_1.Debug.GetDebugLines();
         lines.forEach(line => {
@@ -21767,8 +21463,381 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":11,"../Core/Engine":15,"../Core/Setting":18,"../Math/Color":25,"../Math/Lerp":26,"../Math/TransformTools":30,"../Math/Vector3":32,"../Math/Vector4":33,"../Physics/PhysicsDebugDraw":35,"../Utils/Debug":43}],39:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":11,"../Core/Engine":15,"../Core/Setting":18,"../Math/Color":25,"../Math/Lerp":26,"../Math/TransformTools":30,"../Math/Vector3":32,"../Math/Vector4":33,"../Utils/Debug":43}],37:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SubMesh = exports.Mesh = void 0;
+const UObject_1 = require("../Core/UObject");
+const Bounds_1 = require("../Math/Bounds");
+class Mesh extends UObject_1.UObject {
+    constructor() {
+        super();
+        this.bounds = [];
+        this.material = [];
+        this.triangles = [];
+        this.faceNormals = [];
+        this.vertices = [];
+        this.uv = [];
+        this.normals = [];
+        this.tangents = [];
+        this.subMeshes = [];
+    }
+    // 检查网格是否有效
+    checkValid() {
+        // 检查定点数、uv数、法线数量是否不为零并且相等，同时三角形数量应该是三的倍数
+        return this.vertices.length !== 0
+            && this.vertices.length === this.uv.length
+            && this.vertices.length === this.normals.length
+            && this.triangles.length !== 0
+            && this.triangles.length % 3 === 0
+            && this.faceNormals.length === this.faceCenters.length
+            && this.faceNormals.length * 3 === this.triangles.length;
+    }
+    // 重新计算包围盒
+    recalculateBounds() {
+        //TODO
+    }
+    onDestroy() {
+        throw new Error("Method not implemented.");
+    }
+}
+exports.Mesh = Mesh;
+class SubMesh {
+    constructor() {
+        this.vertexCount = 0;
+        this.firstVertex = 0;
+        this.indexCount = 0;
+        this.indexStart = 0;
+        this.bounds = new Bounds_1.Bounds();
+        this.material = "";
+    }
+}
+exports.SubMesh = SubMesh;
+
+},{"../Core/UObject":22,"../Math/Bounds":24}],38:[function(require,module,exports){
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Resources = void 0;
+const ObjParser_1 = require("../Utils/ObjParser");
+const Texture_1 = require("./Texture");
+class Resources {
+    /**
+     * 异步加载资源，模仿Unity的Resources.LoadAsync
+     * @param fileName 资源路径
+     * @returns 包含资源的Promise
+     */
+    static loadAsync(fileName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // 检查缓存
+            if (Resources.fileCache.has(fileName)) {
+                return Promise.resolve(Resources.fileCache.get(fileName));
+            }
+            // 检查是否正在加载，避免重复请求
+            if (Resources.loadingPromises.has(fileName)) {
+                return Resources.loadingPromises.get(fileName);
+            }
+            // 确定资源类型并加载
+            let promise;
+            if (fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+                // 加载纹理
+                promise = Resources.loadTextureAsync(fileName);
+            }
+            else if (fileName.endsWith('.obj')) {
+                // 加载模型
+                promise = Resources.loadModelAsync(fileName);
+            }
+            else if (fileName.endsWith('.txt') || fileName.endsWith('.json') || fileName.endsWith('.xml')) {
+                // 加载文本
+                promise = Resources.loadTextAsync(fileName);
+            }
+            else {
+                console.error(`不支持的资源类型: ${fileName}`);
+                return Promise.resolve(null);
+            }
+            // 存储加载中的Promise
+            Resources.loadingPromises.set(fileName, promise);
+            // 等待加载完成并更新缓存
+            const result = yield promise;
+            if (result) {
+                Resources.fileCache.set(fileName, result);
+            }
+            // 移除加载中标记
+            Resources.loadingPromises.delete(fileName);
+            return result;
+        });
+    }
+    // /**
+    //  * 同步加载资源（仅支持已缓存的资源）
+    //  * @param fileName 资源路径
+    //  * @returns 资源实例或null
+    //  */
+    // public static load<T>(fileName: string): T | null {
+    //     if (Resources.fileCache.has(fileName)) {
+    //         return Resources.fileCache.get(fileName) as T;
+    //     }
+    //     console.warn(`资源 ${fileName} 未缓存，无法同步加载。请先使用loadAsync加载。`);
+    //     return null;
+    // }
+    /**
+     * 卸载未使用的资源，模仿Unity的UnloadUnusedAssets
+     */
+    static unloadUnusedAssets() {
+        // 实际项目中应该有引用计数机制
+        // 这里简化处理，仅清除所有缓存
+        Resources.fileCache.clear();
+        console.log("已卸载所有未使用的资源");
+    }
+    /**
+     * 卸载特定资源
+     * @param fileName 资源路径
+     */
+    static unloadAsset(fileName) {
+        if (Resources.fileCache.has(fileName)) {
+            Resources.fileCache.delete(fileName);
+            console.log(`已卸载资源: ${fileName}`);
+        }
+        if (Resources.loadingPromises.has(fileName)) {
+            Resources.loadingPromises.delete(fileName);
+        }
+    }
+    /**
+     * 加载纹理资源
+     */
+    static loadTextureAsync(fileName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const img = yield Resources.loadImageFile(fileName);
+                // 1. 获取图片原始尺寸
+                const imgWidth = img.width;
+                const imgHeight = img.height;
+                // 2. 创建【临时Canvas】（内存中，不显示到页面）
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                if (!tempCtx) {
+                    console.error('无法创建临时Canvas上下文');
+                    return null;
+                }
+                // 3. 让临时Canvas尺寸与图片原始尺寸完全一致（关键：确保像素无失真）
+                tempCanvas.width = imgWidth;
+                tempCanvas.height = imgHeight;
+                // 4. 仅在临时Canvas上绘制图片，web的图必须先加载到canvas才能读取它的数据
+                tempCtx.drawImage(img, 0, 0, imgWidth, imgHeight); // 0,0是绘制起点，后两个参数是绘制尺寸（与图片一致）
+                // 5. 提取图片的ImageData（此时已获取完整像素数据，无需依赖业务Canvas）
+                const imageData = tempCtx.getImageData(0, 0, imgWidth, imgHeight);
+                const pixelData = imageData.data; // 核心：Uint8ClampedArray类型的像素数组，每个像素占4位（RGBA）
+                const texture = new Texture_1.Texture();
+                texture.width = imgWidth;
+                texture.height = imgHeight;
+                texture.data = pixelData;
+                return texture;
+            }
+            catch (error) {
+                console.error(`加载纹理失败: ${fileName}`, error);
+                return null;
+            }
+        });
+    }
+    /**
+     * 加载图片文件（内部使用）
+     */
+    static loadImageFile(fileName) {
+        return new Promise((resolve, reject) => {
+            if (Resources.fileCache.has(fileName)) {
+                resolve(Resources.fileCache.get(fileName));
+                return;
+            }
+            const image = new Image();
+            if (!image) {
+                reject(new Error('无法创建图片对象'));
+                return;
+            }
+            image.onload = () => {
+                resolve(image);
+            };
+            image.onerror = () => {
+                reject(new Error(`无法加载图片: ${fileName}`));
+            };
+            // 跨域设置
+            image.crossOrigin = "anonymous";
+            image.src = fileName;
+        });
+    }
+    /**
+     * 加载文本文件
+     */
+    static loadTextAsync(fileName) {
+        return new Promise((resolve) => {
+            if (Resources.fileCache.has(fileName)) {
+                resolve(Resources.fileCache.get(fileName));
+                return;
+            }
+            const request = new XMLHttpRequest();
+            request.onreadystatechange = () => {
+                if (request.readyState === 4) {
+                    if (request.status === 200) {
+                        const text = request.responseText;
+                        resolve(text);
+                    }
+                    else {
+                        console.error(`加载文本失败: ${fileName}, 状态码: ${request.status}`);
+                        resolve(null);
+                    }
+                }
+            };
+            // 使用异步加载以避免阻塞
+            request.open("GET", fileName, true);
+            request.send();
+        });
+    }
+    /**
+     * 加载模型文件
+     */
+    static loadModelAsync(modelPath_1) {
+        return __awaiter(this, arguments, void 0, function* (modelPath, scale = 1) {
+            try {
+                const objDoc = yield Resources.loadTextAsync(modelPath);
+                if (!objDoc) {
+                    return null;
+                }
+                const mesh = ObjParser_1.OBJParser.parse(objDoc, scale);
+                return mesh;
+            }
+            catch (error) {
+                console.error(`加载模型失败: ${modelPath}`, error);
+                return null;
+            }
+        });
+    }
+}
+exports.Resources = Resources;
+Resources.fileCache = new Map();
+Resources.loadingPromises = new Map();
+
+},{"../Utils/ObjParser":44,"./Texture":39}],39:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
+const UObject_1 = require("../Core/UObject");
+var FilterMode;
+(function (FilterMode) {
+    FilterMode[FilterMode["Point"] = 0] = "Point";
+    FilterMode[FilterMode["Bilinear"] = 1] = "Bilinear";
+    FilterMode[FilterMode["Trilinear"] = 2] = "Trilinear";
+})(FilterMode || (exports.FilterMode = FilterMode = {}));
+var TextureWrapMode;
+(function (TextureWrapMode) {
+    TextureWrapMode[TextureWrapMode["Repeat"] = 0] = "Repeat";
+    TextureWrapMode[TextureWrapMode["Clamp"] = 1] = "Clamp";
+})(TextureWrapMode || (exports.TextureWrapMode = TextureWrapMode = {}));
+var TextureFormat;
+(function (TextureFormat) {
+    TextureFormat[TextureFormat["Alpha8"] = 1] = "Alpha8";
+    TextureFormat[TextureFormat["ARGB4444"] = 2] = "ARGB4444";
+    TextureFormat[TextureFormat["RGB24"] = 3] = "RGB24";
+    TextureFormat[TextureFormat["RGBA32"] = 4] = "RGBA32";
+    TextureFormat[TextureFormat["ARGB32"] = 5] = "ARGB32";
+    TextureFormat[TextureFormat["RGB565"] = 7] = "RGB565";
+    TextureFormat[TextureFormat["DXT1"] = 10] = "DXT1";
+    TextureFormat[TextureFormat["DXT5"] = 12] = "DXT5";
+    TextureFormat[TextureFormat["RGBA4444"] = 13] = "RGBA4444";
+    TextureFormat[TextureFormat["PVRTC_RGB2"] = 30] = "PVRTC_RGB2";
+    TextureFormat[TextureFormat["PVRTC_RGBA2"] = 31] = "PVRTC_RGBA2";
+    TextureFormat[TextureFormat["PVRTC_RGB4"] = 32] = "PVRTC_RGB4";
+    TextureFormat[TextureFormat["PVRTC_RGBA4"] = 33] = "PVRTC_RGBA4";
+    TextureFormat[TextureFormat["ETC_RGB4"] = 34] = "ETC_RGB4";
+    TextureFormat[TextureFormat["ATC_RGB4"] = 35] = "ATC_RGB4";
+    TextureFormat[TextureFormat["ATC_RGBA8"] = 36] = "ATC_RGBA8";
+    TextureFormat[TextureFormat["BGRA32"] = 37] = "BGRA32";
+    TextureFormat[TextureFormat["ATF_RGB_DXT1"] = 38] = "ATF_RGB_DXT1";
+    TextureFormat[TextureFormat["ATF_RGBA_JPG"] = 39] = "ATF_RGBA_JPG";
+    TextureFormat[TextureFormat["ATF_RGB_JPG"] = 40] = "ATF_RGB_JPG";
+})(TextureFormat || (exports.TextureFormat = TextureFormat = {}));
+class Texture extends UObject_1.UObject {
+    // LoadImage(data: Uint8ClampedArray){
+    //     throw new Error('LoadImage not implemented');
+    // }
+    SetPixel(x, y, color) {
+        const index = (y * this.width + x) * 4;
+        this.data[index] = color & 0xff;
+        this.data[index + 1] = (color >> 8) & 0xff;
+        this.data[index + 2] = (color >> 16) & 0xff;
+        this.data[index + 3] = (color >> 24) & 0xff;
+    }
+    // SetPixels(colors: Color[]){
+    //     for(let i = 0; i < colors.length; i++){
+    //         const color = colors[i];
+    //         const x = i % this.width;
+    //         const y = Math.floor(i / this.width);
+    //         this.SetPixel(x, y, color);
+    //     }
+    // }
+    // SetPixels2(x: number, y: number, blockWidth: number, blockHeight: number, colors: Color[]){
+    //     throw new Error('LoadImage not implemented');
+    // }
+    GetPixel(x, y) {
+        const index = (y * this.width + x) * 4;
+        return this.data[index] | (this.data[index + 1] << 8) | (this.data[index + 2] << 16) | (this.data[index + 3] << 24);
+    }
+    // GetPixels(x: number, y: number, blockWidth: number, blockHeight: number): number[]{
+    //     const colors = new Array<number>(blockWidth * blockHeight);
+    //     for(let i = 0; i < blockWidth * blockHeight; i++){
+    //         const x0 = x + i % blockWidth;
+    //         const y0 = y + Math.floor(i / blockWidth);
+    //         colors[i] = this.GetPixel(x0, y0);
+    //     }
+    //     return colors;
+    // }
+    // GetPixelBilinear(u: number, v: number): Color{
+    //     const x = u * this.width;
+    //     const y = v * this.height;
+    //     const x0 = Math.floor(x);
+    //     const y0 = Math.floor(y);
+    //     const x1 = x0 + 1;
+    //     const y1 = y0 + 1;
+    //     const u0 = x - x0;
+    //     const v0 = y - y0;
+    //     const u1 = 1 - u0;
+    //     const v1 = 1 - v0;
+    //     const c00 = this.GetPixel(x0, y0);
+    //     const c01 = this.GetPixel(x0, y1);
+    //     const c10 = this.GetPixel(x1, y0);
+    //     const c11 = this.GetPixel(x1, y1);
+    //     return new Color(
+    //         c00.r * u1 * v1 + c01.r * u1 * v0 + c10.r * u0 * v1 + c11.r * u0 * v0,  
+    //         c00.g * u1 * v1 + c01.g * u1 * v0 + c10.g * u0 * v1 + c11.g * u0 * v0,  
+    //         c00.b * u1 * v1 + c01.b * u1 * v0 + c10.b * u0 * v1 + c11.b * u0 * v0,  
+    //         c00.a * u1 * v1 + c01.a * u1 * v0 + c10.a * u0 * v1 + c11.a * u0 * v0,  
+    //     );
+    // }
+    // Resize(width: number, height: number){
+    //     throw new Error('LoadImage not implemented');
+    // }
+    onDestroy() {
+        throw new Error("Method not implemented.");
+    }
+}
+exports.Texture = Texture;
+
+},{"../Core/UObject":22}],40:[function(require,module,exports){
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
 const BoxCollider_1 = require("../Component/BoxCollider");
@@ -21781,10 +21850,10 @@ const SphereCollider_1 = require("../Component/SphereCollider");
 const GameObject_1 = require("../Core/GameObject");
 const Quaternion_1 = require("../Math/Quaternion");
 const Vector3_1 = require("../Math/Vector3");
-const AssetLoader_1 = require("../Utils/AssetLoader");
+const Resources_1 = require("../Resources/Resources");
 exports.MainScene = {
     name: "MainScene",
-    initfun: (scene) => {
+    initfun: (scene) => __awaiter(void 0, void 0, void 0, function* () {
         // 相机
         const camera1 = new GameObject_1.GameObject("camera");
         camera1.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(30, 0, 0));
@@ -21814,7 +21883,7 @@ exports.MainScene = {
         //     scene.addGameObject(obj);
         // });
         let p_obj;
-        AssetLoader_1.AssetLoader.loadModel('resources/cube.obj').then((model) => {
+        Resources_1.Resources.loadAsync('resources/cube.obj').then((model) => {
             const obj = new GameObject_1.GameObject("cube");
             obj.transform.position = new Vector3_1.Vector3(0, 1, 0);
             obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
@@ -21827,7 +21896,7 @@ exports.MainScene = {
                 renderer.mesh = model;
             p_obj = obj;
         });
-        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+        Resources_1.Resources.loadAsync('resources/spheres.obj').then((model) => {
             const obj = new GameObject_1.GameObject("spheres");
             obj.transform.position = new Vector3_1.Vector3(0, 1.5, 1.5);
             obj.addComponent(RigidBody_1.Rigidbody);
@@ -21837,7 +21906,7 @@ exports.MainScene = {
                 renderer.mesh = model;
             //obj.transform.setParent(p_obj.transform);
         });
-        AssetLoader_1.AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+        Resources_1.Resources.loadAsync('resources/spheres.obj').then((model) => {
             const obj = new GameObject_1.GameObject("spheres");
             obj.transform.position = new Vector3_1.Vector3(0, 1.5, 0);
             obj.addComponent(RigidBody_1.Rigidbody);
@@ -21847,17 +21916,16 @@ exports.MainScene = {
                 renderer.mesh = model;
             //obj.transform.setParent(p_obj.transform);
         });
-        AssetLoader_1.AssetLoader.loadModel('resources/panel.obj').then((model) => {
-            const obj = new GameObject_1.GameObject("panel");
-            obj.transform.scale = Vector3_1.Vector3.ONE.multiply(1.5);
-            obj.addComponent(BoxCollider_1.BoxCollider);
-            const body = obj.addComponent(RigidBody_1.Rigidbody);
-            if (body)
-                body.isKinematic = true;
-            const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-            if (renderer)
-                renderer.mesh = model;
-        });
+        const model = yield Resources_1.Resources.loadAsync('resources/panel.obj');
+        const obj = new GameObject_1.GameObject("panel");
+        obj.transform.scale = Vector3_1.Vector3.ONE.multiply(1.5);
+        obj.addComponent(BoxCollider_1.BoxCollider);
+        const body = obj.addComponent(RigidBody_1.Rigidbody);
+        if (body)
+            body.isKinematic = true;
+        const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+        if (renderer)
+            renderer.mesh = model;
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");
         //     obj.transform.position = new Vector3(0, 0.5, 0);
@@ -21871,10 +21939,11 @@ exports.MainScene = {
         //     if (renderer) renderer.mesh = model;
         //     obj.addComponent(ObjRotate);
         // });
-    }
+        const texture = yield Resources_1.Resources.loadAsync('resources/male02/orig_02_-_Defaul1noCulling.jpg');
+    })
 };
 
-},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RayTest":10,"../Component/RigidBody":12,"../Component/SphereCollider":13,"../Core/GameObject":16,"../Math/Quaternion":28,"../Math/Vector3":32,"../Utils/AssetLoader":42}],40:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/CameraController":6,"../Component/MeshRenderer":9,"../Component/RayTest":10,"../Component/RigidBody":12,"../Component/SphereCollider":13,"../Core/GameObject":16,"../Math/Quaternion":28,"../Math/Vector3":32,"../Resources/Resources":38}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -21981,7 +22050,7 @@ class Scene {
 }
 exports.Scene = Scene;
 
-},{"../Component/Renderer":11,"../Core/GameObject":16,"../Math/BVHTree":23,"../Math/TransformTools":30,"../Math/Vector2":31}],41:[function(require,module,exports){
+},{"../Component/Renderer":11,"../Core/GameObject":16,"../Math/BVHTree":23,"../Math/TransformTools":30,"../Math/Vector2":31}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -22030,84 +22099,7 @@ class SceneManager {
 }
 exports.SceneManager = SceneManager;
 
-},{"./Scene":40}],42:[function(require,module,exports){
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssetLoader = void 0;
-const Dictionary_1 = require("./Dictionary");
-const ObjParser_1 = require("./ObjParser");
-class AssetLoader {
-    static loadImageFile(fileName) {
-        return new Promise((resolve) => {
-            if (AssetLoader.fileCache.has(fileName)) {
-                resolve(AssetLoader.fileCache.get(fileName));
-            }
-            else {
-                var image = new Image();
-                if (!image) {
-                    console.error('Failed to create the image object');
-                    return;
-                }
-                // Register the event handler to be called on loading an image
-                image.onload = function () {
-                    AssetLoader.fileCache.set(fileName, image);
-                    resolve(image);
-                };
-                // 跨区请求
-                image.crossOrigin = "";
-                // Tell the browser to load an image
-                image.src = fileName;
-            }
-        });
-    }
-    static loadTextFile(fileName) {
-        return new Promise(function (resolve) {
-            if (AssetLoader.fileCache.has(fileName)) {
-                resolve(AssetLoader.fileCache.get(fileName));
-            }
-            else {
-                var request = new XMLHttpRequest();
-                request.onreadystatechange = function () {
-                    if (request.readyState === 4) {
-                        if (request.status === 200) {
-                            AssetLoader.fileCache.set(fileName, request.responseText);
-                            resolve(request.responseText);
-                        }
-                        else {
-                            resolve("");
-                        }
-                    }
-                };
-                //这里不要开启异步，设置为false，否则容易卡在readyState = 1，原因不明
-                request.open("GET", fileName, false);
-                request.send();
-            }
-        });
-    }
-    static loadModel(modelPath_1) {
-        return __awaiter(this, arguments, void 0, function* (modelPath, scale = 1) {
-            let model = null;
-            var objDoc = yield AssetLoader.loadTextFile(modelPath);
-            if (objDoc != null) {
-                model = ObjParser_1.OBJParser.parse(objDoc, scale);
-            }
-            return model;
-        });
-    }
-}
-exports.AssetLoader = AssetLoader;
-AssetLoader.fileCache = new Dictionary_1.Dictionary();
-
-},{"./Dictionary":44,"./ObjParser":45}],43:[function(require,module,exports){
+},{"./Scene":41}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
@@ -22178,64 +22170,9 @@ Debug.logColors = {
 },{"../Component/Camera":5,"../Core/Engine":15,"../Math/TransformTools":30}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Dictionary = void 0;
-class Dictionary {
-    constructor() {
-        // 关键修复：添加索引签名 { [key: string]: any }，允许用 string 类型索引
-        this.items = {}; // 直接初始化，避免“未赋值”隐患
-        // 无需重复赋值，已在声明时初始化
-    }
-    get count() {
-        return Object.keys(this.items).length;
-    }
-    // 键类型统一为 string（更符合对象索引的实际场景）
-    has(key) {
-        // 推荐用 Object.prototype.hasOwnProperty，避免原型链污染
-        return Object.prototype.hasOwnProperty.call(this.items, key);
-    }
-    set(key, val) {
-        this.items[key] = val; // 现在 TS 能识别 key 是合法索引
-    }
-    // 修复逻辑：删除成功返回 true
-    delete(key) {
-        if (this.has(key)) {
-            delete this.items[key];
-            return true; // 关键修正：删除成功返回 true
-        }
-        return false;
-    }
-    get(key) {
-        return this.has(key) ? this.items[key] : undefined;
-    }
-    clear() {
-        this.items = {};
-    }
-    values() {
-        let values = [];
-        for (let k in this.items) {
-            if (this.has(k)) {
-                values.push(this.items[k]);
-            }
-        }
-        return values;
-    }
-    // 关键修复：定义 fun 的类型（key 为 string，val 为 any）
-    forEach(fun) {
-        for (let k in this.items) {
-            if (this.has(k)) {
-                fun(k, this.items[k]);
-            }
-        }
-    }
-}
-exports.Dictionary = Dictionary;
-
-},{}],45:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
-const Mesh_1 = require("../Renderer/Mesh");
-const Mesh_2 = require("../Renderer/Mesh");
+const Mesh_1 = require("../Resources/Mesh");
+const Mesh_2 = require("../Resources/Mesh");
 const Vector2_1 = require("../Math/Vector2");
 const Vector3_1 = require("../Math/Vector3");
 const Vector4_1 = require("../Math/Vector4");
@@ -22496,7 +22433,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":24,"../Math/Vector2":31,"../Math/Vector3":32,"../Math/Vector4":33,"../Renderer/Mesh":37}],46:[function(require,module,exports){
+},{"../Math/Bounds":24,"../Math/Vector2":31,"../Math/Vector3":32,"../Math/Vector4":33,"../Resources/Mesh":37}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Engine_1 = require("./Core/Engine");
@@ -22514,6 +22451,6 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":15}]},{},[46])
+},{"./Core/Engine":15}]},{},[45])
 
 //# sourceMappingURL=bundle.js.map

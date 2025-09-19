@@ -1,9 +1,10 @@
+import { UObject } from "../Core/UObject";
 import { Bounds } from "../Math/Bounds";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
 
-export class Mesh {
+export class Mesh extends UObject {
     public bounds: Bounds[];                       // 包围盒
     public material: string[];                     // 材质
     public triangles: number[];                    // 三角形
@@ -16,6 +17,7 @@ export class Mesh {
     public subMeshes: SubMesh[];                   // 子网格
 
     public constructor() {
+        super();
         this.bounds = [];
         this.material = [];
         this.triangles = [];
@@ -43,6 +45,10 @@ export class Mesh {
     public recalculateBounds() {
         //TODO
     }
+
+    public onDestroy(): void {
+        throw new Error("Method not implemented.");
+    }
 }
 
 export class SubMesh {
@@ -60,15 +66,5 @@ export class SubMesh {
         this.indexStart = 0;
         this.bounds = new Bounds();
         this.material = "";
-    }
-}
-
-export class Line {
-    public start: Vector3;
-    public end: Vector3;
-
-    public constructor(start: Vector3, end: Vector3) {
-        this.start = start;
-        this.end = end;
     }
 }

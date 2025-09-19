@@ -6,17 +6,20 @@ import { ObjRotate } from "../Component/ObjRotate";
 import { RayTest } from "../Component/RayTest";
 import { Rigidbody } from "../Component/RigidBody";
 import { SphereCollider } from "../Component/SphereCollider";
+import { Engine } from "../Core/Engine";
 import { GameObject } from "../Core/GameObject";
 import { Color } from "../Math/Color";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { AssetLoader } from "../Utils/AssetLoader";
+import { Mesh } from "../Resources/Mesh";
+import { Resources } from "../Resources/Resources";
+import { Texture } from "../Resources/Texture";
 import { Scene } from "./Scene";
 
 export const MainScene = {
     name: "MainScene",
-    initfun: (scene: Scene) => {
+    initfun: async (scene: Scene) => {
         // 相机
         const camera1 = new GameObject("camera");
         camera1.transform.rotation = new Quaternion(new Vector3(30, 0, 0));
@@ -50,7 +53,7 @@ export const MainScene = {
 
         let p_obj: GameObject;
 
-        AssetLoader.loadModel('resources/cube.obj').then((model) => {
+        Resources.loadAsync<Mesh>('resources/cube.obj').then((model) => {
             const obj = new GameObject("cube");
             obj.transform.position = new Vector3(0, 1, 0);
             obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
@@ -63,7 +66,7 @@ export const MainScene = {
             p_obj = obj;
         });
 
-        AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+        Resources.loadAsync<Mesh>('resources/spheres.obj').then((model) => {
             const obj = new GameObject("spheres");
             obj.transform.position = new Vector3(0, 1.5, 1.5);
             obj.addComponent(Rigidbody);
@@ -73,7 +76,7 @@ export const MainScene = {
             //obj.transform.setParent(p_obj.transform);
         });
 
-         AssetLoader.loadModel('resources/spheres.obj').then((model) => {
+        Resources.loadAsync<Mesh>('resources/spheres.obj').then((model) => {
             const obj = new GameObject("spheres");
             obj.transform.position = new Vector3(0, 1.5, 0);
             obj.addComponent(Rigidbody);
@@ -83,15 +86,14 @@ export const MainScene = {
             //obj.transform.setParent(p_obj.transform);
         });
 
-        AssetLoader.loadModel('resources/panel.obj').then((model) => {
-            const obj = new GameObject("panel");
-            obj.transform.scale = Vector3.ONE.multiply(1.5);
-            obj.addComponent(BoxCollider);
-            const body = obj.addComponent(Rigidbody);
-            if (body) body.isKinematic = true;
-            const renderer = obj.addComponent(MeshRenderer);
-            if (renderer) renderer.mesh = model;
-        });
+        const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
+        const obj = new GameObject("panel");
+        obj.transform.scale = Vector3.ONE.multiply(1.5);
+        obj.addComponent(BoxCollider);
+        const body = obj.addComponent(Rigidbody);
+        if (body) body.isKinematic = true;
+        const renderer = obj.addComponent(MeshRenderer);
+        if (renderer) renderer.mesh = model;
 
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");
@@ -107,5 +109,7 @@ export const MainScene = {
         //     if (renderer) renderer.mesh = model;
         //     obj.addComponent(ObjRotate);
         // });
+
+        const texture = await Resources.loadAsync<Texture>('resources/male02/orig_02_-_Defaul1noCulling.jpg');
     }
 }

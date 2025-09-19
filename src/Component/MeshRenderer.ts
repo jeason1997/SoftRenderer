@@ -1,5 +1,5 @@
 import { Renderer } from "./Renderer";
-import { Mesh } from "../Renderer/Mesh";
+import { Mesh } from "../Resources/Mesh";
 
 export class MeshRenderer extends Renderer {
     public mesh: Mesh | null = null;
