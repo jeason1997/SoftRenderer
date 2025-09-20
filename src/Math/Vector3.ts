@@ -35,40 +35,24 @@ export class Vector3 {
      OPERATIONS ON VECTOR
      */
 
-    public add(v: Vector3): Vector3;
-    public add(x: number, y: number, z: number): Vector3;
-    add() {
-        if (arguments[0] instanceof Vector3) {
-            this.x += arguments[0].x;
-            this.y += arguments[0].y;
-            this.z += arguments[0].z;
-        } else {
-            this.x += arguments[0];
-            this.y += arguments[1];
-            this.z += arguments[2];
-        }
+    public add(v: Vector3): Vector3 {
+        this.x += v.x;
+        this.y += v.y;
+        this.z += v.z;
         return this;
     }
 
-    public subtract(v: Vector3): Vector3;
-    public subtract(x: number, y: number, z: number): Vector3;
-    subtract() {
-        if (arguments[0] instanceof Vector3) {
-            this.x -= arguments[0].x;
-            this.y -= arguments[0].y;
-            this.z -= arguments[0].z;
-        } else {
-            this.x -= arguments[0];
-            this.y -= arguments[1];
-            this.z -= arguments[2];
-        }
+    public subtract(v: Vector3): Vector3 {
+        this.x -= v.x;
+        this.y -= v.y;
+        this.z -= v.z;
         return this;
     }
 
-    public multiply(d: number): Vector3 {
-        this.x *= d;
-        this.y *= d;
-        this.z *= d;
+    public multiply(v: Vector3): Vector3 {
+        this.x *= v.x;
+        this.y *= v.y;
+        this.z *= v.z;
         return this;
     }
 
@@ -79,23 +63,21 @@ export class Vector3 {
         return this;
     }
 
-    public scale(v: Vector3): Vector3 {
-        this.x *= v.x;
-        this.y *= v.y;
-        this.z *= v.z;
+    public multiplyScalar(s: number): Vector3 {
+        this.x *= s;
+        this.y *= s;
+        this.z *= s;
         return this;
     }
 
     public negate(): Vector3 {
-        return this.multiply(-1);
+        return this.multiplyScalar(-1);
     }
 
     public normalize(): Vector3 {
         var length = this.magnitude;
-
         if (length === 0)
             return new Vector3();
-
         return this.divide(length);
     }
 
@@ -165,24 +147,32 @@ export class Vector3 {
      STATIC FUNCTIONS
      */
 
-    public static lerp(v1: Vector3, v2: Vector3, t: number): Vector3 {
-        var v = new Vector3();
-        v.x = v1.x + t * (v2.x - v1.x);
-        v.y = v1.y + t * (v2.y - v1.y);
-        v.z = v1.z + t * (v2.z - v1.z);
-        return v;
-    }
-
-    public static multiply(v: Vector3, s: number): Vector3 {
-        return new Vector3(v.x * s, v.y * s, v.z * s);
-    }
-
     public static add(v1: Vector3, v2: Vector3): Vector3 {
         return new Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
     }
 
     public static subtract(v1: Vector3, v2: Vector3): Vector3 {
         return new Vector3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+    }
+
+    public static multiply(v1: Vector3, v2: Vector3): Vector3 {
+        return new Vector3(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+    }
+
+    public static divide(v1: Vector3, v2: Vector3): Vector3 {
+        return new Vector3(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
+    }
+
+    public static multiplyScalar(v1: Vector3, s: number): Vector3 {
+        return new Vector3(v1.x * s, v1.y * s, v1.z * s);
+    }
+
+    public static lerp(v1: Vector3, v2: Vector3, t: number): Vector3 {
+        var v = new Vector3();
+        v.x = v1.x + t * (v2.x - v1.x);
+        v.y = v1.y + t * (v2.y - v1.y);
+        v.z = v1.z + t * (v2.z - v1.z);
+        return v;
     }
 
     public static dot(v1: Vector3, v2: Vector3): number {

@@ -13,7 +13,7 @@ import { Color } from "../Math/Color";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { Material } from "../Renderer/Material";
+import { Material } from "../Resources/Material";
 import { Mesh } from "../Resources/Mesh";
 import { Resources } from "../Resources/Resources";
 import { Texture } from "../Resources/Texture";
@@ -24,8 +24,8 @@ export const MainScene = {
     initfun: async (scene: Scene) => {
         // 相机
         const cameraGo = new GameObject("camera");
-        cameraGo.transform.rotation = new Quaternion(new Vector3(180, 0, 0));
-        cameraGo.transform.position = new Vector3(0, 0, 5);
+        cameraGo.transform.rotation = new Quaternion(new Vector3(0, 0, 0));
+        cameraGo.transform.position = new Vector3(0, 0, -5);
         const camera = cameraGo.addComponent(Camera);
         cameraGo.addComponent(CameraController);
         cameraGo.addComponent(RayTest);
@@ -36,7 +36,7 @@ export const MainScene = {
 
         // 灯
         const lightGo = new GameObject("light");
-        lightGo.transform.rotation = new Quaternion(new Vector3(0, 0, 0));
+        lightGo.transform.rotation = new Quaternion(new Vector3(-45, 180, 0));
         const light = lightGo.addComponent(Light);
         if (light) {
             Light.sunLight = light;
@@ -61,17 +61,21 @@ export const MainScene = {
         //     scene.addGameObject(obj);
         // });
 
-        // Resources.loadAsync<Mesh>('resources/cube.obj').then(async (model) => {
-        //     const obj = new GameObject("cube");
-        //     obj.transform.position = new Vector3(0, 1, 0);
-        //     obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
-        //     obj.transform.scale = Vector3.ONE.multiply(0.5);
-        //     obj.addComponent(Rigidbody);
-        //     obj.addComponent(BoxCollider);
-        //     //obj.addComponent(ObjRotate);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) renderer.mesh = model;
-        // });
+        Resources.loadAsync<Mesh>('resources/cube.obj').then(async (model) => {
+            const obj = new GameObject("cube");
+            obj.transform.position = new Vector3(0, 1, 0);
+            obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
+            obj.transform.scale = Vector3.ONE.multiplyScalar(0.5);
+            // obj.addComponent(Rigidbody);
+            // obj.addComponent(BoxCollider);
+            obj.addComponent(ObjRotate);
+            const renderer = obj.addComponent(MeshRenderer);
+            if (renderer) {
+                renderer.mesh = model;
+                const mat = renderer.material = new Material("cube");
+                mat.mainTexture = Texture.CheckerboardTexture();
+            }
+        });
 
         // Resources.loadAsync<Mesh>('resources/spheres.obj').then((model) => {
         //     const obj = new GameObject("spheres");
@@ -83,20 +87,20 @@ export const MainScene = {
         //     //obj.transform.setParent(p_obj.transform);
         // });
 
-        const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
-        const obj = new GameObject("panel");
-        obj.transform.scale = Vector3.ONE.multiply(1);
-        obj.transform.rotation = Quaternion.angleAxis(90, Vector3.RIGHT);
-        obj.addComponent(ObjRotate);
-        // obj.addComponent(BoxCollider);
-        // const body = obj.addComponent(Rigidbody);
-        // if (body) body.isKinematic = true;
-        const renderer = obj.addComponent(MeshRenderer);
-        if (renderer) {
-            renderer.mesh = model;
-            const mat = renderer.material = new Material("panel");
-            mat.mainTexture = await Resources.loadAsync<Texture>('resources/male02/orig_02_-_Defaul1noCulling.jpg');
-        }
+        // const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
+        // const obj = new GameObject("panel");
+        // obj.transform.scale = Vector3.ONE.multiply(1);
+        // obj.transform.rotation = Quaternion.angleAxis(90, Vector3.RIGHT);
+        // obj.addComponent(ObjRotate);
+        // // obj.addComponent(BoxCollider);
+        // // const body = obj.addComponent(Rigidbody);
+        // // if (body) body.isKinematic = true;
+        // const renderer = obj.addComponent(MeshRenderer);
+        // if (renderer) {
+        //     renderer.mesh = model;
+        //     const mat = renderer.material = new Material("panel");
+        //     mat.mainTexture = await Resources.loadAsync<Texture>('resources/male02/orig_02_-_Defaul1noCulling.jpg');
+        // }
 
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");

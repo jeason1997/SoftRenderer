@@ -617,4 +617,36 @@ export class Matrix4x4 {
         m.matrix[3][3] = 1;
         return m;
     }
+
+    public static add(m1: Matrix4x4, m2: Matrix4x4): Matrix4x4 {
+        let result = new Matrix4x4();
+        let m = result.matrix;
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                m[i][j] = m1.matrix[i][j] + m2.matrix[i][j];
+            }
+        }
+        return result;
+    }
+
+    public static subtract(m1: Matrix4x4, m2: Matrix4x4): Matrix4x4 {
+        let result = new Matrix4x4();
+        let m = result.matrix;
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                m[i][j] = m1.matrix[i][j] - m2.matrix[i][j];
+            }
+        }
+        return result;
+    }
+
+    public static multiplyScalar(m: Matrix4x4, scalar: number): Matrix4x4 {
+        let result = new Matrix4x4();
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                m[i][j] = m.matrix[i][j] * scalar;
+            }
+        }
+        return result;
+    }
 }

@@ -21,7 +21,7 @@ export class Color {
     public static readonly PURPLE = new Color(128, 0, 128).ToUint32();
     public static readonly BROWN = new Color(165, 42, 0).ToUint32();
     public static readonly MAROON = new Color(128, 0, 0).ToUint32();
-    
+
     public r: number;
     public g: number;
     public b: number;
@@ -47,6 +47,33 @@ export class Color {
             (uint32 >> 8) & 0xFF,
             (uint32 >> 16) & 0xFF,
             (uint32 >> 24) & 0xFF
+        );
+    }
+
+    public static add(c1: Color, c2: Color): Color {
+        return new Color(
+            Math.min(255, c1.r + c2.r),
+            Math.min(255, c1.g + c2.g),
+            Math.min(255, c1.b + c2.b),
+            Math.min(255, c1.a + c2.a)
+        );
+    }
+
+    public static subtract(c1: Color, c2: Color): Color {
+        return new Color(
+            Math.max(0, c1.r - c2.r),
+            Math.max(0, c1.g - c2.g),
+            Math.max(0, c1.b - c2.b),
+            Math.max(0, c1.a - c2.a)
+        );
+    }
+
+    public static multiplyScalar(c: Color, scalar: number): Color {
+        return new Color(
+            Math.min(255, c.r * scalar),
+            Math.min(255, c.g * scalar),
+            Math.min(255, c.b * scalar),
+            Math.min(255, c.a * scalar)
         );
     }
 

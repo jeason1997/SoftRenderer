@@ -1,8 +1,9 @@
+import { UObject } from "../Core/UObject";
 import { Color } from "../Math/Color";
 import { Vector2 } from "../Math/Vector2";
-import { Texture } from "../Resources/Texture";
+import { Texture } from "./Texture";
 
-export class Material {
+export class Material extends UObject {
     public name: string;
     public color: number = Color.WHITE;
     public mainTexture: Texture | null = null;
@@ -14,6 +15,7 @@ export class Material {
     public transparent: boolean = false;
     
     constructor(name: string) {
+        super();
         this.name = name;
     }
     
@@ -27,5 +29,9 @@ export class Material {
         material.wireframe = this.wireframe;
         material.transparent = this.transparent;
         return material;
+    }
+
+    public onDestroy(): void {
+        throw new Error("Method not implemented.");
     }
 }

@@ -316,7 +316,7 @@ export class OBJParser {
             const t = tan1[i];
 
             // 正交化切线（Gram-Schmidt过程）
-            const tangent = Vector3.subtract(t, Vector3.multiply(n, Vector3.dot(n, t))).normalize();
+            const tangent = Vector3.subtract(t, Vector3.multiplyScalar(n, Vector3.dot(n, t))).normalize();
 
             // 计算切线方向（ handedness ）
             const handedness = Vector3.dot(Vector3.cross(n, t), tan2[i]) < 0.0 ? -1 : 1;

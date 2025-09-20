@@ -38,35 +38,21 @@ export class Vector2 {
         OPERATIONS ON VECTOR
      */
 
-    public add(v: Vector2): Vector2;
-    public add(x: number, y: number): Vector2;
-    add() {
-        if (arguments[0] instanceof Vector2) {
-            this.x += arguments[0].x;
-            this.y += arguments[0].y;
-        } else {
-            this.x += arguments[0];
-            this.y += arguments[1];
-        }
+    public add(v: Vector2): Vector2 {
+        this.x += v.x;
+        this.y += v.y;
         return this;
     }
 
-    public subtract(v: Vector2): Vector2;
-    public subtract(x: number, y: number): Vector2;
-    subtract() {
-        if (arguments[0] instanceof Vector2) {
-            this.x -= arguments[0].x;
-            this.y -= arguments[0].y;
-        } else {
-            this.x -= arguments[0];
-            this.y -= arguments[1];
-        }
+    public subtract(v: Vector2): Vector2 {
+        this.x -= v.x;
+        this.y -= v.y;
         return this;
     }
 
-    public multiply(d: number): Vector2 {
-        this.x *= d;
-        this.y *= d;
+    public multiply(v: Vector2): Vector2 {
+        this.x *= v.x;
+        this.y *= v.y;
         return this;
     }
 
@@ -76,9 +62,9 @@ export class Vector2 {
         return this;
     }
 
-    public scale(v: Vector2): Vector2 {
-        this.x *= v.x;
-        this.y *= v.y;
+    public multiplyScalar(d: number): Vector2 {
+        this.x *= d;
+        this.y *= d;
         return this;
     }
 
@@ -87,7 +73,7 @@ export class Vector2 {
     }
 
     public negate(): Vector2 {
-        return this.multiply(-1);
+        return this.multiplyScalar(-1);
     }
 
     public normalize(): Vector2 {
@@ -126,6 +112,26 @@ export class Vector2 {
     /*
         STATIC FUNCTIONS
      */
+
+    public static add(v1: Vector2, v2: Vector2): Vector2 {
+        return new Vector2(v1.x + v2.x, v1.y + v2.y);
+    }
+
+    public static subtract(v1: Vector2, v2: Vector2): Vector2 {
+        return new Vector2(v1.x - v2.x, v1.y - v2.y);
+    }
+
+    public static multiply(v1: Vector2, v2: Vector2): Vector2 {
+        return new Vector2(v1.x * v2.x, v1.y * v2.y);
+    }
+
+    public static divide(v1: Vector2, v2: Vector2): Vector2 {
+        return new Vector2(v1.x / v2.x, v1.y / v2.y);
+    }
+
+    public static multiplyScalar(v1: Vector2, scalar: number): Vector2 {
+        return new Vector2(v1.x * scalar, v1.y * scalar);
+    }
 
     public static lerp(v1: Vector2, v2: Vector2, t: number): Vector2 {
         var v = new Vector2();

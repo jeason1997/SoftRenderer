@@ -16560,7 +16560,7 @@ class BoxCollider extends Collider_1.Collider {
 }
 exports.BoxCollider = BoxCollider;
 
-},{"../Math/Vector3":34,"./Collider":7,"./MeshRenderer":10}],5:[function(require,module,exports){
+},{"../Math/Vector3":33,"./Collider":7,"./MeshRenderer":10}],5:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -16711,8 +16711,11 @@ let Camera = (() => {
 })();
 exports.Camera = Camera;
 
-},{"../Core/Decorators":16,"../Core/Setting":20,"../Core/Time":21,"../Math/Color":27,"../Math/Matrix4x4":29,"../Math/Vector4":35,"./Component":8}],6:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/Setting":20,"../Core/Time":21,"../Math/Color":27,"../Math/Matrix4x4":28,"../Math/Vector4":34,"./Component":8}],6:[function(require,module,exports){
 "use strict";
+/*
+ * 相机控制可以参考three.js的OrbitControls.js：https://github.com/mrdoob/three.js/blob/r108/examples/js/controls/OrbitControls.js#L390-L395
+ */
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
     var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
@@ -16865,7 +16868,7 @@ let CameraController = (() => {
 })();
 exports.CameraController = CameraController;
 
-},{"../Core/Decorators":16,"../Core/Engine":17,"../Core/Input":19,"../Core/Time":21,"../Math/Quaternion":30,"../Math/Vector3":34,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/Engine":17,"../Core/Input":19,"../Core/Time":21,"../Math/Quaternion":29,"../Math/Vector3":33,"./Camera":5,"./Component":8}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Collider = void 0;
@@ -16890,7 +16893,7 @@ class Collider extends Component_1.Component {
 }
 exports.Collider = Collider;
 
-},{"../Core/Engine":17,"../Math/Vector3":34,"./Component":8}],8:[function(require,module,exports){
+},{"../Core/Engine":17,"../Math/Vector3":33,"./Component":8}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Component = void 0;
@@ -17171,7 +17174,7 @@ let ObjRotate = (() => {
 })();
 exports.ObjRotate = ObjRotate;
 
-},{"../Core/Decorators":16,"../Core/Input":19,"../Math/Quaternion":30,"../Math/Vector3":34,"../Utils/Debug":46,"./Component":8,"./RigidBody":14}],12:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/Input":19,"../Math/Quaternion":29,"../Math/Vector3":33,"../Utils/Debug":46,"./Component":8,"./RigidBody":14}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17210,7 +17213,7 @@ class RayTest extends Component_1.Component {
 }
 exports.RayTest = RayTest;
 
-},{"../Core/Engine":17,"../Core/Input":19,"../Math/TransformTools":32,"./Camera":5,"./Component":8}],13:[function(require,module,exports){
+},{"../Core/Engine":17,"../Core/Input":19,"../Math/TransformTools":31,"./Camera":5,"./Component":8}],13:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -17551,7 +17554,7 @@ let Rigidbody = (() => {
 })();
 exports.Rigidbody = Rigidbody;
 
-},{"../Core/Decorators":16,"../Core/Engine":17,"../Core/Time":21,"../Core/UObject":24,"../Math/Vector3":34,"./Collider":7,"./Component":8}],15:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/Engine":17,"../Core/Time":21,"../Core/UObject":24,"../Math/Vector3":33,"./Collider":7,"./Component":8}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SphereCollider = void 0;
@@ -17720,7 +17723,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":43,"../Scene/SceneManager":45,"../Utils/Debug":46,"./Input":19,"./Setting":20,"./Time":21,"./TweenManager":23}],18:[function(require,module,exports){
+},{"../Physics/Physics":35,"../Renderer/RasterizationPipeline":37,"../Scene/MainScene":43,"../Scene/SceneManager":45,"../Utils/Debug":46,"./Input":19,"./Setting":20,"./Time":21,"./TweenManager":23}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -18234,7 +18237,7 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":33}],20:[function(require,module,exports){
+},{"../Math/Vector2":32}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RenderSettings = exports.PhysicsSettings = exports.TimeSettings = exports.EngineConfig = exports.Layers = exports.FogMode = void 0;
@@ -18278,7 +18281,7 @@ RenderSettings.linearFogStart = 0;
 RenderSettings.linearFogEnd = 300;
 RenderSettings.ambientLight = Color_1.Color.FromUint32(Color_1.Color.RED);
 
-},{"../Math/Color":27,"../Math/Vector3":34}],21:[function(require,module,exports){
+},{"../Math/Color":27,"../Math/Vector3":33}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Time = void 0;
@@ -18579,7 +18582,7 @@ class Transform {
 }
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":29,"../Math/Quaternion":30,"../Math/Vector3":34,"../Math/Vector4":35}],23:[function(require,module,exports){
+},{"../Math/Matrix4x4":28,"../Math/Quaternion":29,"../Math/Vector3":33,"../Math/Vector4":34}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TweenManager = void 0;
@@ -18804,7 +18807,7 @@ class BVHTree {
 }
 exports.BVHTree = BVHTree;
 
-},{"../Math/Vector3":34,"./Bounds":26}],26:[function(require,module,exports){
+},{"../Math/Vector3":33,"./Bounds":26}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
@@ -18951,7 +18954,7 @@ class Sphere {
     }
 }
 
-},{"./Vector3":34}],27:[function(require,module,exports){
+},{"./Vector3":33}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = exports.BlendMode = void 0;
@@ -18976,6 +18979,15 @@ class Color {
     }
     static FromUint32(uint32) {
         return new Color(uint32 & 0xFF, (uint32 >> 8) & 0xFF, (uint32 >> 16) & 0xFF, (uint32 >> 24) & 0xFF);
+    }
+    static add(c1, c2) {
+        return new Color(Math.min(255, c1.r + c2.r), Math.min(255, c1.g + c2.g), Math.min(255, c1.b + c2.b), Math.min(255, c1.a + c2.a));
+    }
+    static subtract(c1, c2) {
+        return new Color(Math.max(0, c1.r - c2.r), Math.max(0, c1.g - c2.g), Math.max(0, c1.b - c2.b), Math.max(0, c1.a - c2.a));
+    }
+    static multiplyScalar(c, scalar) {
+        return new Color(Math.min(255, c.r * scalar), Math.min(255, c.g * scalar), Math.min(255, c.b * scalar), Math.min(255, c.a * scalar));
     }
     /**
      * 颜色混合方法
@@ -19069,191 +19081,6 @@ Color.MAROON = new Color(128, 0, 0).ToUint32();
 Color.blendLUT = [];
 
 },{}],28:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.interpolateOverTriangle = interpolateOverTriangle;
-const Color_1 = require("./Color");
-const Vector2_1 = require("./Vector2");
-const Vector3_1 = require("./Vector3");
-const Vector4_1 = require("./Vector4");
-const Matrix4x4_1 = require("./Matrix4x4");
-/**
- * 计算点 p 在三角形 (v0, v1, v2) 中的重心坐标。
- * @param p 目标点（2D 坐标）
- * @param v0 三角形顶点0（2D 坐标）
- * @param v1 三角形顶点1（2D 坐标）
- * @param v2 三角形顶点2（2D 坐标）
- * @returns 重心坐标 [alpha, beta, gamma]
- */
-function computeBarycentricCoords(p, v0, v1, v2) {
-    const [x, y] = p;
-    // 计算整个三角形的面积（的两倍，有符号）
-    const areaABC = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
-    // 计算子三角形 PBC 的面积（的两倍，有符号）
-    const areaPBC = (v1.x - x) * (v2.y - y) - (v2.x - x) * (v1.y - y);
-    const alpha = areaPBC / areaABC;
-    // 计算子三角形 PCA 的面积（的两倍，有签名）
-    const areaPCA = (v2.x - x) * (v0.y - y) - (v0.x - x) * (v2.y - y);
-    const beta = areaPCA / areaABC;
-    // 计算子三角形 PAB 的面积（的两倍，有签名）
-    const areaPAB = (v0.x - x) * (v1.y - y) - (v1.x - x) * (v0.y - y);
-    const gamma = areaPAB / areaABC;
-    // 或者 gamma = 1 - alpha - beta;
-    return [alpha, beta, gamma];
-}
-/**
- * 对三角形进行栅格化并插值顶点属性
- * @param v0 第一个顶点的屏幕坐标
- * @param v1 第二个顶点的屏幕坐标
- * @param v2 第三个顶点的屏幕坐标
- * @param attrs0 第一个顶点的所有属性
- * @param attrs1 第二个顶点的所有属性
- * @param attrs2 第三个顶点的所有属性
- * @returns 所有像素及其插值后的属性
- */
-function interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2) {
-    const fragments = [];
-    // 1. 计算三角形的包围盒
-    const minX = Math.floor(Math.min(v0.x, v1.x, v2.x));
-    const maxX = Math.ceil(Math.max(v0.x, v1.x, v2.x));
-    const minY = Math.floor(Math.min(v0.y, v1.y, v2.y));
-    const maxY = Math.ceil(Math.max(v0.y, v1.y, v2.y));
-    // 2. 遍历边界框内的每一个像素点
-    for (let y = minY; y <= maxY; y++) {
-        for (let x = minX; x <= maxX; x++) {
-            const pixel = [x, y];
-            // 3. 计算当前像素点的重心坐标
-            const [alpha, beta, gamma] = computeBarycentricCoords(pixel, v0, v1, v2);
-            // 4. 判断点是否在三角形内部（重心坐标均非负，且近似和为1）
-            const tolerance = 1e-5; // 浮点数精度容差
-            if (alpha >= -tolerance &&
-                beta >= -tolerance &&
-                gamma >= -tolerance &&
-                Math.abs(alpha + beta + gamma - 1) < tolerance) {
-                // 5. 使用重心坐标作为权重对属性进行插值
-                // 例如，如果 T 是 number: interpolatedValue = alpha * v0.attr + beta * v1.attr + gamma * v2.attr;
-                // 如果 T 是数组，需要每个分量分别计算。
-                const interpolatedAttrs = interpolateAttributes(attrs0, attrs1, attrs2, alpha, beta, gamma);
-                // 6. 深度值，需要单独额外插值计算
-                const z = interpolateNumber(v0.z, v1.z, v2.z, alpha, beta, gamma);
-                // 添加到片段列表
-                fragments.push({
-                    x, y, z,
-                    attributes: interpolatedAttrs
-                });
-            }
-        }
-    }
-    return fragments;
-}
-/**
- * 基于 barycentric 坐标插值顶点属性，支持多种类型
- */
-function interpolateAttributes(a, b, c, w, // 顶点a的权重
-u, // 顶点b的权重
-v // 顶点c的权重
-) {
-    const result = {};
-    // 获取所有属性名称并验证
-    const attributeNames = Object.keys(a);
-    validateAttributes(attributeNames, b, c);
-    // 对每个属性进行插值
-    for (const name of attributeNames) {
-        const valA = a[name];
-        const valB = b[name];
-        const valC = c[name];
-        // 根据属性类型执行相应的插值
-        if (typeof valA === 'number') {
-            // 标量插值
-            result[name] = interpolateNumber(valA, valB, valC, w, u, v);
-        }
-        else if (valA instanceof Color_1.Color) {
-            // Color插值
-            result[name] = interpolateColor(valA, valB, valC, w, u, v);
-        }
-        else if (valA instanceof Vector2_1.Vector2) {
-            // Vector2插值
-            result[name] = interpolateVector2(valA, valB, valC, w, u, v);
-        }
-        else if (valA instanceof Vector3_1.Vector3) {
-            // Vector3插值
-            result[name] = interpolateVector3(valA, valB, valC, w, u, v);
-        }
-        else if (valA instanceof Vector4_1.Vector4) {
-            // Vector4插值
-            result[name] = interpolateVector4(valA, valB, valC, w, u, v);
-        }
-        else if (valA instanceof Matrix4x4_1.Matrix4x4) {
-            // 矩阵插值 - 对矩阵的每个元素分别插值
-            result[name] = interpolateMatrix4x4(valA, valB, valC, w, u, v);
-        }
-        else {
-            throw new Error(`不支持的属性类型: ${typeof valA} 用于属性 ${name}`);
-        }
-    }
-    return result;
-}
-/**
- * 验证所有顶点是否具有相同的属性
- */
-function validateAttributes(attributeNames, ...otherAttrs) {
-    for (const attrs of otherAttrs) {
-        for (const name of attributeNames) {
-            if (!(name in attrs)) {
-                throw new Error(`顶点属性不匹配: 缺少属性 ${name}`);
-            }
-        }
-        for (const name of Object.keys(attrs)) {
-            if (!attributeNames.includes(name)) {
-                throw new Error(`顶点属性不匹配: 存在额外属性 ${name}`);
-            }
-        }
-    }
-}
-/**
- * 插值标量
- */
-function interpolateNumber(a, b, c, w, u, v) {
-    return a * w + b * u + c * v;
-}
-/**
- * 插值Color
- */
-function interpolateColor(a, b, c, w, u, v) {
-    return new Color_1.Color(a.r * w + b.r * u + c.r * v, a.g * w + b.g * u + c.g * v, a.b * w + b.b * u + c.b * v, a.a * w + b.a * u + c.a * v);
-}
-/**
- * 插值Vector2
- */
-function interpolateVector2(a, b, c, w, u, v) {
-    return new Vector2_1.Vector2(a.x * w + b.x * u + c.x * v, a.y * w + b.y * u + c.y * v);
-}
-/**
- * 插值Vector3
- */
-function interpolateVector3(a, b, c, w, u, v) {
-    return new Vector3_1.Vector3(a.x * w + b.x * u + c.x * v, a.y * w + b.y * u + c.y * v, a.z * w + b.z * u + c.z * v);
-}
-/**
- * 插值Vector4
- */
-function interpolateVector4(a, b, c, w, u, v) {
-    return new Vector4_1.Vector4(a.x * w + b.x * u + c.x * v, a.y * w + b.y * u + c.y * v, a.z * w + b.z * u + c.z * v, a.w * w + b.w * u + c.w * v);
-}
-/**
- * 插值4x4矩阵 - 对矩阵的每个元素分别进行插值
- */
-function interpolateMatrix4x4(a, b, c, w, u, v) {
-    const result = new Matrix4x4_1.Matrix4x4();
-    for (let row = 0; row < 4; row++) {
-        for (let col = 0; col < 4; col++) {
-            result.matrix[row][col] = a.matrix[row][col] * w + b.matrix[row][col] * u + c.matrix[row][col] * v;
-        }
-    }
-    return result;
-}
-
-},{"./Color":27,"./Matrix4x4":29,"./Vector2":33,"./Vector3":34,"./Vector4":35}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -19788,10 +19615,39 @@ class Matrix4x4 {
         m.matrix[3][3] = 1;
         return m;
     }
+    static add(m1, m2) {
+        let result = new Matrix4x4();
+        let m = result.matrix;
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                m[i][j] = m1.matrix[i][j] + m2.matrix[i][j];
+            }
+        }
+        return result;
+    }
+    static subtract(m1, m2) {
+        let result = new Matrix4x4();
+        let m = result.matrix;
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                m[i][j] = m1.matrix[i][j] - m2.matrix[i][j];
+            }
+        }
+        return result;
+    }
+    static multiplyScalar(m, scalar) {
+        let result = new Matrix4x4();
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                m[i][j] = m.matrix[i][j] * scalar;
+            }
+        }
+        return result;
+    }
 }
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":30,"./Vector3":34,"./Vector4":35}],30:[function(require,module,exports){
+},{"./Quaternion":29,"./Vector3":33,"./Vector4":34}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
@@ -19953,7 +19809,7 @@ class Quaternion {
 }
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":29,"./Vector3":34}],31:[function(require,module,exports){
+},{"./Matrix4x4":28,"./Vector3":33}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ray = void 0;
@@ -19975,7 +19831,7 @@ class Ray {
      */
     at(t) {
         // 公式: point = origin + t * direction
-        return Vector3_1.Vector3.add(this.origin, Vector3_1.Vector3.multiply(this.direction, t));
+        return Vector3_1.Vector3.add(this.origin, Vector3_1.Vector3.multiplyScalar(this.direction, t));
     }
     /**
      * 克隆当前射线
@@ -19987,7 +19843,7 @@ class Ray {
 }
 exports.Ray = Ray;
 
-},{"./Vector3":34}],32:[function(require,module,exports){
+},{"./Vector3":33}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransformTools = void 0;
@@ -20164,7 +20020,7 @@ class TransformTools {
 }
 exports.TransformTools = TransformTools;
 
-},{"../Core/Setting":20,"./Ray":31,"./Vector2":33,"./Vector3":34,"./Vector4":35}],33:[function(require,module,exports){
+},{"../Core/Setting":20,"./Ray":30,"./Vector2":32,"./Vector3":33,"./Vector4":34}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -20192,31 +20048,22 @@ class Vector2 {
             this.x = this.y = 0;
         }
     }
-    add() {
-        if (arguments[0] instanceof Vector2) {
-            this.x += arguments[0].x;
-            this.y += arguments[0].y;
-        }
-        else {
-            this.x += arguments[0];
-            this.y += arguments[1];
-        }
+    /*
+        OPERATIONS ON VECTOR
+     */
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
         return this;
     }
-    subtract() {
-        if (arguments[0] instanceof Vector2) {
-            this.x -= arguments[0].x;
-            this.y -= arguments[0].y;
-        }
-        else {
-            this.x -= arguments[0];
-            this.y -= arguments[1];
-        }
+    subtract(v) {
+        this.x -= v.x;
+        this.y -= v.y;
         return this;
     }
-    multiply(d) {
-        this.x *= d;
-        this.y *= d;
+    multiply(v) {
+        this.x *= v.x;
+        this.y *= v.y;
         return this;
     }
     divide(d) {
@@ -20224,16 +20071,16 @@ class Vector2 {
         this.y /= d;
         return this;
     }
-    scale(v) {
-        this.x *= v.x;
-        this.y *= v.y;
+    multiplyScalar(d) {
+        this.x *= d;
+        this.y *= d;
         return this;
     }
     dot(v) {
         return (this.x * v.x + this.y * v.y);
     }
     negate() {
-        return this.multiply(-1);
+        return this.multiplyScalar(-1);
     }
     normalize() {
         var length = this.magnitude;
@@ -20262,6 +20109,21 @@ class Vector2 {
     /*
         STATIC FUNCTIONS
      */
+    static add(v1, v2) {
+        return new Vector2(v1.x + v2.x, v1.y + v2.y);
+    }
+    static subtract(v1, v2) {
+        return new Vector2(v1.x - v2.x, v1.y - v2.y);
+    }
+    static multiply(v1, v2) {
+        return new Vector2(v1.x * v2.x, v1.y * v2.y);
+    }
+    static divide(v1, v2) {
+        return new Vector2(v1.x / v2.x, v1.y / v2.y);
+    }
+    static multiplyScalar(v1, scalar) {
+        return new Vector2(v1.x * scalar, v1.y * scalar);
+    }
     static lerp(v1, v2, t) {
         var v = new Vector2();
         v.x = v1.x + t * (v2.x - v1.x);
@@ -20306,7 +20168,7 @@ class Vector2 {
 }
 exports.Vector2 = Vector2;
 
-},{"./Vector3":34,"./Vector4":35}],34:[function(require,module,exports){
+},{"./Vector3":33,"./Vector4":34}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
@@ -20333,36 +20195,25 @@ class Vector3 {
             this.x = this.y = this.z = 0;
         }
     }
-    add() {
-        if (arguments[0] instanceof Vector3) {
-            this.x += arguments[0].x;
-            this.y += arguments[0].y;
-            this.z += arguments[0].z;
-        }
-        else {
-            this.x += arguments[0];
-            this.y += arguments[1];
-            this.z += arguments[2];
-        }
+    /*
+     OPERATIONS ON VECTOR
+     */
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
+        this.z += v.z;
         return this;
     }
-    subtract() {
-        if (arguments[0] instanceof Vector3) {
-            this.x -= arguments[0].x;
-            this.y -= arguments[0].y;
-            this.z -= arguments[0].z;
-        }
-        else {
-            this.x -= arguments[0];
-            this.y -= arguments[1];
-            this.z -= arguments[2];
-        }
+    subtract(v) {
+        this.x -= v.x;
+        this.y -= v.y;
+        this.z -= v.z;
         return this;
     }
-    multiply(d) {
-        this.x *= d;
-        this.y *= d;
-        this.z *= d;
+    multiply(v) {
+        this.x *= v.x;
+        this.y *= v.y;
+        this.z *= v.z;
         return this;
     }
     divide(d) {
@@ -20371,14 +20222,14 @@ class Vector3 {
         this.z /= d;
         return this;
     }
-    scale(v) {
-        this.x *= v.x;
-        this.y *= v.y;
-        this.z *= v.z;
+    multiplyScalar(s) {
+        this.x *= s;
+        this.y *= s;
+        this.z *= s;
         return this;
     }
     negate() {
-        return this.multiply(-1);
+        return this.multiplyScalar(-1);
     }
     normalize() {
         var length = this.magnitude;
@@ -20447,21 +20298,27 @@ class Vector3 {
     /*
      STATIC FUNCTIONS
      */
+    static add(v1, v2) {
+        return new Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+    }
+    static subtract(v1, v2) {
+        return new Vector3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+    }
+    static multiply(v1, v2) {
+        return new Vector3(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+    }
+    static divide(v1, v2) {
+        return new Vector3(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
+    }
+    static multiplyScalar(v1, s) {
+        return new Vector3(v1.x * s, v1.y * s, v1.z * s);
+    }
     static lerp(v1, v2, t) {
         var v = new Vector3();
         v.x = v1.x + t * (v2.x - v1.x);
         v.y = v1.y + t * (v2.y - v1.y);
         v.z = v1.z + t * (v2.z - v1.z);
         return v;
-    }
-    static multiply(v, s) {
-        return new Vector3(v.x * s, v.y * s, v.z * s);
-    }
-    static add(v1, v2) {
-        return new Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
-    }
-    static subtract(v1, v2) {
-        return new Vector3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
     }
     static dot(v1, v2) {
         return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
@@ -20536,7 +20393,7 @@ class Vector3 {
 }
 exports.Vector3 = Vector3;
 
-},{"./Vector2":33,"./Vector4":35}],35:[function(require,module,exports){
+},{"./Vector2":32,"./Vector4":34}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
@@ -20570,41 +20427,28 @@ class Vector4 {
             this.x = this.y = this.z = this.w = 0;
         }
     }
-    add() {
-        if (arguments[0] instanceof Vector4) {
-            this.x += arguments[0].x;
-            this.y += arguments[0].y;
-            this.z += arguments[0].z;
-            this.w += arguments[0].w;
-        }
-        else {
-            this.x += arguments[0];
-            this.y += arguments[1];
-            this.z += arguments[2];
-            this.w += arguments[3];
-        }
+    /*
+     OPERATIONS ON VECTOR
+     */
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
+        this.z += v.z;
+        this.w += v.w;
         return this;
     }
-    subtract() {
-        if (arguments[0] instanceof Vector4) {
-            this.x -= arguments[0].x;
-            this.y -= arguments[0].y;
-            this.z -= arguments[0].z;
-            this.w -= arguments[0].w;
-        }
-        else {
-            this.x -= arguments[0];
-            this.y -= arguments[1];
-            this.z -= arguments[2];
-            this.w -= arguments[3];
-        }
+    subtract(v) {
+        this.x -= v.x;
+        this.y -= v.y;
+        this.z -= v.z;
+        this.w -= v.w;
         return this;
     }
-    multiply(d) {
-        this.x *= d;
-        this.y *= d;
-        this.z *= d;
-        this.w *= d;
+    multiply(v) {
+        this.x *= v.x;
+        this.y *= v.y;
+        this.z *= v.z;
+        this.w *= v.w;
         return this;
     }
     divide(d) {
@@ -20614,15 +20458,15 @@ class Vector4 {
         this.w /= d;
         return this;
     }
-    scale(v) {
-        this.x *= v.x;
-        this.y *= v.y;
-        this.z *= v.z;
-        this.w *= v.w;
+    multiplyScalar(d) {
+        this.x *= d;
+        this.y *= d;
+        this.z *= d;
+        this.w *= d;
         return this;
     }
     negate() {
-        return this.multiply(-1);
+        return this.multiplyScalar(-1);
     }
     normalize() {
         var length = this.magnitude;
@@ -20651,6 +20495,21 @@ class Vector4 {
     /*
      STATIC FUNCTIONS
      */
+    static add(v1, v2) {
+        return new Vector4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
+    }
+    static subtract(v1, v2) {
+        return new Vector4(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);
+    }
+    static multiply(v1, v2) {
+        return new Vector4(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w * v2.w);
+    }
+    static divide(v1, scalar) {
+        return new Vector4(v1.x / scalar, v1.y / scalar, v1.z / scalar, v1.w / scalar);
+    }
+    static multiplyScalar(v1, scalar) {
+        return new Vector4(v1.x * scalar, v1.y * scalar, v1.z * scalar, v1.w * scalar);
+    }
     static lerp(v1, v2, t) {
         var v = new Vector4();
         v.x = v1.x + t * (v2.x - v1.x);
@@ -20677,7 +20536,7 @@ class Vector4 {
 }
 exports.Vector4 = Vector4;
 
-},{"./Vector2":33,"./Vector3":34}],36:[function(require,module,exports){
+},{"./Vector2":32,"./Vector3":33}],35:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -20883,7 +20742,7 @@ class Physics {
 }
 exports.Physics = Physics;
 
-},{"../Component/BoxCollider":4,"../Component/SphereCollider":15,"../Core/Time":21,"../Math/Quaternion":30,"../Math/Vector3":34,"./RaycastHit":37,"cannon":2}],37:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/SphereCollider":15,"../Core/Time":21,"../Math/Quaternion":29,"../Math/Vector3":33,"./RaycastHit":36,"cannon":2}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RaycastHit = void 0;
@@ -20971,38 +20830,7 @@ class RaycastHit {
 }
 exports.RaycastHit = RaycastHit;
 
-},{"../Math/Vector3":34}],38:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Material = void 0;
-const Color_1 = require("../Math/Color");
-const Vector2_1 = require("../Math/Vector2");
-class Material {
-    constructor(name) {
-        this.color = Color_1.Color.WHITE;
-        this.mainTexture = null;
-        this.textureOffset = Vector2_1.Vector2.ZERO;
-        this.textureScale = Vector2_1.Vector2.ONE;
-        // 渲染模式
-        this.wireframe = false;
-        this.transparent = false;
-        this.name = name;
-    }
-    // 克隆材质
-    clone() {
-        const material = new Material(this.name + "_Clone");
-        material.color = this.color;
-        material.mainTexture = this.mainTexture;
-        material.textureOffset = this.textureOffset.clone();
-        material.textureScale = this.textureScale.clone();
-        material.wireframe = this.wireframe;
-        material.transparent = this.transparent;
-        return material;
-    }
-}
-exports.Material = Material;
-
-},{"../Math/Color":27,"../Math/Vector2":33}],39:[function(require,module,exports){
+},{"../Math/Vector3":33}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -21013,7 +20841,7 @@ const Renderer_1 = require("../Component/Renderer");
 const Camera_1 = require("../Component/Camera");
 const Engine_1 = require("../Core/Engine");
 const Setting_1 = require("../Core/Setting");
-const Lerp_1 = require("../Math/Lerp");
+const triangleRasterizer_1 = require("./triangleRasterizer");
 const TransformTools_1 = require("../Math/TransformTools");
 const Debug_1 = require("../Utils/Debug");
 const Light_1 = require("../Component/Light");
@@ -21025,7 +20853,7 @@ var DrawMode;
 })(DrawMode || (DrawMode = {}));
 class RasterizationPipeline {
     constructor(frameBuffer) {
-        this.drawMode = DrawMode.Shader;
+        this.drawMode = DrawMode.Shader | DrawMode.Wireframe;
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Float32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
         this.overdrawBuffer = new Uint32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
@@ -21464,7 +21292,7 @@ class RasterizationPipeline {
             }
             if (this.drawMode & DrawMode.Shader) {
                 // 渲染管线7.光栅化
-                const fragments = (0, Lerp_1.interpolateOverTriangle)(p1, p2, p3, attrs1, attrs2, attrs3);
+                const fragments = (0, triangleRasterizer_1.interpolateOverTriangle)(p1, p2, p3, attrs1, attrs2, attrs3);
                 for (let i = 0; i < fragments.length; i++) {
                     const fragment = fragments[i];
                     const x = fragment.x;
@@ -21659,7 +21487,302 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Light":9,"../Component/Renderer":13,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/Lerp":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Utils/Debug":46}],40:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Light":9,"../Component/Renderer":13,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Utils/Debug":46,"./triangleRasterizer":38}],38:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.interpolateOverTriangle = interpolateOverTriangle;
+const Color_1 = require("../Math/Color");
+const Vector2_1 = require("../Math/Vector2");
+const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
+const Matrix4x4_1 = require("../Math/Matrix4x4");
+/**
+ * 使用边缘行走算法对三角形进行栅格化并插值顶点属性
+ * @param v0 第一个顶点的屏幕坐标
+ * @param v1 第二个顶点的屏幕坐标
+ * @param v2 第三个顶点的屏幕坐标
+ * @param attrs0 第一个顶点的所有属性
+ * @param attrs1 第二个顶点的所有属性
+ * @param attrs2 第三个顶点的所有属性
+ * @returns 所有像素及其插值后的属性
+ */
+function interpolateOverTriangle(v0, v1, v2, attrs0, attrs1, attrs2) {
+    const fragments = [];
+    // 1. 排序顶点按y坐标从小到大
+    const vertices = [v0, v1, v2].sort((a, b) => a.y - b.y);
+    const [vMin, vMid, vMax] = vertices;
+    // 获取对应的属性
+    const getAttrsForVertex = (v) => {
+        if (v === v0)
+            return attrs0;
+        if (v === v1)
+            return attrs1;
+        return attrs2;
+    };
+    const attrsMin = getAttrsForVertex(vMin);
+    const attrsMid = getAttrsForVertex(vMid);
+    const attrsMax = getAttrsForVertex(vMax);
+    // 2. 计算三条边
+    const edges = [
+        createEdge(vMin, vMax, attrsMin, attrsMax),
+        createEdge(vMin, vMid, attrsMin, attrsMid),
+        createEdge(vMid, vMax, attrsMid, attrsMax)
+    ];
+    // 3. 区分主边和两条子边
+    const mainEdge = edges[0]; // 从最低到最高顶点的边
+    const leftEdge = edges[1].xStart < edges[2].xStart ? edges[1] : edges[2];
+    const rightEdge = edges[1].xStart >= edges[2].xStart ? edges[1] : edges[2];
+    // 4. 初始化当前扫描线的属性插值器
+    let currentY = Math.floor(vMin.y);
+    const maxY = Math.floor(vMax.y);
+    // 左侧和右侧边的当前x值及属性
+    let leftX = leftEdge.xStart;
+    let rightX = rightEdge.xStart;
+    let leftAttrs = Object.assign({}, leftEdge.attrs);
+    let rightAttrs = Object.assign({}, rightEdge.attrs);
+    // 5. 遍历每条扫描线
+    while (currentY <= maxY) {
+        // 确定当前扫描线是否在当前边的范围内
+        const isInLeftEdge = currentY >= leftEdge.yMin && currentY <= leftEdge.yMax;
+        const isInRightEdge = currentY >= rightEdge.yMin && currentY <= rightEdge.yMax;
+        const isInMainEdge = currentY >= mainEdge.yMin && currentY <= mainEdge.yMax;
+        // 只处理在三角形范围内的扫描线
+        if (isInLeftEdge && isInRightEdge && isInMainEdge) {
+            // 计算当前行的左右x边界（取整）
+            const xMin = Math.floor(leftX);
+            const xMax = Math.floor(rightX);
+            // 计算属性沿x轴的步长
+            const xStep = 1 / (xMax - xMin + 1);
+            const xAttrsStep = calculateXAttrsStep(leftAttrs, rightAttrs, xMax - xMin + 1);
+            // 6. 填充当前扫描线上的像素
+            for (let x = xMin; x <= xMax; x++) {
+                const t = x === xMin ? 0 : (x - xMin) * xStep;
+                const interpolatedAttrs = interpolateBetweenEdges(leftAttrs, rightAttrs, xAttrsStep, t);
+                // 插值深度值
+                const z = interpolateZ(leftAttrs.z.start, rightAttrs.z.start, t);
+                fragments.push({
+                    x,
+                    y: currentY,
+                    z,
+                    attributes: interpolatedAttrs
+                });
+            }
+        }
+        // 7. 更新下一行的x值和属性
+        if (isInLeftEdge) {
+            leftX += leftEdge.dx;
+            updateEdgeAttributes(leftAttrs);
+        }
+        if (isInRightEdge) {
+            rightX += rightEdge.dx;
+            updateEdgeAttributes(rightAttrs);
+        }
+        currentY++;
+    }
+    return fragments;
+}
+/**
+ * 创建边的信息，包括y范围、x变化率和属性插值参数
+ */
+function createEdge(v1, v2, attrs1, attrs2) {
+    // 确保v1是y较小的顶点
+    const [start, end] = v1.y < v2.y ? [v1, v2] : [v2, v1];
+    const [startAttrs, endAttrs] = v1.y < v2.y ? [attrs1, attrs2] : [attrs2, attrs1];
+    const yMin = Math.floor(start.y);
+    const yMax = Math.floor(end.y);
+    const dy = end.y - start.y;
+    // 计算x的变化率 (Δx/Δy)，避免除以0
+    const dx = dy === 0 ? 0 : (end.x - start.x) / dy;
+    // 计算x在yMin处的起始值
+    const xStart = start.x + (yMin - start.y) * dx;
+    // 计算属性的起始值和每步变化量
+    const attrs = {};
+    const attributeNames = Object.keys(startAttrs);
+    // 添加z属性（深度）
+    attrs.z = {
+        start: start.z,
+        step: dy === 0 ? 0 : (end.z - start.z) / dy
+    };
+    // 处理其他属性
+    for (const name of attributeNames) {
+        const startVal = startAttrs[name];
+        const endVal = endAttrs[name];
+        attrs[name] = {
+            start: startVal,
+            step: calculateAttributeStep(startVal, endVal, dy)
+        };
+    }
+    return { yMin, yMax, xStart, dx, attrs };
+}
+/**
+ * 计算属性的每步变化量
+ */
+function calculateAttributeStep(start, end, dy) {
+    if (dy === 0) {
+        // 水平边，属性不变
+        if (typeof start === 'number')
+            return 0;
+        if (start instanceof Color_1.Color)
+            return new Color_1.Color(0, 0, 0, 0);
+        if (start instanceof Vector2_1.Vector2)
+            return new Vector2_1.Vector2(0, 0);
+        if (start instanceof Vector3_1.Vector3)
+            return new Vector3_1.Vector3(0, 0, 0);
+        if (start instanceof Vector4_1.Vector4)
+            return new Vector4_1.Vector4(0, 0, 0, 0);
+        if (start instanceof Matrix4x4_1.Matrix4x4)
+            return new Matrix4x4_1.Matrix4x4();
+    }
+    const t = 1 / dy;
+    if (typeof start === 'number') {
+        return (end - start) * t;
+    }
+    if (start instanceof Color_1.Color) {
+        return new Color_1.Color(end.r - start.r * t, end.g - start.g * t, end.b - start.b * t, end.a - start.a * t);
+    }
+    if (start instanceof Vector2_1.Vector2) {
+        return new Vector2_1.Vector2((end.x - start.x) * t, (end.y - start.y) * t);
+    }
+    if (start instanceof Vector3_1.Vector3) {
+        return new Vector3_1.Vector3((end.x - start.x) * t, (end.y - start.y) * t, (end.z - start.z) * t);
+    }
+    if (start instanceof Vector4_1.Vector4) {
+        return new Vector4_1.Vector4((end.x - start.x) * t, (end.y - start.y) * t, (end.z - start.z) * t, (end.w - start.w) * t);
+    }
+    if (start instanceof Matrix4x4_1.Matrix4x4) {
+        const result = new Matrix4x4_1.Matrix4x4();
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 4; col++) {
+                result.matrix[row][col] =
+                    (end.matrix[row][col] - start.matrix[row][col]) * t;
+            }
+        }
+        return result;
+    }
+    throw new Error(`不支持的属性类型: ${typeof start}`);
+}
+/**
+ * 更新边上的属性值（沿y轴步进）
+ */
+function updateEdgeAttributes(attrs) {
+    for (const name in attrs) {
+        const attr = attrs[name];
+        attr.start = addAttribute(attr.start, attr.step);
+    }
+}
+/**
+ * 计算属性在x轴方向的步长
+ */
+function calculateXAttrsStep(left, right, pixelCount) {
+    const step = {};
+    const t = 1 / pixelCount;
+    for (const name in left) {
+        step[name] = multiplyAttribute(subtractAttribute(right[name].start, left[name].start), t);
+    }
+    return step;
+}
+/**
+ * 在左右边之间插值属性（沿x轴）
+ */
+function interpolateBetweenEdges(left, right, step, t) {
+    const result = {};
+    for (const name in left) {
+        result[name] = addAttribute(left[name].start, multiplyAttribute(step[name], t));
+    }
+    return result;
+}
+/**
+ * 插值深度值
+ */
+function interpolateZ(zLeft, zRight, t) {
+    return zLeft + (zRight - zLeft) * t;
+}
+// 辅助函数：属性加法
+function addAttribute(a, b) {
+    if (typeof a === 'number' && typeof b === 'number')
+        return a + b;
+    if (a instanceof Color_1.Color && b instanceof Color_1.Color)
+        return Color_1.Color.add(a, b);
+    if (a instanceof Vector2_1.Vector2 && b instanceof Vector2_1.Vector2)
+        return Vector2_1.Vector2.add(a, b);
+    if (a instanceof Vector3_1.Vector3 && b instanceof Vector3_1.Vector3)
+        return Vector3_1.Vector3.add(a, b);
+    if (a instanceof Vector4_1.Vector4 && b instanceof Vector4_1.Vector4)
+        return Vector4_1.Vector4.add(a, b);
+    if (a instanceof Matrix4x4_1.Matrix4x4 && b instanceof Matrix4x4_1.Matrix4x4)
+        return Matrix4x4_1.Matrix4x4.add(a, b);
+    throw new Error(`属性加法不支持的类型组合: ${typeof a} 和 ${typeof b}`);
+}
+// 辅助函数：属性减法
+function subtractAttribute(a, b) {
+    if (typeof a === 'number' && typeof b === 'number')
+        return a - b;
+    if (a instanceof Color_1.Color && b instanceof Color_1.Color)
+        return Color_1.Color.subtract(a, b);
+    if (a instanceof Vector2_1.Vector2 && b instanceof Vector2_1.Vector2)
+        return Vector2_1.Vector2.subtract(a, b);
+    if (a instanceof Vector3_1.Vector3 && b instanceof Vector3_1.Vector3)
+        return Vector3_1.Vector3.subtract(a, b);
+    if (a instanceof Vector4_1.Vector4 && b instanceof Vector4_1.Vector4)
+        return Vector4_1.Vector4.subtract(a, b);
+    if (a instanceof Matrix4x4_1.Matrix4x4 && b instanceof Matrix4x4_1.Matrix4x4)
+        return Matrix4x4_1.Matrix4x4.subtract(a, b);
+    throw new Error(`属性减法不支持的类型组合: ${typeof a} 和 ${typeof b}`);
+}
+// 辅助函数：属性乘以标量
+function multiplyAttribute(a, scalar) {
+    if (typeof a === 'number')
+        return a * scalar;
+    if (a instanceof Color_1.Color)
+        return Color_1.Color.multiplyScalar(a, scalar);
+    if (a instanceof Vector2_1.Vector2)
+        return Vector2_1.Vector2.multiplyScalar(a, scalar);
+    if (a instanceof Vector3_1.Vector3)
+        return Vector3_1.Vector3.multiplyScalar(a, scalar);
+    if (a instanceof Vector4_1.Vector4)
+        return Vector4_1.Vector4.multiplyScalar(a, scalar);
+    if (a instanceof Matrix4x4_1.Matrix4x4)
+        return Matrix4x4_1.Matrix4x4.multiplyScalar(a, scalar);
+    throw new Error(`属性乘法不支持的类型: ${typeof a}`);
+}
+
+},{"../Math/Color":27,"../Math/Matrix4x4":28,"../Math/Vector2":32,"../Math/Vector3":33,"../Math/Vector4":34}],39:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Material = void 0;
+const UObject_1 = require("../Core/UObject");
+const Color_1 = require("../Math/Color");
+const Vector2_1 = require("../Math/Vector2");
+class Material extends UObject_1.UObject {
+    constructor(name) {
+        super();
+        this.color = Color_1.Color.WHITE;
+        this.mainTexture = null;
+        this.textureOffset = Vector2_1.Vector2.ZERO;
+        this.textureScale = Vector2_1.Vector2.ONE;
+        // 渲染模式
+        this.wireframe = false;
+        this.transparent = false;
+        this.name = name;
+    }
+    // 克隆材质
+    clone() {
+        const material = new Material(this.name + "_Clone");
+        material.color = this.color;
+        material.mainTexture = this.mainTexture;
+        material.textureOffset = this.textureOffset.clone();
+        material.textureScale = this.textureScale.clone();
+        material.wireframe = this.wireframe;
+        material.transparent = this.transparent;
+        return material;
+    }
+    onDestroy() {
+        throw new Error("Method not implemented.");
+    }
+}
+exports.Material = Material;
+
+},{"../Core/UObject":24,"../Math/Color":27,"../Math/Vector2":32}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubMesh = exports.Mesh = void 0;
@@ -21921,6 +22044,7 @@ Resources.loadingPromises = new Map();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
 const UObject_1 = require("../Core/UObject");
+const Color_1 = require("../Math/Color");
 var FilterMode;
 (function (FilterMode) {
     FilterMode[FilterMode["Point"] = 0] = "Point";
@@ -22323,6 +22447,34 @@ class Texture extends UObject_1.UObject {
     packColor(r, g, b, a) {
         return r | (g << 8) | (b << 16) | (a << 24);
     }
+    /**
+     * 生成棋盘纹理
+     * @param tileSize 每个棋盘格的大小（像素）
+     * @param color1 第一种颜色（默认白色）
+     * @param color2 第二种颜色（默认黑色）
+     */
+    static CheckerboardTexture(width = 64, height = 64, tileSize = 8, color1 = Color_1.Color.WHITE, color2 = Color_1.Color.GRAY) {
+        const texture = new Texture(width, height);
+        const data = new Uint8ClampedArray(width * height * 4);
+        // 填充棋盘格
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                // 计算当前位置属于哪个棋盘格
+                const tileX = Math.floor(x / tileSize);
+                const tileY = Math.floor(y / tileSize);
+                // 交替选择颜色
+                const color = (tileX + tileY) % 2 === 0 ? color1 : color2;
+                // 设置像素颜色
+                const index = (y * width + x) * 4;
+                data[index] = (color >> 0) & 0xff;
+                data[index + 1] = (color >> 8) & 0xff;
+                data[index + 2] = (color >> 16) & 0xff;
+                data[index + 3] = (color >> 24) & 0xff;
+            }
+        }
+        texture.LoadImage(data);
+        return texture;
+    }
     onDestroy() {
         // 清理Mipmap数据
         this.mipmapLevels = [];
@@ -22330,7 +22482,7 @@ class Texture extends UObject_1.UObject {
 }
 exports.Texture = Texture;
 
-},{"../Core/UObject":24}],43:[function(require,module,exports){
+},{"../Core/UObject":24,"../Math/Color":27}],43:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22352,15 +22504,16 @@ const RayTest_1 = require("../Component/RayTest");
 const GameObject_1 = require("../Core/GameObject");
 const Quaternion_1 = require("../Math/Quaternion");
 const Vector3_1 = require("../Math/Vector3");
-const Material_1 = require("../Renderer/Material");
+const Material_1 = require("../Resources/Material");
 const Resources_1 = require("../Resources/Resources");
+const Texture_1 = require("../Resources/Texture");
 exports.MainScene = {
     name: "MainScene",
     initfun: (scene) => __awaiter(void 0, void 0, void 0, function* () {
         // 相机
         const cameraGo = new GameObject_1.GameObject("camera");
-        cameraGo.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(180, 0, 0));
-        cameraGo.transform.position = new Vector3_1.Vector3(0, 0, 5);
+        cameraGo.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(0, 0, 0));
+        cameraGo.transform.position = new Vector3_1.Vector3(0, 0, -5);
         const camera = cameraGo.addComponent(Camera_1.Camera);
         cameraGo.addComponent(CameraController_1.CameraController);
         cameraGo.addComponent(RayTest_1.RayTest);
@@ -22370,7 +22523,7 @@ exports.MainScene = {
         }
         // 灯
         const lightGo = new GameObject_1.GameObject("light");
-        lightGo.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(0, 0, 0));
+        lightGo.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(-45, 180, 0));
         const light = lightGo.addComponent(Light_1.Light);
         if (light) {
             Light_1.Light.sunLight = light;
@@ -22392,17 +22545,21 @@ exports.MainScene = {
         //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
-        // Resources.loadAsync<Mesh>('resources/cube.obj').then(async (model) => {
-        //     const obj = new GameObject("cube");
-        //     obj.transform.position = new Vector3(0, 1, 0);
-        //     obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
-        //     obj.transform.scale = Vector3.ONE.multiply(0.5);
-        //     obj.addComponent(Rigidbody);
-        //     obj.addComponent(BoxCollider);
-        //     //obj.addComponent(ObjRotate);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) renderer.mesh = model;
-        // });
+        Resources_1.Resources.loadAsync('resources/cube.obj').then((model) => __awaiter(void 0, void 0, void 0, function* () {
+            const obj = new GameObject_1.GameObject("cube");
+            obj.transform.position = new Vector3_1.Vector3(0, 1, 0);
+            obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(45, Vector3_1.Vector3.UP);
+            obj.transform.scale = Vector3_1.Vector3.ONE.multiplyScalar(0.5);
+            // obj.addComponent(Rigidbody);
+            // obj.addComponent(BoxCollider);
+            obj.addComponent(ObjRotate_1.ObjRotate);
+            const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            if (renderer) {
+                renderer.mesh = model;
+                const mat = renderer.material = new Material_1.Material("cube");
+                mat.mainTexture = Texture_1.Texture.CheckerboardTexture();
+            }
+        }));
         // Resources.loadAsync<Mesh>('resources/spheres.obj').then((model) => {
         //     const obj = new GameObject("spheres");
         //     obj.transform.position = new Vector3(0, 1.5, 1.5);
@@ -22412,20 +22569,20 @@ exports.MainScene = {
         //     if (renderer) renderer.mesh = model;
         //     //obj.transform.setParent(p_obj.transform);
         // });
-        const model = yield Resources_1.Resources.loadAsync('resources/panel.obj');
-        const obj = new GameObject_1.GameObject("panel");
-        obj.transform.scale = Vector3_1.Vector3.ONE.multiply(1);
-        obj.transform.rotation = Quaternion_1.Quaternion.angleAxis(90, Vector3_1.Vector3.RIGHT);
-        obj.addComponent(ObjRotate_1.ObjRotate);
-        // obj.addComponent(BoxCollider);
-        // const body = obj.addComponent(Rigidbody);
-        // if (body) body.isKinematic = true;
-        const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-        if (renderer) {
-            renderer.mesh = model;
-            const mat = renderer.material = new Material_1.Material("panel");
-            mat.mainTexture = yield Resources_1.Resources.loadAsync('resources/male02/orig_02_-_Defaul1noCulling.jpg');
-        }
+        // const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
+        // const obj = new GameObject("panel");
+        // obj.transform.scale = Vector3.ONE.multiply(1);
+        // obj.transform.rotation = Quaternion.angleAxis(90, Vector3.RIGHT);
+        // obj.addComponent(ObjRotate);
+        // // obj.addComponent(BoxCollider);
+        // // const body = obj.addComponent(Rigidbody);
+        // // if (body) body.isKinematic = true;
+        // const renderer = obj.addComponent(MeshRenderer);
+        // if (renderer) {
+        //     renderer.mesh = model;
+        //     const mat = renderer.material = new Material("panel");
+        //     mat.mainTexture = await Resources.loadAsync<Texture>('resources/male02/orig_02_-_Defaul1noCulling.jpg');
+        // }
         // AssetLoader.loadModel('resources/models/bunny2.obj', 10).then((model) => {
         //     const obj = new GameObject("bunny");
         //     obj.transform.position = new Vector3(0, 0.5, 0);
@@ -22449,7 +22606,7 @@ exports.MainScene = {
     })
 };
 
-},{"../Component/Camera":5,"../Component/CameraController":6,"../Component/Light":9,"../Component/MeshRenderer":10,"../Component/ObjRotate":11,"../Component/RayTest":12,"../Core/GameObject":18,"../Math/Quaternion":30,"../Math/Vector3":34,"../Renderer/Material":38,"../Resources/Resources":41}],44:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/CameraController":6,"../Component/Light":9,"../Component/MeshRenderer":10,"../Component/ObjRotate":11,"../Component/RayTest":12,"../Core/GameObject":18,"../Math/Quaternion":29,"../Math/Vector3":33,"../Resources/Material":39,"../Resources/Resources":41,"../Resources/Texture":42}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -22556,7 +22713,7 @@ class Scene {
 }
 exports.Scene = Scene;
 
-},{"../Component/Renderer":13,"../Core/GameObject":18,"../Math/BVHTree":25,"../Math/TransformTools":32,"../Math/Vector2":33}],45:[function(require,module,exports){
+},{"../Component/Renderer":13,"../Core/GameObject":18,"../Math/BVHTree":25,"../Math/TransformTools":31,"../Math/Vector2":32}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SceneManager = void 0;
@@ -22673,7 +22830,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":17,"../Math/TransformTools":32}],47:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":17,"../Math/TransformTools":31}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -22929,7 +23086,7 @@ class OBJParser {
             const n = mesh.normals[i];
             const t = tan1[i];
             // 正交化切线（Gram-Schmidt过程）
-            const tangent = Vector3_1.Vector3.subtract(t, Vector3_1.Vector3.multiply(n, Vector3_1.Vector3.dot(n, t))).normalize();
+            const tangent = Vector3_1.Vector3.subtract(t, Vector3_1.Vector3.multiplyScalar(n, Vector3_1.Vector3.dot(n, t))).normalize();
             // 计算切线方向（ handedness ）
             const handedness = Vector3_1.Vector3.dot(Vector3_1.Vector3.cross(n, t), tan2[i]) < 0.0 ? -1 : 1;
             // 存储切线（w分量表示方向）
@@ -22939,7 +23096,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":26,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":40}],48:[function(require,module,exports){
+},{"../Math/Bounds":26,"../Math/Vector2":32,"../Math/Vector3":33,"../Math/Vector4":34,"../Resources/Mesh":40}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Engine_1 = require("./Core/Engine");

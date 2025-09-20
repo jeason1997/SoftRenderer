@@ -47,45 +47,27 @@ export class Vector4 {
      OPERATIONS ON VECTOR
      */
 
-    public add(v: Vector4): Vector4;
-    public add(x: number, y: number, z: number, w: number): Vector4;
-    add() {
-        if (arguments[0] instanceof Vector4) {
-            this.x += arguments[0].x;
-            this.y += arguments[0].y;
-            this.z += arguments[0].z;
-            this.w += arguments[0].w;
-        } else {
-            this.x += arguments[0];
-            this.y += arguments[1];
-            this.z += arguments[2];
-            this.w += arguments[3];
-        }
+    public add(v: Vector4): Vector4 {
+        this.x += v.x;
+        this.y += v.y;
+        this.z += v.z;
+        this.w += v.w;
         return this;
     }
 
-    public subtract(v: Vector4): Vector4;
-    public subtract(x: number, y: number, z: number, w: number): Vector4;
-    subtract() {
-        if (arguments[0] instanceof Vector4) {
-            this.x -= arguments[0].x;
-            this.y -= arguments[0].y;
-            this.z -= arguments[0].z;
-            this.w -= arguments[0].w;
-        } else {
-            this.x -= arguments[0];
-            this.y -= arguments[1];
-            this.z -= arguments[2];
-            this.w -= arguments[3];
-        }
+    public subtract(v: Vector4): Vector4 {
+        this.x -= v.x;
+        this.y -= v.y;
+        this.z -= v.z;
+        this.w -= v.w;
         return this;
     }
 
-    public multiply(d: number): Vector4 {
-        this.x *= d;
-        this.y *= d;
-        this.z *= d;
-        this.w *= d;
+    public multiply(v: Vector4): Vector4 {
+        this.x *= v.x;
+        this.y *= v.y;
+        this.z *= v.z;
+        this.w *= v.w;
         return this;
     }
 
@@ -97,16 +79,16 @@ export class Vector4 {
         return this;
     }
 
-    public scale(v: Vector4): Vector4 {
-        this.x *= v.x;
-        this.y *= v.y;
-        this.z *= v.z;
-        this.w *= v.w;
+    public multiplyScalar(d: number): Vector4 {
+        this.x *= d;
+        this.y *= d;
+        this.z *= d;
+        this.w *= d;
         return this;
     }
 
     public negate(): Vector4 {
-        return this.multiply(-1);
+        return this.multiplyScalar(-1);
     }
 
     public normalize(): Vector4 {
@@ -145,6 +127,26 @@ export class Vector4 {
     /*
      STATIC FUNCTIONS
      */
+
+    public static add(v1: Vector4, v2: Vector4): Vector4 {
+        return new Vector4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
+    }
+
+    public static subtract(v1: Vector4, v2: Vector4): Vector4 {
+        return new Vector4(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);
+    }
+
+    public static multiply(v1: Vector4, v2: Vector4): Vector4 {
+        return new Vector4(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w * v2.w);
+    }
+
+    public static divide(v1: Vector4, scalar: number): Vector4 {
+        return new Vector4(v1.x / scalar, v1.y / scalar, v1.z / scalar, v1.w / scalar);
+    }
+
+    public static multiplyScalar(v1: Vector4, scalar: number): Vector4 {
+        return new Vector4(v1.x * scalar, v1.y * scalar, v1.z * scalar, v1.w * scalar);
+    }
 
     public static lerp(v1: Vector4, v2: Vector4, t: number): Vector4 {
         var v = new Vector4();

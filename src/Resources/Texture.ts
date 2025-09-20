@@ -224,7 +224,7 @@ export class Texture extends UObject {
         // 选择最接近的Mipmap层级
         const level = Math.round(mipLevel);
         const mip = this.getMipmapLevel(level);
-        
+
         // 将UV坐标转换为像素坐标
         const x = Math.floor(u * mip.width);
         const y = Math.floor(v * mip.height);
@@ -481,6 +481,45 @@ export class Texture extends UObject {
      */
     private packColor(r: number, g: number, b: number, a: number): number {
         return r | (g << 8) | (b << 16) | (a << 24);
+    }
+
+    /**
+     * 生成棋盘纹理
+     * @param tileSize 每个棋盘格的大小（像素）
+     * @param color1 第一种颜色（默认白色）
+     * @param color2 第二种颜色（默认黑色）
+     */
+    public static CheckerboardTexture(
+        width: number = 64,
+        height: number = 64,
+        tileSize: number = 8,
+        color1: number = Color.WHITE,
+        color2: number = Color.GRAY): Texture {
+
+        const texture = new Texture(width, height);
+        const data = new Uint8ClampedArray(width * height * 4);
+
+        // 填充棋盘格
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                // 计算当前位置属于哪个棋盘格
+                const tileX = Math.floor(x / tileSize);
+                const tileY = Math.floor(y / tileSize);
+
+                // 交替选择颜色
+                const color = (tileX + tileY) % 2 === 0 ? color1 : color2;
+
+                // 设置像素颜色
+                const index = (y * width + x) * 4;
+                data[index] = (color >> 0) & 0xff;
+                data[index + 1] = (color >> 8) & 0xff;
+                data[index + 2] = (color >> 16) & 0xff;
+                data[index + 3] = (color >> 24) & 0xff;
+            }
+        }
+
+        texture.LoadImage(data);
+        return texture;
     }
 
     public onDestroy(): void {

@@ -21,7 +21,7 @@ export class Ray {
      */
     public at(t: number): Vector3 {
         // 公式: point = origin + t * direction
-        return Vector3.add(this.origin, Vector3.multiply(this.direction, t));
+        return Vector3.add(this.origin, Vector3.multiplyScalar(this.direction, t));
     }
 
     /**

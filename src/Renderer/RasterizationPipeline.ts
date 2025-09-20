@@ -10,7 +10,7 @@ import { EngineConfig } from "../Core/Setting";
 import { Mesh } from "../Resources/Mesh";
 import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
-import { interpolateOverTriangle } from "../Math/Lerp"
+import { interpolateOverTriangle } from "./triangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
 import { Vector2 } from "../Math/Vector2";
@@ -23,7 +23,7 @@ enum DrawMode {
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.Shader;
+    public drawMode: DrawMode = DrawMode.Shader | DrawMode.Wireframe;
     private frameBuffer: Uint32Array;
     private depthBuffer: Float32Array;
     private currentCamera: Camera;

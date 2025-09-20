@@ -1,5 +1,5 @@
 import { Component } from "./Component";
-import { Material } from "../Renderer/Material";
+import { Material } from "../Resources/Material";
 import { Bounds } from "../Math/Bounds";
 import { DisallowMultipleComponent } from "../Core/Decorators";
 

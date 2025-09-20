@@ -1,3 +1,7 @@
+/*
+ * 相机控制可以参考three.js的OrbitControls.js：https://github.com/mrdoob/three.js/blob/r108/examples/js/controls/OrbitControls.js#L390-L395
+ */
+
 import { RequireComponent } from "../Core/Decorators";
 import { Engine } from "../Core/Engine";
 import { Input, InputAxis } from "../Core/Input";

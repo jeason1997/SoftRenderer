@@ -1,8 +1,8 @@
-import { Color } from "./Color";
-import { Vector2 } from "./Vector2";
-import { Vector3 } from "./Vector3";
-import { Vector4 } from "./Vector4";
-import { Matrix4x4 } from "./Matrix4x4";
+import { Color } from "../Math/Color";
+import { Vector2 } from "../Math/Vector2";
+import { Vector3 } from "../Math/Vector3";
+import { Vector4 } from "../Math/Vector4";
+import { Matrix4x4 } from "../Math/Matrix4x4";
 
 // 支持的属性类型
 type AttributeType = number | Color | Vector2 | Vector3 | Vector4 | Matrix4x4;
