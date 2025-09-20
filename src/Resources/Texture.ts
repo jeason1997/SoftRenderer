@@ -129,25 +129,62 @@ export class Texture extends UObject {
     // }
 
     /**
+     * 通过UV坐标和纹理坐标导数获取像素颜色（考虑Mipmap）
+     * @param u 纹理U坐标（0-1）
+     * @param v 纹理V坐标（0-1）
+     * @param du_dx U坐标在屏幕空间X方向的导数
+     * @param dv_dx V坐标在屏幕空间X方向的导数
+     * @param du_dy U坐标在屏幕空间Y方向的导数
+     * @param dv_dy V坐标在屏幕空间Y方向的导数
+     * @returns 颜色值（ARGB格式的32位整数）
+     */
+    public SampleMip(u: number, v: number, du_dx: number = 0.001, dv_dx: number = 0.001, du_dy: number = 0.001, dv_dy: number = 0.001): number {
+        /* 
+        在 3D 渲染中，为了让 Mipmap 层级计算更准确（避免纹理在远处出现锯齿或近处过度模糊），需要传递纹理坐标在屏幕空间的导数。这些导数描述了 UV 坐标在屏幕上每移动 1 像素时的变化率，计算方式如下：
+        // 假设当前片段的UV坐标
+        const currentU = uv.u;
+        const currentV = uv.v;
+
+        // 右侧相邻像素的UV（x方向+1）
+        const rightU = neighborRight.attributes.uv.u;
+        const rightV = neighborRight.attributes.uv.v;
+
+        // 下方相邻像素的UV（y方向+1）
+        const bottomU = neighborBottom.attributes.uv.u;
+        const bottomV = neighborBottom.attributes.uv.v;
+
+        // 计算导数（UV在屏幕空间的变化率）
+        const du_dx = rightU - currentU; // U在X方向的导数
+        const dv_dx = rightV - currentV; // V在X方向的导数
+        const du_dy = bottomU - currentU; // U在Y方向的导数
+        const dv_dy = bottomV - currentV; // V在Y方向的导数
+         */
+
+        // 计算Mipmap层级
+        const mipLevel = this.calculateMipLevel(du_dx, dv_dx, du_dy, dv_dy);
+        return this.Sample(u, v, mipLevel);
+    }
+
+    /**
      * 通过UV坐标获取像素颜色（根据纹理设置自动处理）
      * @param u 纹理U坐标（0-1）
      * @param v 纹理V坐标（0-1）
      * @returns 颜色值（ARGB格式的32位整数）
      */
-    public Sample(u: number, v: number): number {
+    public Sample(u: number, v: number, mipLevel: number = 0): number {
         // 根据环绕模式处理UV坐标
         const [clampedU, clampedV] = this.handleWrapMode(u, v);
 
         // 根据过滤模式采样像素
         switch (this.filterMode) {
             case FilterMode.Point:
-                return this.samplePoint(clampedU, clampedV, 5);
+                return this.samplePoint(clampedU, clampedV, mipLevel);
             case FilterMode.Bilinear:
-                return this.sampleBilinear(clampedU, clampedV);
+                return this.sampleBilinear(clampedU, clampedV, mipLevel);
             case FilterMode.Trilinear:
-                return this.sampleTrilinear(clampedU, clampedV);
+                return this.sampleTrilinear(clampedU, clampedV, mipLevel);
             default:
-                return this.samplePoint(clampedU, clampedV);
+                return this.samplePoint(clampedU, clampedV, mipLevel);
         }
     }
 
@@ -246,7 +283,7 @@ export class Texture extends UObject {
     }
 
     /**
-     * 三线性过滤采样
+     * 三线性过滤采样，在双线性过滤基础上，找到2个最近的Mipmap层级，根据距离插值
      */
     private sampleTrilinear(u: number, v: number, mipLevel: number = 0): number {
         // 如果Mipmap层级不足，退化为双线性过滤
