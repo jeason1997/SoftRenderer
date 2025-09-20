@@ -516,6 +516,7 @@ export class RasterizationPipeline {
         const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
 
         // 渲染管线6.裁剪
+        //TODO:
 
         for (let i = 0; i < triangles.length; i += 3) {
             const p1 = screenVertices[triangles[i]];

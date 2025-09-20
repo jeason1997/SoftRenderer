@@ -35,20 +35,35 @@ export enum TextureFormat {
     ATF_RGB_JPG = 40
 }
 
+interface MipmapLevel {
+    width: number;
+    height: number;
+    data: Uint8ClampedArray;
+}
+
 export class Texture extends UObject {
     public width: number;
     public height: number;
-    public mipMapBias: number;
-    public mipmapCount: number;
+    public mipMapBias: number = 0;
+    public mipmapCount: number = 5;
     public data: Uint8ClampedArray;
-    public filterMode: FilterMode;
-    public wrapMode: TextureWrapMode;
-    public format: TextureFormat;
+    public filterMode: FilterMode = FilterMode.Point;
+    public wrapMode: TextureWrapMode = TextureWrapMode.Repeat;
+    public format: TextureFormat = TextureFormat.RGBA32;
     public alphaIsTransparency: boolean;
+    private mipmapLevels: MipmapLevel[];
 
-    // LoadImage(data: Uint8ClampedArray){
-    //     throw new Error('LoadImage not implemented');
-    // }
+
+    constructor(width: number, height: number) {
+        super();
+        this.width = width;
+        this.height = height;
+    }
+
+    LoadImage(data: Uint8ClampedArray) {
+        this.data = data;
+        this.generateMipmaps();
+    }
 
     SetPixel(x: number, y: number, color: number) {
         const index = (y * this.width + x) * 4;
@@ -126,13 +141,11 @@ export class Texture extends UObject {
         // 根据过滤模式采样像素
         switch (this.filterMode) {
             case FilterMode.Point:
-                return this.samplePoint(clampedU, clampedV);
+                return this.samplePoint(clampedU, clampedV, 5);
             case FilterMode.Bilinear:
                 return this.sampleBilinear(clampedU, clampedV);
             case FilterMode.Trilinear:
-                // 三线性过滤需要Mipmap支持，这里简化处理
-                console.warn("Trilinear filter not fully implemented, falling back to bilinear");
-                return this.sampleBilinear(clampedU, clampedV);
+                return this.sampleTrilinear(clampedU, clampedV);
             default:
                 return this.samplePoint(clampedU, clampedV);
         }
@@ -170,16 +183,27 @@ export class Texture extends UObject {
      * @param v 处理后的V坐标（0-1）
      * @returns 颜色值
      */
-    private samplePoint(u: number, v: number): number {
-        // 将UV坐标转换为像素坐标（注意V坐标通常需要翻转，因为纹理原点可能在左下角）
-        const x = Math.floor(u * this.width);
-        const y = Math.floor(v * this.height); // 翻转V坐标，符合常见纹理坐标系
+    private samplePoint(u: number, v: number, mipLevel: number = 0): number {
+        // 选择最接近的Mipmap层级
+        const level = Math.round(mipLevel);
+        const mip = this.getMipmapLevel(level);
+        
+        // 将UV坐标转换为像素坐标
+        const x = Math.floor(u * mip.width);
+        const y = Math.floor(v * mip.height);
 
         // 确保坐标在有效范围内
-        const clampedX = Math.max(0, Math.min(this.width - 1, x));
-        const clampedY = Math.max(0, Math.min(this.height - 1, y));
+        const clampedX = Math.max(0, Math.min(mip.width - 1, x));
+        const clampedY = Math.max(0, Math.min(mip.height - 1, y));
 
-        return this.GetPixel(clampedX, clampedY);
+        // 获取像素颜色
+        const index = (clampedY * mip.width + clampedX) * 4;
+        return this.packColor(
+            mip.data[index],
+            mip.data[index + 1],
+            mip.data[index + 2],
+            mip.data[index + 3]
+        );
     }
 
     /**
@@ -188,10 +212,14 @@ export class Texture extends UObject {
      * @param v 处理后的V坐标（0-1）
      * @returns 插值后的颜色值
      */
-    private sampleBilinear(u: number, v: number): number {
+    private sampleBilinear(u: number, v: number, mipLevel: number = 0): number {
+        // 选择最接近的Mipmap层级
+        const level = Math.round(mipLevel);
+        const mip = this.getMipmapLevel(level);
+
         // 转换为像素坐标（带小数部分）
-        const x = u * this.width;
-        const y = (1 - v) * this.height; // 翻转V坐标
+        const x = u * mip.width;
+        const y = v * mip.height;
 
         // 计算周围四个像素的坐标
         const x0 = Math.floor(x);
@@ -200,33 +228,43 @@ export class Texture extends UObject {
         const y1 = y0 + 1;
 
         // 计算插值权重
-        const uWeight = x - x0; // U方向权重（0-1）
-        const vWeight = y - y0; // V方向权重（0-1）
+        const uWeight = x - x0;
+        const vWeight = y - y0;
 
         // 获取四个角落的像素颜色
-        const c00 = this.getClampedPixel(x0, y0);
-        const c01 = this.getClampedPixel(x0, y1);
-        const c10 = this.getClampedPixel(x1, y0);
-        const c11 = this.getClampedPixel(x1, y1);
+        const c00 = this.getClampedPixelFromMip(mip, x0, y0);
+        const c01 = this.getClampedPixelFromMip(mip, x0, y1);
+        const c10 = this.getClampedPixelFromMip(mip, x1, y0);
+        const c11 = this.getClampedPixelFromMip(mip, x1, y1);
 
         // 双线性插值计算
-        const color0 = this.lerpColor(c00, c10, uWeight); // 第一行插值
-        const color1 = this.lerpColor(c01, c11, uWeight); // 第二行插值
-        const finalColor = this.lerpColor(color0, color1, vWeight); // 垂直方向插值
+        const color0 = this.lerpColor(c00, c10, uWeight);
+        const color1 = this.lerpColor(c01, c11, uWeight);
+        const finalColor = this.lerpColor(color0, color1, vWeight);
 
         return finalColor;
     }
 
     /**
-     * 获取范围内的像素（防止越界）
-     * @param x 像素X坐标
-     * @param y 像素Y坐标
-     * @returns 颜色值
+     * 三线性过滤采样
      */
-    private getClampedPixel(x: number, y: number): number {
-        const clampedX = Math.max(0, Math.min(this.width - 1, x));
-        const clampedY = Math.max(0, Math.min(this.height - 1, y));
-        return this.GetPixel(clampedX, clampedY);
+    private sampleTrilinear(u: number, v: number, mipLevel: number = 0): number {
+        // 如果Mipmap层级不足，退化为双线性过滤
+        if (this.mipmapCount < 2) {
+            return this.sampleBilinear(u, v, mipLevel);
+        }
+
+        // 计算上下两个Mipmap层级
+        const levelFloor = Math.floor(mipLevel);
+        const levelCeil = Math.min(levelFloor + 1, this.mipmapCount - 1);
+        const levelWeight = mipLevel - levelFloor;
+
+        // 在两个层级上分别进行双线性过滤
+        const colorFloor = this.sampleBilinear(u, v, levelFloor);
+        const colorCeil = this.sampleBilinear(u, v, levelCeil);
+
+        // 在两个层级结果之间进行线性插值
+        return this.lerpColor(colorFloor, colorCeil, levelWeight);
     }
 
     /**
@@ -258,7 +296,158 @@ export class Texture extends UObject {
         return (lerpA << 24) | (lerpR << 16) | (lerpG << 8) | lerpB;
     }
 
+    /**
+     * 生成Mipmap层级
+     * 从原始纹理开始，逐级缩小为1/2尺寸并进行模糊处理
+     */
+    private generateMipmaps() {
+        // 清空现有Mipmap层级
+        this.mipmapLevels = [];
+
+        // 添加原始纹理作为第0级Mipmap
+        this.mipmapLevels.push({
+            width: this.width,
+            height: this.height,
+            data: new Uint8ClampedArray(this.data)
+        });
+
+        let currentWidth = this.width;
+        let currentHeight = this.height;
+        let currentLevel = 0;
+
+        // 生成后续Mipmap层级，直到1x1像素
+        while (currentWidth > 1 || currentHeight > 1) {
+            currentLevel++;
+            const newWidth = Math.max(1, Math.floor(currentWidth / 2));
+            const newHeight = Math.max(1, Math.floor(currentHeight / 2));
+
+            // 创建新层级数据
+            const newData = new Uint8ClampedArray(newWidth * newHeight * 4);
+            const sourceLevel = this.mipmapLevels[currentLevel - 1];
+
+            // 缩小并模糊处理（简单的2x2区域平均）
+            for (let y = 0; y < newHeight; y++) {
+                for (let x = 0; x < newWidth; x++) {
+                    // 计算源纹理中的对应区域
+                    const srcX = Math.min(x * 2, sourceLevel.width - 1);
+                    const srcY = Math.min(y * 2, sourceLevel.height - 1);
+
+                    // 取2x2区域的四个像素
+                    const pixels = [
+                        this.getPixelFromLevel(sourceLevel, srcX, srcY),
+                        this.getPixelFromLevel(sourceLevel, Math.min(srcX + 1, sourceLevel.width - 1), srcY),
+                        this.getPixelFromLevel(sourceLevel, srcX, Math.min(srcY + 1, sourceLevel.height - 1)),
+                        this.getPixelFromLevel(sourceLevel, Math.min(srcX + 1, sourceLevel.width - 1), Math.min(srcY + 1, sourceLevel.height - 1))
+                    ];
+
+                    // 计算四个像素的平均值
+                    let r = 0, g = 0, b = 0, a = 0;
+                    for (const p of pixels) {
+                        r += p.r;
+                        g += p.g;
+                        b += p.b;
+                        a += p.a;
+                    }
+
+                    r = Math.round(r / 4);
+                    g = Math.round(g / 4);
+                    b = Math.round(b / 4);
+                    a = Math.round(a / 4);
+
+                    // 写入新Mipmap层级
+                    const index = (y * newWidth + x) * 4;
+                    newData[index] = r;
+                    newData[index + 1] = g;
+                    newData[index + 2] = b;
+                    newData[index + 3] = a;
+                }
+            }
+
+            // 添加新层级
+            this.mipmapLevels.push({
+                width: newWidth,
+                height: newHeight,
+                data: newData
+            });
+
+            currentWidth = newWidth;
+            currentHeight = newHeight;
+        }
+
+        this.mipmapCount = this.mipmapLevels.length;
+    }
+
+    /**
+     * 从指定Mipmap层级获取像素颜色（RGBA分量）
+     */
+    private getPixelFromLevel(level: MipmapLevel, x: number, y: number): { r: number, g: number, b: number, a: number } {
+        const index = (y * level.width + x) * 4;
+        return {
+            r: level.data[index],
+            g: level.data[index + 1],
+            b: level.data[index + 2],
+            a: level.data[index + 3]
+        };
+    }
+
+    /**
+     * 计算所需的Mipmap层级
+     * 基于纹理坐标在屏幕空间的变化率（导数）
+     */
+    private calculateMipLevel(du_dx: number, dv_dx: number, du_dy: number, dv_dy: number): number {
+        // 如果没有Mipmap，直接返回0级
+        if (this.mipmapCount <= 1) return 0;
+
+        // 计算纹理空间的偏导数
+        const dx = du_dx * this.width;
+        const dy = dv_dx * this.height;
+        const dz = du_dy * this.width;
+        const dw = dv_dy * this.height;
+
+        // 计算纹理坐标变化的幅度
+        const lenSq = dx * dx + dy * dy + dz * dz + dw * dw;
+        let level = 0.5 * Math.log2(lenSq);
+
+        // 应用Mipmap偏差
+        level += this.mipMapBias;
+
+        // 限制在有效层级范围内
+        return Math.max(0, Math.min(this.mipmapCount - 1, level));
+    }
+
+    /**
+     * 获取指定Mipmap层级（确保有效）
+     */
+    private getMipmapLevel(level: number): MipmapLevel {
+        const clampedLevel = Math.max(0, Math.min(this.mipmapCount - 1, level));
+        return this.mipmapLevels[clampedLevel] || this.mipmapLevels[0];
+    }
+
+    /**
+     * 从Mipmap层级获取范围内的像素（防止越界）
+     */
+    private getClampedPixelFromMip(mip: MipmapLevel, x: number, y: number): number {
+        const clampedX = Math.max(0, Math.min(mip.width - 1, x));
+        const clampedY = Math.max(0, Math.min(mip.height - 1, y));
+        const index = (clampedY * mip.width + clampedX) * 4;
+
+        return this.packColor(
+            mip.data[index],
+            mip.data[index + 1],
+            mip.data[index + 2],
+            mip.data[index + 3]
+        );
+    }
+
+    /**
+     * 将RGBA分量打包为32位整数
+     */
+    private packColor(r: number, g: number, b: number, a: number): number {
+        return r | (g << 8) | (b << 16) | (a << 24);
+    }
+
     public onDestroy(): void {
-        throw new Error("Method not implemented.");
+        // 清理Mipmap数据
+        this.mipmapLevels = [];
     }
 }

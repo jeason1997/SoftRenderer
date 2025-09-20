@@ -123,10 +123,8 @@ export class Resources {
             const imageData = tempCtx.getImageData(0, 0, imgWidth, imgHeight);
             const pixelData = imageData.data; // 核心：Uint8ClampedArray类型的像素数组，每个像素占4位（RGBA）
 
-            const texture = new Texture();
-            texture.width = imgWidth;
-            texture.height = imgHeight;
-            texture.data = pixelData;
+            const texture = new Texture(imgWidth, imgHeight);
+            texture.LoadImage(pixelData);
             return texture;
         } catch (error) {
             console.error(`加载纹理失败: ${fileName}`, error);

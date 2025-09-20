@@ -2,6 +2,7 @@ import { DisallowComponent } from "../Core/Decorators";
 import { Input } from "../Core/Input";
 import { Quaternion } from "../Math/Quaternion";
 import { Vector3 } from "../Math/Vector3";
+import { Debug } from "../Utils/Debug";
 import { Component } from "./Component";
 import { Rigidbody } from "./RigidBody";
 
@@ -9,6 +10,11 @@ import { Rigidbody } from "./RigidBody";
 export class ObjRotate extends Component {
     private angleX = 0;
     private angleY = 0;
+
+    public onStart(): void {
+        this.angleX = this.transform.rotation.eulerAngles.x;
+        this.angleY = this.transform.rotation.eulerAngles.y;
+    }
 
     public onUpdate(): void {
         // // 键盘输入
@@ -32,5 +38,7 @@ export class ObjRotate extends Component {
         if(Input.GetKey(Input.KeyCode.Numpad8)) this.angleX -= 1;
         if(Input.GetKey(Input.KeyCode.Numpad2)) this.angleX += 1;
         this.transform.rotation = new Quaternion(new Vector3(this.angleX, this.angleY, 0));
+
+        Debug.Log("X:" + Math.floor(this.angleX) + " Y:" + Math.floor(this.angleY));
     }
 }
