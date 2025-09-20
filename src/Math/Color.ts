@@ -77,6 +77,15 @@ export class Color {
         );
     }
 
+    public static lerp(c1: Color, c2: Color, t: number): Color {
+        return new Color(
+            Math.floor(c1.r + (c2.r - c1.r) * t),
+            Math.floor(c1.g + (c2.g - c1.g) * t),
+            Math.floor(c1.b + (c2.b - c1.b) * t),
+            Math.floor(c1.a + (c2.a - c1.a) * t)
+        );
+    }
+
     /**
      * 颜色混合方法
      * 支持多种混合模式

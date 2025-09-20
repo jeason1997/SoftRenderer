@@ -38,6 +38,6 @@ export class RenderSettings {
     public static fogDensity: number = 0.01;
     public static linearFogStart: number = 0;
     public static linearFogEnd: number = 300;
-    public static ambientLight: Color = Color.FromUint32(Color.RED);
+    public static ambientLight: Color = Color.FromUint32(Color.BLACK);
     public static skyboxMaterial;
 }

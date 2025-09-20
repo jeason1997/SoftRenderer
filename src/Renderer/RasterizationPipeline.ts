@@ -6,15 +6,16 @@ import { Renderer } from "../Component/Renderer";
 import { MeshRenderer } from "../Component/MeshRenderer";
 import { Camera, CameraClearFlags } from "../Component/Camera";
 import { Engine } from "../Core/Engine";
-import { EngineConfig } from "../Core/Setting";
+import { EngineConfig, RenderSettings } from "../Core/Setting";
 import { Mesh } from "../Resources/Mesh";
 import { Bounds } from "../Math/Bounds";
 import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
-import { interpolateOverTriangle } from "./triangleRasterizer"
+import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
 import { Vector2 } from "../Math/Vector2";
 import { Light } from "../Component/Light";
+import { ScanlineTriangleRasterizer } from "./ScanlineTriangleRasterizer";
 
 enum DrawMode {
     Wireframe = 1,
@@ -23,7 +24,7 @@ enum DrawMode {
 }
 
 export class RasterizationPipeline {
-    public drawMode: DrawMode = DrawMode.Shader | DrawMode.Wireframe;
+    public drawMode: DrawMode = DrawMode.Shader;
     private frameBuffer: Uint32Array;
     private depthBuffer: Float32Array;
     private currentCamera: Camera;
@@ -232,190 +233,6 @@ export class RasterizationPipeline {
         this.DrawLine(x3, y3, x1, y1, color);
     }
 
-    public DrawTriangleFilled(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, color: number) {
-        // 注：以下提到的长边，特指y轴跨度最长的边，而不是实际上的边长
-
-        // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-        const w = EngineConfig.canvasWidth;
-        const h = EngineConfig.canvasHeight;
-        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
-            //TODO:裁剪掉超出屏幕的部分
-            return;
-        }
-
-        // 实际绘制到屏幕上的点，必须是整数，取整一下。使用位运算代替Math.floor，提升性能
-        x1 = x1 | 0;
-        y1 = y1 | 0;
-        x2 = x2 | 0;
-        y2 = y2 | 0;
-        x3 = x3 | 0;
-        y3 = y3 | 0;
-
-        // 对点进行排序，使得y1<=y2<=y3，即可确定三角形的长边为L13，L12和L23则是另外两条短边
-        if (y1 > y2) [x1, y1, x2, y2] = [x2, y2, x1, y1];
-        if (y1 > y3) [x1, y1, x3, y3] = [x3, y3, x1, y1];
-        if (y2 > y3) [x2, y2, x3, y3] = [x3, y3, x2, y2];
-
-        // 获取3条边的点坐标合集
-        const p12 = this.Interpolate(y1, x1, y2, x2);
-        const p23 = this.Interpolate(y2, x2, y3, x3);
-        const p13 = this.Interpolate(y1, x1, y3, x3);
-
-        // 拼合两条短边为一条长边（先移除第一条边的最后一个数据，避免重复）
-        // 现在变成2条长边，L13和L123
-        p12.pop();
-        const p123 = p12.concat(p23);
-
-        // 判断L13和L123哪条长边是左哪条是右，都取数组中间的点，判断谁左谁右即可。
-        // 使用位运算代替Math.floor，提升性能
-        // const m = Math.floor(p123.length / 2);
-        const m = (p123.length >> 1) | 0;
-        let pLeft = p123;
-        let pRight = p13;
-        if (p13[m] < p123[m]) {
-            pLeft = p13;
-            pRight = p123;
-        }
-
-        // 绘制水平线段
-        for (let y = y1; y <= y3; y++) {
-            for (let x = pLeft[y - y1]; x <= pRight[y - y1]; x++) {
-                this.DrawPixel(x, y, color);
-            }
-        }
-    }
-
-    public DrawTriangleFilledWithVertexColor(
-        x1: number, y1: number,
-        x2: number, y2: number,
-        x3: number, y3: number,
-        color1: number, color2: number, color3: number
-    ) {
-        // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-        const w = EngineConfig.canvasWidth;
-        const h = EngineConfig.canvasHeight;
-        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
-            //TODO:裁剪掉超出屏幕的部分
-            return;
-        }
-
-        // 实际绘制到屏幕上的点，必须是整数，取整一下。使用位运算代替Math.floor，提升性能
-        x1 = x1 | 0;
-        y1 = y1 | 0;
-        x2 = x2 | 0;
-        y2 = y2 | 0;
-        x3 = x3 | 0;
-        y3 = y3 | 0;
-
-        // 对点按Y坐标排序，确保y1 <= y2 <= y3
-        if (y1 > y2) [x1, y1, x2, y2, color1, color2] = [x2, y2, x1, y1, color2, color1];
-        if (y1 > y3) [x1, y1, x3, y3, color1, color3] = [x3, y3, x1, y1, color3, color1];
-        if (y2 > y3) [x2, y2, x3, y3, color2, color3] = [x3, y3, x2, y2, color3, color2];
-
-        // 提取RGB分量
-        const c1 = Color.FromUint32(color1);
-        const c2 = Color.FromUint32(color2);
-        const c3 = Color.FromUint32(color3);
-
-        // 插值函数，颜色1与颜色2在d1-d2的范围内均匀插值
-        const interpolateColor = (d1: number, r1: number, g1: number, b1: number, a1: number,
-            d2: number, r2: number, g2: number, b2: number, a2: number) => {
-            // 预分配数组大小
-            // 使用位运算代替Math.floor和Math.abs，提升性能
-            // const dx = Math.abs(Math.floor(d2 - d1));
-            const dx = ((d2 > d1 ? d2 - d1 : d1 - d2) | 0);
-            const result = new Array(dx + 1);
-
-            // 计算步长
-            const invDelta = 1 / (d2 - d1);
-            const rStep = (r2 - r1) * invDelta;
-            const gStep = (g2 - g1) * invDelta;
-            const bStep = (b2 - b1) * invDelta;
-            const aStep = (a2 - a1) * invDelta;
-
-            let r = r1, g = g1, b = b1, a = a1;
-            for (let i = 0; i <= dx; i++) {
-                result[i] = { r, g, b, a };
-                r += rStep;
-                g += gStep;
-                b += bStep;
-                a += aStep;
-            }
-            return result;
-        };
-
-        // 插值三条边的坐标和颜色
-        const p12 = this.Interpolate(y1, x1, y2, x2);
-        const p12Colors = interpolateColor(y1, c1.r, c1.g, c1.b, c1.a, y2, c2.r, c2.g, c2.b, c2.a);
-
-        const p23 = this.Interpolate(y2, x2, y3, x3);
-        const p23Colors = interpolateColor(y2, c2.r, c2.g, c2.b, c2.a, y3, c3.r, c3.g, c3.b, c3.a);
-
-        const p13 = this.Interpolate(y1, x1, y3, x3);
-        const p13Colors = interpolateColor(y1, c1.r, c1.g, c1.b, c1.a, y3, c3.r, c3.g, c3.b, c3.a);
-
-        // 合并两条短边
-        p12.pop();
-        const p123 = p12.concat(p23);
-        const p123Colors = p12Colors.concat(p23Colors);
-
-        // 确定左右边界
-        // const m = Math.floor(p123.length / 2);
-        const m = (p123.length >> 1) | 0;
-        let leftPoints = p123;
-        let rightPoints = p13;
-        let leftColors = p123Colors;
-        let rightColors = p13Colors;
-
-        if (p13[m] < p123[m]) {
-            leftPoints = p13;
-            rightPoints = p123;
-            leftColors = p13Colors;
-            rightColors = p123Colors;
-        }
-
-        // 绘制水平线段，并进行颜色插值
-        for (let y = y1; y <= y3; y++) {
-            const idx = y - y1;
-            const xStart = leftPoints[idx];
-            const xEnd = rightPoints[idx];
-
-            const leftColor = leftColors[idx];
-            const rightColor = rightColors[idx];
-
-            // 预计算颜色差值
-            const rDiff = rightColor.r - leftColor.r;
-            const gDiff = rightColor.g - leftColor.g;
-            const bDiff = rightColor.b - leftColor.b;
-            const aDiff = rightColor.a - leftColor.a;
-
-            // 步长和颜色增量
-            const invLength = 1 / ((xEnd - xStart) + 1);
-            const rStep = rDiff * invLength;
-            const gStep = gDiff * invLength;
-            const bStep = bDiff * invLength;
-            const aStep = aDiff * invLength;
-
-            // 初始颜色值
-            let r = leftColor.r;
-            let g = leftColor.g;
-            let b = leftColor.b;
-            let a = leftColor.a;
-
-            // 水平方向颜色插值
-            for (let x = xStart; x <= xEnd; x++) {
-                const finalColor = ((a | 0) << 24) | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0);
-                this.DrawPixel(x, y, finalColor);
-
-                // 累加颜色值
-                r += rStep;
-                g += gStep;
-                b += bStep;
-                a += aStep;
-            }
-        }
-    }
-
     //#endregion
 
     //#region 变换
@@ -556,7 +373,7 @@ export class RasterizationPipeline {
             }
             if (this.drawMode & DrawMode.Shader) {
                 // 渲染管线7.光栅化
-                const fragments = interpolateOverTriangle(p1, p2, p3, attrs1, attrs2, attrs3);
+                const fragments = BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, attrs1, attrs2, attrs3);
 
                 for (let i = 0; i < fragments.length; i++) {
                     const fragment = fragments[i];
@@ -592,7 +409,7 @@ export class RasterizationPipeline {
                             const texture = renderer.material.mainTexture;
                             const uv = fragment.attributes.uv as Vector2;
                             const color = texture.Sample(uv.u, uv.v);
-                            this.DrawPixel(x, y, this.calculateLambertLighting(color, fragment.attributes.normal as Vector3), true);
+                            this.DrawPixel(x, y, this.calculateLighting(color, fragment.attributes.normal as Vector3, this.currentCamera.transform.forward), true);
                         }
                     }
                 }
@@ -600,39 +417,65 @@ export class RasterizationPipeline {
         }
     }
 
-    // 兰伯特光照计算
-    private calculateLambertLighting(
-        surfaceColor: number, 
-        normal: Vector3, 
+    // 光照计算
+    private calculateLighting(
+        surfaceColor: number,
+        normal: Vector3,
+        viewDirection: Vector3,
     ): number {
         const light = Light.sunLight;
+        const ambientLight = RenderSettings.ambientLight;
+
+        // 高光系数，值越大高光越集中
+        const shininess: number = 100
 
         // 确保法向量归一化
         const normalizedNormal = normal.normalize();
-        
-        // 计算法向量与光源方向的点积（兰伯特色度）
-        // 结果范围为[-1, 1]，我们只关心正面光照（>0的值）
-        const dotProduct = Math.max(0, normalizedNormal.dot(light.transform.forward));
-        
+        const lightDirection = light.transform.forward.normalize();
+        const normalizedViewDir = viewDirection.negate().normalize();
+
+        // 计算漫反射（半兰伯特）部分
+        const dotProduct = Math.max(0, Vector3.dot(normalizedNormal, lightDirection)) * 0.5 + 0.5;
+
+        // 计算高光（Phong）部分
+        // 1. 计算反射光方向 = 2*(法向量·光源方向)*法向量 - 光源方向
+        const reflectDir = normalizedNormal.clone()
+            .multiplyScalar(2 * Vector3.dot(normalizedNormal, lightDirection))
+            .subtract(lightDirection)
+            .normalize();
+
+        // 2. 计算反射方向与视角方向的点积
+        const specDot = Math.max(0, Vector3.dot(reflectDir, normalizedViewDir));
+
+        // 3. 计算高光因子（使用高光系数控制高光范围）
+        const specularFactor = Math.pow(specDot, shininess);
+
+        // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
+        const specularIntensity = 0.5; // 高光强度
+        const specularR = Math.round(light.color.r * specularIntensity * specularFactor);
+        const specularG = Math.round(light.color.g * specularIntensity * specularFactor);
+        const specularB = Math.round(light.color.b * specularIntensity * specularFactor);
+
         // 提取表面颜色的RGBA通道
-        const r = (surfaceColor >> 16) & 0xff;
-        const g = (surfaceColor >> 8) & 0xff;
-        const b = surfaceColor & 0xff;
-        const a = (surfaceColor >> 24) & 0xff;
-        
-        // 计算光照后的颜色（漫反射公式）
-        // 表面颜色 * 光源颜色 * 光照强度 * 兰伯特色度
-        const litR = Math.round(r * (light.color.r / 255) * light.intensity * dotProduct);
-        const litG = Math.round(g * (light.color.g / 255) * light.intensity * dotProduct);
-        const litB = Math.round(b * (light.color.b / 255) * light.intensity * dotProduct);
-        
+        const rgba = Color.FromUint32(surfaceColor);
+
+        // 计算漫反射颜色
+        const diffR = Math.round(rgba.r * (light.color.r / 255) * light.intensity * dotProduct);
+        const diffG = Math.round(rgba.g * (light.color.g / 255) * light.intensity * dotProduct);
+        const diffB = Math.round(rgba.b * (light.color.b / 255) * light.intensity * dotProduct);
+
+        // 合并所有光照贡献（环境光 + 漫反射 + 高光）
+        const totalR = ambientLight.r + diffR + specularR;
+        const totalG = ambientLight.g + diffG + specularG;
+        const totalB = ambientLight.b + diffB + specularB;
+
         // 确保颜色值在0-255范围内
-        const clampedR = Math.min(255, Math.max(0, litR));
-        const clampedG = Math.min(255, Math.max(0, litG));
-        const clampedB = Math.min(255, Math.max(0, litB));
-        
+        const clampedR = Math.min(255, Math.max(0, totalR));
+        const clampedG = Math.min(255, Math.max(0, totalG));
+        const clampedB = Math.min(255, Math.max(0, totalB));
+
         // 组合成32位颜色值（保留原始Alpha）
-        return (a << 24) | (clampedR << 16) | (clampedG << 8) | clampedB;
+        return (rgba.a << 24) | (clampedB << 16) | (clampedG << 8) | clampedR;
     }
 
     //#endregion
@@ -741,30 +584,6 @@ export class RasterizationPipeline {
                 Color.RED
             );
         }
-    }
-
-    /// <summary>
-    /// 线性插值
-    /// 传入2个点，返回它们组成线段的插值。
-    /// 要求：
-    /// 1. 要先算出直线偏水平还是垂直，如果是偏水平（斜率小于1），则以x为循环，传入顺序是(x1,y1,x2,y2)，反之如果直线偏垂直，则是(y1,x1,y2,x2)
-    /// 2. 同时要确保线段点的方向是从左往右或从上往下，例如线段是偏水平的话，要确保x2>x1，如果是偏垂直的话，要确保y2>y1
-    /// 举个例子：
-    /// 点(0, 0)和(2,1)，传入的参数是(0, 0, 2, 1)，返回的是((2-0)+1=3)个值，这些值是从(0-1)中间插值的，即(0, 0.5, 1)
-    /// </summary>
-    private Interpolate(a1: number, b1: number, a2: number, b2: number): number[] {
-        // 预分配数组大小以避免动态扩容
-        // const dx = Math.abs(Math.floor(a2 - a1));
-        const dx = ((a2 > a1 ? a2 - a1 : a1 - a2) | 0);
-        const value = new Array(dx + 1);
-        const a = (b2 - b1) / (a2 - a1);
-        let d = b1;
-
-        for (let i = 0; i <= dx; i++) {
-            value[i] = d;
-            d += a;
-        }
-        return value;
     }
 
     /**

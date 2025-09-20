@@ -649,4 +649,14 @@ export class Matrix4x4 {
         }
         return result;
     }
+
+    public static lerp(m1: Matrix4x4, m2: Matrix4x4, t: number): Matrix4x4 {
+        let result = new Matrix4x4();
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                result.matrix[i][j] = m1.matrix[i][j] + (m2.matrix[i][j] - m1.matrix[i][j]) * t;
+            }
+        }
+        return result;
+    }
 }

@@ -1,0 +1,103 @@
+import { Fragment, TriangleRasterizer, VertexAttributes, AttributeType } from "./TriangleRasterizer";
+import { Vector3 } from "../Math/Vector3";
+import { EngineConfig } from "../Core/Setting";
+
+
+export class ScanlineTriangleRasterizer extends TriangleRasterizer {
+    /**
+     * 静态实现基类的rasterizeTriangle方法
+     */
+    public static rasterizeTriangle(v0: Vector3, v1: Vector3, v2: Vector3, attrs1: VertexAttributes, attrs2: VertexAttributes, attrs3: VertexAttributes): Fragment[] {
+        const fragments: Fragment[] = [];
+        let [x1, y1, x2, y2, x3, y3] = [v0.x, v0.y, v1.x, v1.y, v2.x, v2.y];
+
+        // 注：以下提到的长边，特指y轴跨度最长的边，而不是实际上的边长
+
+        // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
+        const w = EngineConfig.canvasWidth;
+        const h = EngineConfig.canvasHeight;
+        if (((x1 | y1) < 0) || (x1 >= w) || (y1 >= h) || ((x2 | y2) < 0) || (x2 >= w) || (y2 >= h) || ((x3 | y3) < 0) || (x3 >= w) || (y3 >= h)) {
+            //TODO:裁剪掉超出屏幕的部分
+            return fragments;
+        }
+
+        // 实际绘制到屏幕上的点，必须是整数，取整一下。使用位运算代替Math.floor，提升性能
+        x1 = x1 | 0;
+        y1 = y1 | 0;
+        x2 = x2 | 0;
+        y2 = y2 | 0;
+        x3 = x3 | 0;
+        y3 = y3 | 0;
+
+        // 对点进行排序，使得y1<=y2<=y3，即可确定三角形的长边为L13，L12和L23则是另外两条短边
+        if (y1 > y2) [x1, y1, x2, y2] = [x2, y2, x1, y1];
+        if (y1 > y3) [x1, y1, x3, y3] = [x3, y3, x1, y1];
+        if (y2 > y3) [x2, y2, x3, y3] = [x3, y3, x2, y2];
+
+        // 获取3条边的点坐标合集
+        const p12 = this.Interpolate(y1, x1, y2, x2);
+        const p23 = this.Interpolate(y2, x2, y3, x3);
+        const p13 = this.Interpolate(y1, x1, y3, x3);
+
+        // 拼合两条短边为一条长边（先移除第一条边的最后一个数据，避免重复）
+        // 现在变成2条长边，L13和L123
+        p12.pop();
+        const p123 = p12.concat(p23);
+
+        // 判断L13和L123哪条长边是左哪条是右，都取数组中间的点，判断谁左谁右即可。
+        // 使用位运算代替Math.floor，提升性能
+        // const m = Math.floor(p123.length / 2);
+        const m = (p123.length >> 1) | 0;
+        let pLeft = p123;
+        let pRight = p13;
+        if (p13[m] < p123[m]) {
+            pLeft = p13;
+            pRight = p123;
+        }
+
+        // 绘制水平线段
+        for (let y = y1; y <= y3; y++) {
+            for (let x = pLeft[y - y1]; x <= pRight[y - y1]; x++) {
+                //this.DrawPixel(x, y, color);
+                fragments.push({
+                    x: x,
+                    y: y,
+                    z: 0,
+                    attributes: {
+                    }
+                });
+            }
+        }
+
+        return fragments;
+    }
+
+    /// <summary>
+    /// 线性插值
+    /// 传入2个点，返回它们组成线段的插值。
+    /// 要求：
+    /// 1. 要先算出直线偏水平还是垂直，如果是偏水平（斜率小于1），则以x为循环，传入顺序是(x1,y1,x2,y2)，反之如果直线偏垂直，则是(y1,x1,y2,x2)
+    /// 2. 同时要确保线段点的方向是从左往右或从上往下，例如线段是偏水平的话，要确保x2>x1，如果是偏垂直的话，要确保y2>y1
+    /// 举个例子：
+    /// 点(0, 0)和(2,1)，传入的参数是(0, 0, 2, 1)，返回的是((2-0)+1=3)个值，这些值是从(0-1)中间插值的，即(0, 0.5, 1)
+    /// </summary>
+    private static Interpolate(y1: number, x1: number, y2: number, x2: number): number[] {
+        // 预分配数组大小以避免动态扩容
+        // const detal = Math.abs(Math.floor(a2 - a1));
+        // const detal = ((y2 > y1 ? y2 - y1 : y1 - y2) | 0);
+        // 传入参数时已经假设y2>y1，所以这里不需要再判断，直接获取dy，即y轴的跨度
+        const yLength = y2 - y1;
+        const xLength = x2 - x1;
+        const value = new Array(yLength + 1);
+        // 计算x轴的增量，即将x轴的跨度除以y轴的跨度，得到x轴的增量
+        // 因为我们的目的是画一条在y轴上均匀分布的线段，这里的x轴增量指y每增加1时，x增加的量
+        const dx = xLength / yLength;
+        let xPos = x1;
+
+        for (let i = 0; i <= yLength; i++) {
+            value[i] = xPos;
+            xPos += dx;
+        }
+        return value;
+    }
+}
