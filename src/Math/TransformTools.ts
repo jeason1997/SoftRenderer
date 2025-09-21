@@ -218,7 +218,7 @@ export class TransformTools {
 
         // 计算模型矩阵的逆转置矩阵
         // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
-        const inverseTransposeModel = modelMatrix.clone().invert().transpose();
+        const inverseTransposeModel = modelMatrix.invert().transpose();
 
         // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
         const worldNormal = inverseTransposeModel.multiplyVector3(normal);

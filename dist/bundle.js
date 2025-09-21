@@ -16719,7 +16719,6 @@ let Camera = (() => {
                 Camera.mainCamera = this;
             }
             Camera.cameras.push(this);
-            this.transform.forward;
         }
         onUpdate() {
             if (Time_1.Time.time - this.timer >= 1) {
@@ -16744,7 +16743,7 @@ let Camera = (() => {
                 // 1. 获取相机的世界变换矩阵
                 const worldMatrix = this.transform.localToWorldMatrix;
                 // 2. 计算逆矩阵（世界空间 → 视图空间）
-                this._viewMatrix = worldMatrix.clone().invert();
+                this._viewMatrix = worldMatrix.invert();
                 this._viewMatrixDirty = false;
             }
             // 返回矩阵的副本，防止外部修改
@@ -18525,44 +18524,44 @@ class Transform {
             // 注意：localToWorldMatrix和worldToLocalMatrix的计算会自动处理
             this._isDirty = false;
         }
-        return this._selfMatrix;
+        return this._selfMatrix.clone();
     }
     get localToWorldMatrix() {
         if (this._localToWorldMatrix === null || this._isDirty) {
             const p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4_1.Matrix4x4.identity;
-            this._localToWorldMatrix = p.clone().multiply(this.selfMatrix);
+            this._localToWorldMatrix = p.multiply(this.selfMatrix);
             // 当selfMatrix被访问时，_isDirty已经被设置为false
         }
-        return this._localToWorldMatrix;
+        return this._localToWorldMatrix.clone();
     }
     get worldToLocalMatrix() {
         if (this._worldToLocalMatrix === null || this._isDirty) {
             const p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4_1.Matrix4x4.identity;
-            this._worldToLocalMatrix = this.selfMatrix.clone().invert().multiply(p);
+            this._worldToLocalMatrix = this.selfMatrix.invert().multiply(p);
             // 当selfMatrix被访问时，_isDirty已经被设置为false
         }
-        return this._worldToLocalMatrix;
+        return this._worldToLocalMatrix.clone();
     }
     get forward() {
         // 使用缓存优化，避免重复计算和创建临时对象
         if (this._isDirty || !this._forward) {
             this._forward = this.convertToWorldSpace(Vector3_1.Vector3.FORWARD, 0);
         }
-        return this._forward;
+        return this._forward.clone();
     }
     get up() {
         // 使用缓存优化，避免重复计算和创建临时对象
         if (this._isDirty || !this._up) {
             this._up = this.convertToWorldSpace(Vector3_1.Vector3.UP, 0);
         }
-        return this._up;
+        return this._up.clone();
     }
     get right() {
         // 使用缓存优化，避免重复计算和创建临时对象
         if (this._isDirty || !this._right) {
             this._right = this.convertToWorldSpace(Vector3_1.Vector3.RIGHT, 0);
         }
-        return this._right;
+        return this._right.clone();
     }
     get position() {
         return this._tempPos.clone();
@@ -20138,7 +20137,7 @@ class TransformTools {
         const modelMatrix = transform.localToWorldMatrix;
         // 计算模型矩阵的逆转置矩阵
         // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
-        const inverseTransposeModel = modelMatrix.clone().invert().transpose();
+        const inverseTransposeModel = modelMatrix.invert().transpose();
         // 使用逆转置矩阵变换法线向量（忽略平移分量，只应用旋转和缩放的逆变换）
         const worldNormal = inverseTransposeModel.multiplyVector3(normal);
         // 归一化结果，确保法线保持单位长度

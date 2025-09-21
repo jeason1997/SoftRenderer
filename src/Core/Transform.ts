@@ -66,25 +66,25 @@ export class Transform {
             // 注意：localToWorldMatrix和worldToLocalMatrix的计算会自动处理
             this._isDirty = false;
         }
-        return this._selfMatrix;
+        return this._selfMatrix.clone();
     }
 
     public get localToWorldMatrix(): Matrix4x4 {
         if (this._localToWorldMatrix === null || this._isDirty) {
             const p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4.identity;
-            this._localToWorldMatrix = p.clone().multiply(this.selfMatrix);
+            this._localToWorldMatrix = p.multiply(this.selfMatrix);
             // 当selfMatrix被访问时，_isDirty已经被设置为false
         }
-        return this._localToWorldMatrix;
+        return this._localToWorldMatrix.clone();
     }
 
     public get worldToLocalMatrix(): Matrix4x4 {
         if (this._worldToLocalMatrix === null || this._isDirty) {
             const p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4.identity;
-            this._worldToLocalMatrix = this.selfMatrix.clone().invert().multiply(p);
+            this._worldToLocalMatrix = this.selfMatrix.invert().multiply(p);
             // 当selfMatrix被访问时，_isDirty已经被设置为false
         }
-        return this._worldToLocalMatrix;
+        return this._worldToLocalMatrix.clone();
     }
 
     public get forward(): Vector3 {
@@ -92,7 +92,7 @@ export class Transform {
         if (this._isDirty || !this._forward) {
             this._forward = this.convertToWorldSpace(Vector3.FORWARD, 0);
         }
-        return this._forward;
+        return this._forward.clone();
     }
 
     public get up(): Vector3 {
@@ -100,7 +100,7 @@ export class Transform {
         if (this._isDirty || !this._up) {
             this._up = this.convertToWorldSpace(Vector3.UP, 0);
         }
-        return this._up;
+        return this._up.clone();
     }
 
     public get right(): Vector3 {
@@ -108,7 +108,7 @@ export class Transform {
         if (this._isDirty || !this._right) {
             this._right = this.convertToWorldSpace(Vector3.RIGHT, 0);
         }
-        return this._right;
+        return this._right.clone();
     }
 
     public get position(): Vector3 {

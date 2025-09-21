@@ -127,7 +127,6 @@ export class Camera extends Component {
             Camera.mainCamera = this;
         }
         Camera.cameras.push(this);
-        this.transform.forward;
     }
 
     private timer: number = 0;
@@ -158,7 +157,7 @@ export class Camera extends Component {
             // 1. 获取相机的世界变换矩阵
             const worldMatrix = this.transform.localToWorldMatrix;
             // 2. 计算逆矩阵（世界空间 → 视图空间）
-            this._viewMatrix = worldMatrix.clone().invert();
+            this._viewMatrix = worldMatrix.invert();
             this._viewMatrixDirty = false;
         }
         // 返回矩阵的副本，防止外部修改
