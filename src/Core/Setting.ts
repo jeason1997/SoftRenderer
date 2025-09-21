@@ -16,8 +16,8 @@ export const Layers: string[] = [
 ]
 
 export class EngineConfig {
-    public static canvasWidth: number = 400;
-    public static canvasHeight: number = 400;
+    public static canvasWidth: number = 320;
+    public static canvasHeight: number = 240;
     public static halfCanvasWidth: number = EngineConfig.canvasWidth >> 1;
     public static halfCanvasHeight: number = EngineConfig.canvasHeight >> 1;
     public static aspectRatio: number = EngineConfig.canvasWidth / EngineConfig.canvasHeight;

@@ -18258,8 +18258,8 @@ exports.Layers = [
 class EngineConfig {
 }
 exports.EngineConfig = EngineConfig;
-EngineConfig.canvasWidth = 400;
-EngineConfig.canvasHeight = 400;
+EngineConfig.canvasWidth = 320;
+EngineConfig.canvasHeight = 240;
 EngineConfig.halfCanvasWidth = EngineConfig.canvasWidth >> 1;
 EngineConfig.halfCanvasHeight = EngineConfig.canvasHeight >> 1;
 EngineConfig.aspectRatio = EngineConfig.canvasWidth / EngineConfig.canvasHeight;
@@ -19865,26 +19865,46 @@ const Vector2_1 = require("./Vector2");
 const Vector3_1 = require("./Vector3");
 const Vector4_1 = require("./Vector4");
 class TransformTools {
+    /**
+     * 将裁剪空间坐标转换为标准化设备坐标(NDC)
+     * @param clipPos 裁剪空间坐标，包含x, y, z, w四个分量
+     * @returns 标准化设备坐标(NDC)，三个分量范围均为[-1, 1]
+     */
     static ClipToNdcPos(clipPos) {
-        // 透视除法得到NDC坐标 (范围[-1, 1])
+        // 获取裁剪坐标的w分量，用于透视除法
         const w = clipPos.w;
-        // 避免除以0
+        // 避免除以0（理论上w=0的点在无穷远处，实际中通常返回原点）
         if (w === 0) {
             return Vector3_1.Vector3.ZERO;
         }
+        // 执行透视除法：裁剪空间坐标各分量除以w分量，得到NDC
+        // 透视投影中，w分量与深度相关，除法会产生近大远小的透视效果
         const ndcX = clipPos.x / w;
         const ndcY = clipPos.y / w;
         const ndcZ = clipPos.z / w;
+        // 返回NDC坐标，三个分量均应落在[-1, 1]范围内（超出此范围的点会被裁剪）
         return new Vector3_1.Vector3(ndcX, ndcY, ndcZ);
     }
+    /**
+     * 将NDC坐标转换为视口坐标
+     * @param ndcPos 标准化设备坐标(NDC)，范围为X:[-1,1], Y:[-1,1], Z:[-1,1]
+     * @param viewport 视口参数，格式为[x, y, width, height]，其中(x,y)是视口左上角在屏幕上的坐标
+     * @returns 视口空间中的二维坐标
+     */
     static NdcToViewportPos(ndcPos, viewport) {
-        const startX = viewport.x;
-        const startY = viewport.y;
-        const width = viewport.z;
-        const height = viewport.w;
-        const viewPortX = startX + (ndcPos.x + 1) * 0.5 * width;
-        // 注意：屏幕坐标系原点通常在左上角，Y轴向下
-        const viewPortY = startY + (1 - ndcPos.y) * 0.5 * height;
+        const startX = viewport.x; // 视口左上角X坐标
+        const startY = viewport.y; // 视口左上角Y坐标
+        const width = viewport.z; // 视口宽度
+        const height = viewport.w; // 视口高度
+        // NDC坐标范围是[-1,1]，先转换为[0,1]范围的相对坐标
+        // 公式：[0,1] = (NDC + 1) / 2
+        const normalizedX = (ndcPos.x + 1) * 0.5;
+        const normalizedY = (ndcPos.y + 1) * 0.5;
+        // 转换为视口坐标：
+        // X轴：视口起始X + 相对X * 视口宽度
+        // Y轴：由于屏幕坐标系Y轴向下（与NDC的Y轴方向相反），需要用1减去相对Y值后再计算
+        const viewPortX = startX + normalizedX * width;
+        const viewPortY = startY + (1 - normalizedY) * height;
         return new Vector2_1.Vector2(viewPortX, viewPortY);
     }
     static ViewportToScreenPos(vp) {
@@ -19973,6 +19993,7 @@ class TransformTools {
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
         const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        // 另一种构建mv矩阵的方式
         // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
         // const cameraForward = camera.transform.forward;
         // const cameraUp = camera.transform.up;
@@ -21303,12 +21324,18 @@ class RasterizationPipeline {
         this.OcclusionCulling();
         // 渲染管线5.MVP变换
         const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
-        // 渲染管线6.裁剪
-        //TODO:
         for (let i = 0; i < triangles.length; i += 3) {
             const p1 = screenVertices[triangles[i]];
             const p2 = screenVertices[triangles[i + 1]];
             const p3 = screenVertices[triangles[i + 2]];
+            // 渲染管线6.裁剪
+            // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
+            // 简单粗暴的裁剪，有点在屏幕外直接抛弃
+            const w = Setting_1.EngineConfig.canvasWidth;
+            const h = Setting_1.EngineConfig.canvasHeight;
+            if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
+                continue;
+            }
             const p1_uv = mesh.uv[triangles[i]];
             const p2_uv = mesh.uv[triangles[i + 1]];
             const p3_uv = mesh.uv[triangles[i + 2]];
@@ -21474,7 +21501,7 @@ class RasterizationPipeline {
                     // 组合颜色（ARGB格式）
                     const color = Color_1.Color.FromUint32(Color_1.Color.ORANGE);
                     color.a = alpha;
-                    this.DrawPixel(x, y, color.ToUint32(), false);
+                    this.DrawPixel(x, y, color.ToUint32());
                 }
             }
         }

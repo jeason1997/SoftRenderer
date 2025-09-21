@@ -332,13 +332,19 @@ export class RasterizationPipeline {
         // 渲染管线5.MVP变换
         const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
 
-        // 渲染管线6.裁剪
-        //TODO:
-
         for (let i = 0; i < triangles.length; i += 3) {
             const p1 = screenVertices[triangles[i]];
             const p2 = screenVertices[triangles[i + 1]];
             const p3 = screenVertices[triangles[i + 2]];
+
+            // 渲染管线6.裁剪
+            // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
+            // 简单粗暴的裁剪，有点在屏幕外直接抛弃
+            const w = EngineConfig.canvasWidth;
+            const h = EngineConfig.canvasHeight;
+            if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
+                continue;
+            }
 
             const p1_uv = mesh.uv[triangles[i]];
             const p2_uv = mesh.uv[triangles[i + 1]];
@@ -545,7 +551,7 @@ export class RasterizationPipeline {
                     // 组合颜色（ARGB格式）
                     const color = Color.FromUint32(Color.ORANGE);
                     color.a = alpha;
-                    this.DrawPixel(x, y, color.ToUint32(), false);
+                    this.DrawPixel(x, y, color.ToUint32());
                 }
             }
         }

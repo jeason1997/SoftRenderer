@@ -9,28 +9,52 @@ import { Vector4 } from "./Vector4";
 
 export class TransformTools {
 
+    /**
+     * 将裁剪空间坐标转换为标准化设备坐标(NDC)
+     * @param clipPos 裁剪空间坐标，包含x, y, z, w四个分量
+     * @returns 标准化设备坐标(NDC)，三个分量范围均为[-1, 1]
+     */
     public static ClipToNdcPos(clipPos: Vector4): Vector3 {
-        // 透视除法得到NDC坐标 (范围[-1, 1])
+        // 获取裁剪坐标的w分量，用于透视除法
         const w = clipPos.w;
-        // 避免除以0
+
+        // 避免除以0（理论上w=0的点在无穷远处，实际中通常返回原点）
         if (w === 0) {
             return Vector3.ZERO;
         }
+
+        // 执行透视除法：裁剪空间坐标各分量除以w分量，得到NDC
+        // 透视投影中，w分量与深度相关，除法会产生近大远小的透视效果
         const ndcX = clipPos.x / w;
         const ndcY = clipPos.y / w;
         const ndcZ = clipPos.z / w;
+
+        // 返回NDC坐标，三个分量均应落在[-1, 1]范围内（超出此范围的点会被裁剪）
         return new Vector3(ndcX, ndcY, ndcZ);
     }
 
+    /**
+     * 将NDC坐标转换为视口坐标
+     * @param ndcPos 标准化设备坐标(NDC)，范围为X:[-1,1], Y:[-1,1], Z:[-1,1]
+     * @param viewport 视口参数，格式为[x, y, width, height]，其中(x,y)是视口左上角在屏幕上的坐标
+     * @returns 视口空间中的二维坐标
+     */
     public static NdcToViewportPos(ndcPos: Vector3, viewport: Vector4): Vector2 {
-        const startX = viewport.x;
-        const startY = viewport.y;
-        const width = viewport.z;
-        const height = viewport.w;
+        const startX = viewport.x;    // 视口左上角X坐标
+        const startY = viewport.y;    // 视口左上角Y坐标
+        const width = viewport.z;     // 视口宽度
+        const height = viewport.w;    // 视口高度
 
-        const viewPortX = startX + (ndcPos.x + 1) * 0.5 * width;
-        // 注意：屏幕坐标系原点通常在左上角，Y轴向下
-        const viewPortY = startY + (1 - ndcPos.y) * 0.5 * height;
+        // NDC坐标范围是[-1,1]，先转换为[0,1]范围的相对坐标
+        // 公式：[0,1] = (NDC + 1) / 2
+        const normalizedX = (ndcPos.x + 1) * 0.5;
+        const normalizedY = (ndcPos.y + 1) * 0.5;
+
+        // 转换为视口坐标：
+        // X轴：视口起始X + 相对X * 视口宽度
+        // Y轴：由于屏幕坐标系Y轴向下（与NDC的Y轴方向相反），需要用1减去相对Y值后再计算
+        const viewPortX = startX + normalizedX * width;
+        const viewPortY = startY + (1 - normalizedY) * height;
 
         return new Vector2(viewPortX, viewPortY);
     }
@@ -157,6 +181,8 @@ export class TransformTools {
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
         const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+
+        // 另一种构建mv矩阵的方式
         // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
         // const cameraForward = camera.transform.forward;
         // const cameraUp = camera.transform.up;
