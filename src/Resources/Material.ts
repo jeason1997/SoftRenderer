@@ -1,10 +1,12 @@
 import { UObject } from "../Core/UObject";
 import { Color } from "../Math/Color";
 import { Vector2 } from "../Math/Vector2";
+import { Shader } from "../Shader/Shader";
 import { Texture } from "./Texture";
 
 export class Material extends UObject {
     public name: string;
+    public shader: Shader | null = null;
     public color: number = Color.WHITE;
     public mainTexture: Texture | null = null;
     public textureOffset: Vector2 = Vector2.ZERO;

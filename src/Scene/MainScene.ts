@@ -17,6 +17,7 @@ import { Material } from "../Resources/Material";
 import { Mesh } from "../Resources/Mesh";
 import { Resources } from "../Resources/Resources";
 import { Texture } from "../Resources/Texture";
+import { LitShader } from "../Shader/LitShader";
 import { Scene } from "./Scene";
 
 export const MainScene = {
@@ -33,6 +34,9 @@ export const MainScene = {
             camera.clearFlags = CameraClearFlags.Color;
             camera.depth = 0;
         }
+
+        // 天空盒
+
 
         // 灯
         const lightGo = new GameObject("light");
@@ -77,6 +81,7 @@ export const MainScene = {
         //     }
         // });
 
+        let p_obj: GameObject;
         Resources.loadAsync<Mesh>('resources/spheres.obj').then((model) => {
             const obj = new GameObject("spheres");
             obj.transform.position = new Vector3(0, 1.5, 1.5);
@@ -87,23 +92,25 @@ export const MainScene = {
                 renderer.mesh = model;
                 const mat = renderer.material = new Material("spheres");
                 mat.mainTexture = Texture.CheckerboardTexture();
+                mat.shader = new LitShader();
             }
             //obj.transform.setParent(p_obj.transform);
+            p_obj = obj;
         });
 
-        const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
-        const obj = new GameObject("panel");
-        obj.transform.scale = Vector3.ONE.multiplyScalar(1.5);
-        obj.addComponent(ObjRotate);
-        // obj.addComponent(BoxCollider);
-        // const body = obj.addComponent(Rigidbody);
-        // if (body) body.isKinematic = true;
-        const renderer = obj.addComponent(MeshRenderer);
-        if (renderer) {
-            renderer.mesh = model;
-            const mat = renderer.material = new Material("panel");
-            mat.mainTexture = Texture.CheckerboardTexture();
-        }
+        // const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
+        // const obj = new GameObject("panel");
+        // obj.transform.scale = Vector3.ONE.multiplyScalar(1.5);
+        // obj.addComponent(ObjRotate);
+        // // obj.addComponent(BoxCollider);
+        // // const body = obj.addComponent(Rigidbody);
+        // // if (body) body.isKinematic = true;
+        // const renderer = obj.addComponent(MeshRenderer);
+        // if (renderer) {
+        //     renderer.mesh = model;
+        //     const mat = renderer.material = new Material("panel");
+        //     mat.mainTexture = Texture.CheckerboardTexture();
+        // }
 
         // Resources.loadAsync<Mesh>('resources/models/bunny2.obj').then((model) => {
         //     const obj = new GameObject("bunny");
@@ -114,18 +121,22 @@ export const MainScene = {
         //     obj.addComponent(ObjRotate);
         // });
 
-        // Resources.loadAsync<Mesh>('resources/toukui/Construction_Helmet.obj').then((model) => {
-        //     const obj = new GameObject("toukui");
-        //     obj.transform.scale = Vector3.ONE.multiplyScalar(0.1);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) {
-        //         renderer.mesh = model;
-        //         const mat = renderer.material = new Material("toukui");
-        //         Resources.loadAsync<Texture>('resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png').then((texture) => {
-        //             mat.mainTexture = texture;
-        //         });
-        //     }
-        //     obj.addComponent(ObjRotate);
-        // });
+        Resources.loadAsync<Mesh>('resources/toukui/Construction_Helmet.obj').then((model) => {
+            const obj = new GameObject("toukui");
+            obj.transform.scale = Vector3.ONE.multiplyScalar(0.1);
+            const renderer = obj.addComponent(MeshRenderer);
+            if (renderer) {
+                renderer.mesh = model;
+                const mat = renderer.material = new Material("toukui");
+                Resources.loadAsync<Texture>('resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png').then((texture) => {
+                    mat.mainTexture = texture;
+                    mat.shader = new LitShader();
+                });
+            }
+            obj.addComponent(ObjRotate);
+            if (p_obj) {
+                p_obj.transform.setParent(obj.transform);
+            }
+        });
     }
 }

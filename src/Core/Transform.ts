@@ -13,6 +13,19 @@ export class Transform {
     private _tempRot: Quaternion;
     private _tempScale: Vector3;
 
+    // 缓存矩阵以提高性能
+    private _selfMatrix: Matrix4x4 | null = null;
+    private _localToWorldMatrix: Matrix4x4 | null = null;
+    private _worldToLocalMatrix: Matrix4x4 | null = null;
+
+    // 脏标记，用于跟踪变换是否已更改
+    private _isDirty: boolean = true;
+
+    // 方向向量缓存
+    private _forward: Vector3 | null = null;
+    private _up: Vector3 | null = null;
+    private _right: Vector3 | null = null;
+
     constructor(gameObject: GameObject) {
         this.gameObject = gameObject;
         this.children = new Array<Transform>();
@@ -22,61 +35,80 @@ export class Transform {
         this._tempScale = Vector3.ONE;
     }
 
+    /**
+     * 标记当前变换为脏，需要重新计算矩阵
+     * 同时标记所有子节点为脏
+     */
+    private setDirty(): void {
+        this._isDirty = true;
+        this._selfMatrix = null;
+        this._localToWorldMatrix = null;
+        this._worldToLocalMatrix = null;
+
+        // 通知所有组件变换发生了变化
+        const components = this.gameObject.getAllComponents();
+        for (const component of components) {
+            if (typeof (component as any).onTransformChanged === 'function') {
+                (component as any).onTransformChanged();
+            }
+        }
+
+        // 递归标记所有子节点为脏
+        for (const child of this.children) {
+            child.setDirty();
+        }
+    }
+
     public get selfMatrix(): Matrix4x4 {
-        return Matrix4x4.getTRSMatrix(this._tempPos, this._tempRot, this._tempScale);
+        if (this._selfMatrix === null || this._isDirty) {
+            this._selfMatrix = Matrix4x4.getTRSMatrix(this._tempPos, this._tempRot, this._tempScale);
+            // selfMatrix是最基础的矩阵，当它更新后，所有矩阵都应该被认为是干净的
+            // 注意：localToWorldMatrix和worldToLocalMatrix的计算会自动处理
+            this._isDirty = false;
+        }
+        return this._selfMatrix;
     }
 
     public get localToWorldMatrix(): Matrix4x4 {
-        var p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4.identity;
-        return p.multiply(this.selfMatrix);
+        if (this._localToWorldMatrix === null || this._isDirty) {
+            const p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4.identity;
+            this._localToWorldMatrix = p.clone().multiply(this.selfMatrix);
+            // 当selfMatrix被访问时，_isDirty已经被设置为false
+        }
+        return this._localToWorldMatrix;
     }
 
     public get worldToLocalMatrix(): Matrix4x4 {
-        var p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4.identity;
-        return this.selfMatrix.invert().multiply(p);
-    }
-
-    public get x(): number {
-        return this.position.x;
-    }
-
-    public set x(x: number) {
-        var pos = this.position;
-        pos.x = x;
-        this.position = pos;
-    }
-
-    public get y(): number {
-        return this.position.y;
-    }
-
-    public set y(y: number) {
-        var pos = this.position;
-        pos.y = y;
-        this.position = pos;
-    }
-
-    public get z(): number {
-        return this.position.z;
-    }
-
-    public set z(z: number) {
-        var pos = this.position;
-        pos.z = z;
-        this.position = pos;
+        if (this._worldToLocalMatrix === null || this._isDirty) {
+            const p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4.identity;
+            this._worldToLocalMatrix = this.selfMatrix.clone().invert().multiply(p);
+            // 当selfMatrix被访问时，_isDirty已经被设置为false
+        }
+        return this._worldToLocalMatrix;
     }
 
     public get forward(): Vector3 {
-        //我们要得到的是一个方向，因此不需要位置信息，将齐次坐标的w设置为0，抛弃掉坐标信息
-        return this.convertToWorldSpace(Vector3.FORWARD, 0);
+        // 使用缓存优化，避免重复计算和创建临时对象
+        if (this._isDirty || !this._forward) {
+            this._forward = this.convertToWorldSpace(Vector3.FORWARD, 0);
+        }
+        return this._forward;
     }
 
     public get up(): Vector3 {
-        return this.convertToWorldSpace(Vector3.UP, 0);
+        // 使用缓存优化，避免重复计算和创建临时对象
+        if (this._isDirty || !this._up) {
+            this._up = this.convertToWorldSpace(Vector3.UP, 0);
+        }
+        return this._up;
     }
 
     public get right(): Vector3 {
-        return this.convertToWorldSpace(Vector3.RIGHT, 0);
+        // 使用缓存优化，避免重复计算和创建临时对象
+        if (this._isDirty || !this._right) {
+            this._right = this.convertToWorldSpace(Vector3.RIGHT, 0);
+        }
+        return this._right;
     }
 
     public get position(): Vector3 {
@@ -85,6 +117,7 @@ export class Transform {
 
     public set position(pos: Vector3) {
         this._tempPos = pos;
+        this.setDirty();
     }
 
     public get worldPosition(): Vector3 {
@@ -97,6 +130,7 @@ export class Transform {
 
     public set rotation(q: Quaternion) {
         this._tempRot = q;
+        this.setDirty();
     }
 
     public get worldRotation(): Quaternion {
@@ -109,6 +143,7 @@ export class Transform {
 
     public set scale(s: Vector3) {
         this._tempScale = s;
+        this.setDirty();
     }
 
     public get worldScale(): Vector3 {
@@ -137,6 +172,9 @@ export class Transform {
         else if (parent == null && this.parent != null) {
             this.parent.removeChild(this, worldPositionStays);
         }
+
+        // 设置脏标记，因为父节点关系改变会影响变换矩阵
+        this.setDirty();
     }
 
     //节点p是否是当前节点的上级
@@ -174,6 +212,9 @@ export class Transform {
                 child._tempScale = m.getScale();
             }
 
+            // 设置脏标记，因为父节点关系改变会影响变换矩阵
+            child.setDirty();
+
             return true;
         }
         return false;
@@ -194,6 +235,8 @@ export class Transform {
 
             this.children.splice(index, 1);
             child._parent = null;
+            // 设置脏标记，因为父节点关系改变会影响变换矩阵
+            child.setDirty();
             return true;
         }
         return false;

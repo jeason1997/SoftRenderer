@@ -16638,21 +16638,81 @@ let Camera = (() => {
             super(...arguments);
             this.backGroundColor = Color_1.Color.GRAY;
             this.clearFlags = CameraClearFlags.Color;
-            this.nearClip = 1;
-            this.farClip = 128;
-            this.fov = 60;
+            this._nearClip = 1;
+            this._farClip = 128;
+            this._fov = 60;
             this.depth = -1;
-            this.viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
-            this.projection = Projection.Perspective;
-            this.orthographicSize = 5;
+            this._viewPort = new Vector4_1.Vector4(0, 0, 1, 1);
+            this._projection = Projection.Perspective;
+            this._orthographicSize = 5;
             this.renderingPath = RenderingPath.Forward;
             this.occlusionCulling = false;
+            // 缓存矩阵
+            this._viewMatrix = null;
+            this._projectionMatrix = null;
+            // 脏标记
+            this._viewMatrixDirty = true;
+            this._projectionMatrixDirty = true;
             this.timer = 0;
             this.counter = 0;
         }
         get aspect() {
             var v = this.viewPort;
             return (v.z * Setting_1.EngineConfig.canvasWidth) / (v.w * Setting_1.EngineConfig.canvasHeight);
+        }
+        get nearClip() {
+            return this._nearClip;
+        }
+        set nearClip(value) {
+            if (this._nearClip !== value) {
+                this._nearClip = value;
+                this._projectionMatrixDirty = true;
+            }
+        }
+        get farClip() {
+            return this._farClip;
+        }
+        set farClip(value) {
+            if (this._farClip !== value) {
+                this._farClip = value;
+                this._projectionMatrixDirty = true;
+            }
+        }
+        get fov() {
+            return this._fov;
+        }
+        set fov(value) {
+            if (this._fov !== value) {
+                this._fov = value;
+                this._projectionMatrixDirty = true;
+            }
+        }
+        get viewPort() {
+            return this._viewPort;
+        }
+        set viewPort(value) {
+            if (!this._viewPort.equals(value)) {
+                this._viewPort = value;
+                this._projectionMatrixDirty = true;
+            }
+        }
+        get projection() {
+            return this._projection;
+        }
+        set projection(value) {
+            if (this._projection !== value) {
+                this._projection = value;
+                this._projectionMatrixDirty = true;
+            }
+        }
+        get orthographicSize() {
+            return this._orthographicSize;
+        }
+        set orthographicSize(value) {
+            if (this._orthographicSize !== value) {
+                this._orthographicSize = value;
+                this._projectionMatrixDirty = true;
+            }
         }
         onAwake() {
             if (Camera.mainCamera == null) {
@@ -16680,19 +16740,32 @@ let Camera = (() => {
             }
         }
         getViewMatrix() {
-            // 1. 获取相机的世界变换矩阵
-            const worldMatrix = this.transform.localToWorldMatrix;
-            // 2. 计算逆矩阵（世界空间 → 视图空间）
-            const viewMatrix = worldMatrix.clone().invert();
-            return viewMatrix;
+            if (this._viewMatrixDirty || !this._viewMatrix) {
+                // 1. 获取相机的世界变换矩阵
+                const worldMatrix = this.transform.localToWorldMatrix;
+                // 2. 计算逆矩阵（世界空间 → 视图空间）
+                this._viewMatrix = worldMatrix.clone().invert();
+                this._viewMatrixDirty = false;
+            }
+            // 返回矩阵的副本，防止外部修改
+            return this._viewMatrix.clone();
         }
         getProjectionMatrix() {
-            if (this.projection == Projection.Orthographic) {
-                return Matrix4x4_1.Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
+            if (this._projectionMatrixDirty || !this._projectionMatrix) {
+                if (this.projection == Projection.Orthographic) {
+                    this._projectionMatrix = Matrix4x4_1.Matrix4x4.orthographic(-this.orthographicSize, this.orthographicSize, -this.orthographicSize, this.orthographicSize, this.nearClip, this.farClip);
+                }
+                else {
+                    this._projectionMatrix = Matrix4x4_1.Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
+                }
+                this._projectionMatrixDirty = false;
             }
-            else {
-                return Matrix4x4_1.Matrix4x4.perspective(this.fov, this.aspect, this.nearClip, this.farClip);
-            }
+            // 返回矩阵的副本，防止外部修改
+            return this._projectionMatrix.clone();
+        }
+        // 当Transform发生变化时，需要更新视图矩阵
+        onTransformChanged() {
+            this._viewMatrixDirty = true;
         }
     };
     __setFunctionName(_classThis, "Camera");
@@ -17174,7 +17247,7 @@ let ObjRotate = (() => {
 })();
 exports.ObjRotate = ObjRotate;
 
-},{"../Core/Decorators":16,"../Core/Input":19,"../Math/Quaternion":29,"../Math/Vector3":33,"../Utils/Debug":47,"./Component":8,"./RigidBody":14}],12:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/Input":19,"../Math/Quaternion":29,"../Math/Vector3":33,"../Utils/Debug":49,"./Component":8,"./RigidBody":14}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17723,7 +17796,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":35,"../Renderer/RasterizationPipeline":38,"../Scene/MainScene":44,"../Scene/SceneManager":46,"../Utils/Debug":47,"./Input":19,"./Setting":20,"./Time":21,"./TweenManager":23}],18:[function(require,module,exports){
+},{"../Physics/Physics":35,"../Renderer/RasterizationPipeline":38,"../Scene/MainScene":44,"../Scene/SceneManager":46,"../Utils/Debug":49,"./Input":19,"./Setting":20,"./Time":21,"./TweenManager":23}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -18407,6 +18480,16 @@ const Vector4_1 = require("../Math/Vector4");
 class Transform {
     constructor(gameObject) {
         this._parent = null;
+        // 缓存矩阵以提高性能
+        this._selfMatrix = null;
+        this._localToWorldMatrix = null;
+        this._worldToLocalMatrix = null;
+        // 脏标记，用于跟踪变换是否已更改
+        this._isDirty = true;
+        // 方向向量缓存
+        this._forward = null;
+        this._up = null;
+        this._right = null;
         this.gameObject = gameObject;
         this.children = new Array();
         this._parent = null;
@@ -18414,56 +18497,79 @@ class Transform {
         this._tempRot = Quaternion_1.Quaternion.identity;
         this._tempScale = Vector3_1.Vector3.ONE;
     }
+    /**
+     * 标记当前变换为脏，需要重新计算矩阵
+     * 同时标记所有子节点为脏
+     */
+    setDirty() {
+        this._isDirty = true;
+        this._selfMatrix = null;
+        this._localToWorldMatrix = null;
+        this._worldToLocalMatrix = null;
+        // 通知所有组件变换发生了变化
+        const components = this.gameObject.getAllComponents();
+        for (const component of components) {
+            if (typeof component.onTransformChanged === 'function') {
+                component.onTransformChanged();
+            }
+        }
+        // 递归标记所有子节点为脏
+        for (const child of this.children) {
+            child.setDirty();
+        }
+    }
     get selfMatrix() {
-        return Matrix4x4_1.Matrix4x4.getTRSMatrix(this._tempPos, this._tempRot, this._tempScale);
+        if (this._selfMatrix === null || this._isDirty) {
+            this._selfMatrix = Matrix4x4_1.Matrix4x4.getTRSMatrix(this._tempPos, this._tempRot, this._tempScale);
+            // selfMatrix是最基础的矩阵，当它更新后，所有矩阵都应该被认为是干净的
+            // 注意：localToWorldMatrix和worldToLocalMatrix的计算会自动处理
+            this._isDirty = false;
+        }
+        return this._selfMatrix;
     }
     get localToWorldMatrix() {
-        var p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4_1.Matrix4x4.identity;
-        return p.multiply(this.selfMatrix);
+        if (this._localToWorldMatrix === null || this._isDirty) {
+            const p = this.parent != null ? this.parent.localToWorldMatrix : Matrix4x4_1.Matrix4x4.identity;
+            this._localToWorldMatrix = p.clone().multiply(this.selfMatrix);
+            // 当selfMatrix被访问时，_isDirty已经被设置为false
+        }
+        return this._localToWorldMatrix;
     }
     get worldToLocalMatrix() {
-        var p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4_1.Matrix4x4.identity;
-        return this.selfMatrix.invert().multiply(p);
-    }
-    get x() {
-        return this.position.x;
-    }
-    set x(x) {
-        var pos = this.position;
-        pos.x = x;
-        this.position = pos;
-    }
-    get y() {
-        return this.position.y;
-    }
-    set y(y) {
-        var pos = this.position;
-        pos.y = y;
-        this.position = pos;
-    }
-    get z() {
-        return this.position.z;
-    }
-    set z(z) {
-        var pos = this.position;
-        pos.z = z;
-        this.position = pos;
+        if (this._worldToLocalMatrix === null || this._isDirty) {
+            const p = this.parent != null ? this.parent.worldToLocalMatrix : Matrix4x4_1.Matrix4x4.identity;
+            this._worldToLocalMatrix = this.selfMatrix.clone().invert().multiply(p);
+            // 当selfMatrix被访问时，_isDirty已经被设置为false
+        }
+        return this._worldToLocalMatrix;
     }
     get forward() {
-        //我们要得到的是一个方向，因此不需要位置信息，将齐次坐标的w设置为0，抛弃掉坐标信息
-        return this.convertToWorldSpace(Vector3_1.Vector3.FORWARD, 0);
+        // 使用缓存优化，避免重复计算和创建临时对象
+        if (this._isDirty || !this._forward) {
+            this._forward = this.convertToWorldSpace(Vector3_1.Vector3.FORWARD, 0);
+        }
+        return this._forward;
     }
     get up() {
-        return this.convertToWorldSpace(Vector3_1.Vector3.UP, 0);
+        // 使用缓存优化，避免重复计算和创建临时对象
+        if (this._isDirty || !this._up) {
+            this._up = this.convertToWorldSpace(Vector3_1.Vector3.UP, 0);
+        }
+        return this._up;
     }
     get right() {
-        return this.convertToWorldSpace(Vector3_1.Vector3.RIGHT, 0);
+        // 使用缓存优化，避免重复计算和创建临时对象
+        if (this._isDirty || !this._right) {
+            this._right = this.convertToWorldSpace(Vector3_1.Vector3.RIGHT, 0);
+        }
+        return this._right;
     }
     get position() {
         return this._tempPos.clone();
     }
     set position(pos) {
         this._tempPos = pos;
+        this.setDirty();
     }
     get worldPosition() {
         return this.localToWorldMatrix.getTranslate();
@@ -18473,6 +18579,7 @@ class Transform {
     }
     set rotation(q) {
         this._tempRot = q;
+        this.setDirty();
     }
     get worldRotation() {
         return this.localToWorldMatrix.getRotate();
@@ -18482,6 +18589,7 @@ class Transform {
     }
     set scale(s) {
         this._tempScale = s;
+        this.setDirty();
     }
     get worldScale() {
         return this.localToWorldMatrix.getScale();
@@ -18505,6 +18613,8 @@ class Transform {
         else if (parent == null && this.parent != null) {
             this.parent.removeChild(this, worldPositionStays);
         }
+        // 设置脏标记，因为父节点关系改变会影响变换矩阵
+        this.setDirty();
     }
     //节点p是否是当前节点的上级
     hasParent(p) {
@@ -18536,6 +18646,8 @@ class Transform {
                 child._tempRot = m.getRotate();
                 child._tempScale = m.getScale();
             }
+            // 设置脏标记，因为父节点关系改变会影响变换矩阵
+            child.setDirty();
             return true;
         }
         return false;
@@ -18552,6 +18664,8 @@ class Transform {
             }
             this.children.splice(index, 1);
             child._parent = null;
+            // 设置脏标记，因为父节点关系改变会影响变换矩阵
+            child.setDirty();
             return true;
         }
         return false;
@@ -20005,6 +20119,13 @@ class TransformTools {
     // 模型坐标转为屏幕坐标
     static ModelToScreenPos(vertex, transform, camera) {
         const clipPos = this.ModelToClipPos(vertex, transform, camera);
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        const screen = this.ViewportToScreenPos(vp);
+        const depth = (ndc.z + 1) / 2;
+        return { screen, depth };
+    }
+    static ClipToScreenPos(clipPos, camera) {
         const ndc = this.ClipToNdcPos(clipPos);
         const vp = this.NdcToViewportPos(ndc, camera.viewPort);
         const screen = this.ViewportToScreenPos(vp);
@@ -21556,7 +21677,7 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Light":9,"../Component/Renderer":13,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Utils/Debug":47,"./BarycentricTriangleRasterizer":37}],39:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Light":9,"../Component/Renderer":13,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Utils/Debug":49,"./BarycentricTriangleRasterizer":37}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TriangleRasterizer = void 0;
@@ -21577,6 +21698,7 @@ const Vector2_1 = require("../Math/Vector2");
 class Material extends UObject_1.UObject {
     constructor(name) {
         super();
+        this.shader = null;
         this.color = Color_1.Color.WHITE;
         this.mainTexture = null;
         this.textureOffset = Vector2_1.Vector2.ZERO;
@@ -21860,7 +21982,7 @@ exports.Resources = Resources;
 Resources.fileCache = new Map();
 Resources.loadingPromises = new Map();
 
-},{"../Utils/ObjParser":48,"./Texture":43}],43:[function(require,module,exports){
+},{"../Utils/ObjParser":50,"./Texture":43}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
@@ -22544,6 +22666,7 @@ const Vector3_1 = require("../Math/Vector3");
 const Material_1 = require("../Resources/Material");
 const Resources_1 = require("../Resources/Resources");
 const Texture_1 = require("../Resources/Texture");
+const LitShader_1 = require("../Shader/LitShader");
 exports.MainScene = {
     name: "MainScene",
     initfun: (scene) => __awaiter(void 0, void 0, void 0, function* () {
@@ -22558,6 +22681,7 @@ exports.MainScene = {
             camera.clearFlags = Camera_1.CameraClearFlags.Color;
             camera.depth = 0;
         }
+        // 天空盒
         // 灯
         const lightGo = new GameObject_1.GameObject("light");
         lightGo.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(-45, 180, 0));
@@ -22597,6 +22721,7 @@ exports.MainScene = {
         //         mat.mainTexture = Texture.CheckerboardTexture();
         //     }
         // });
+        let p_obj;
         Resources_1.Resources.loadAsync('resources/spheres.obj').then((model) => {
             const obj = new GameObject_1.GameObject("spheres");
             obj.transform.position = new Vector3_1.Vector3(0, 1.5, 1.5);
@@ -22607,22 +22732,24 @@ exports.MainScene = {
                 renderer.mesh = model;
                 const mat = renderer.material = new Material_1.Material("spheres");
                 mat.mainTexture = Texture_1.Texture.CheckerboardTexture();
+                mat.shader = new LitShader_1.LitShader();
             }
             //obj.transform.setParent(p_obj.transform);
+            p_obj = obj;
         });
-        const model = yield Resources_1.Resources.loadAsync('resources/panel.obj');
-        const obj = new GameObject_1.GameObject("panel");
-        obj.transform.scale = Vector3_1.Vector3.ONE.multiplyScalar(1.5);
-        obj.addComponent(ObjRotate_1.ObjRotate);
-        // obj.addComponent(BoxCollider);
-        // const body = obj.addComponent(Rigidbody);
-        // if (body) body.isKinematic = true;
-        const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
-        if (renderer) {
-            renderer.mesh = model;
-            const mat = renderer.material = new Material_1.Material("panel");
-            mat.mainTexture = Texture_1.Texture.CheckerboardTexture();
-        }
+        // const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
+        // const obj = new GameObject("panel");
+        // obj.transform.scale = Vector3.ONE.multiplyScalar(1.5);
+        // obj.addComponent(ObjRotate);
+        // // obj.addComponent(BoxCollider);
+        // // const body = obj.addComponent(Rigidbody);
+        // // if (body) body.isKinematic = true;
+        // const renderer = obj.addComponent(MeshRenderer);
+        // if (renderer) {
+        //     renderer.mesh = model;
+        //     const mat = renderer.material = new Material("panel");
+        //     mat.mainTexture = Texture.CheckerboardTexture();
+        // }
         // Resources.loadAsync<Mesh>('resources/models/bunny2.obj').then((model) => {
         //     const obj = new GameObject("bunny");
         //     obj.transform.position = new Vector3(0, 0.5, 0);
@@ -22631,23 +22758,27 @@ exports.MainScene = {
         //     if (renderer) renderer.mesh = model;
         //     obj.addComponent(ObjRotate);
         // });
-        // Resources.loadAsync<Mesh>('resources/toukui/Construction_Helmet.obj').then((model) => {
-        //     const obj = new GameObject("toukui");
-        //     obj.transform.scale = Vector3.ONE.multiplyScalar(0.1);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) {
-        //         renderer.mesh = model;
-        //         const mat = renderer.material = new Material("toukui");
-        //         Resources.loadAsync<Texture>('resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png').then((texture) => {
-        //             mat.mainTexture = texture;
-        //         });
-        //     }
-        //     obj.addComponent(ObjRotate);
-        // });
+        Resources_1.Resources.loadAsync('resources/toukui/Construction_Helmet.obj').then((model) => {
+            const obj = new GameObject_1.GameObject("toukui");
+            obj.transform.scale = Vector3_1.Vector3.ONE.multiplyScalar(0.1);
+            const renderer = obj.addComponent(MeshRenderer_1.MeshRenderer);
+            if (renderer) {
+                renderer.mesh = model;
+                const mat = renderer.material = new Material_1.Material("toukui");
+                Resources_1.Resources.loadAsync('resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png').then((texture) => {
+                    mat.mainTexture = texture;
+                    mat.shader = new LitShader_1.LitShader();
+                });
+            }
+            obj.addComponent(ObjRotate_1.ObjRotate);
+            if (p_obj) {
+                p_obj.transform.setParent(obj.transform);
+            }
+        });
     })
 };
 
-},{"../Component/Camera":5,"../Component/CameraController":6,"../Component/Light":9,"../Component/MeshRenderer":10,"../Component/ObjRotate":11,"../Component/RayTest":12,"../Core/GameObject":18,"../Math/Quaternion":29,"../Math/Vector3":33,"../Resources/Material":40,"../Resources/Resources":42,"../Resources/Texture":43}],45:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/CameraController":6,"../Component/Light":9,"../Component/MeshRenderer":10,"../Component/ObjRotate":11,"../Component/RayTest":12,"../Core/GameObject":18,"../Math/Quaternion":29,"../Math/Vector3":33,"../Resources/Material":40,"../Resources/Resources":42,"../Resources/Texture":43,"../Shader/LitShader":47}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -22806,6 +22937,95 @@ exports.SceneManager = SceneManager;
 },{"./Scene":45}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.LitShader = void 0;
+const Light_1 = require("../Component/Light");
+const Setting_1 = require("../Core/Setting");
+const Color_1 = require("../Math/Color");
+const Vector2_1 = require("../Math/Vector2");
+const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
+const Shader_1 = require("./Shader");
+class LitShader extends Shader_1.Shader {
+    vertexShader() {
+        this.attr = {
+            uv: new Vector2_1.Vector2(),
+            normal: new Vector3_1.Vector3(),
+        };
+        // const modelMatrix = transform.localToWorldMatrix;
+        // const viewMatrix = camera.getViewMatrix();
+        // const projectionMatrix = camera.getProjectionMatrix();
+        // const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        // 另一种构建mv矩阵的方式
+        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
+        // const cameraForward = camera.transform.forward;
+        // const cameraUp = camera.transform.up;
+        // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
+        // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
+        // 要把Vec3转为齐次坐标点，即w=1
+        //return mvpMatrix.multiplyVector4(new Vector4(vertex, 1));
+        return Vector4_1.Vector4.ZERO;
+    }
+    // 光照计算
+    fragmentShader() {
+        const uv = this.attr.uv;
+        const normal = this.attr.normal;
+        const surfaceColor = this.mainTexture.Sample(uv.u, uv.v);
+        const light = Light_1.Light.sunLight;
+        const ambientLight = Setting_1.RenderSettings.ambientLight;
+        // 高光系数，值越大高光越集中
+        const shininess = 100;
+        // 确保法向量归一化
+        const normalizedNormal = normal.normalize();
+        const lightDirection = light.transform.forward.normalize();
+        const normalizedViewDir = this.viewDirection.negate().normalize();
+        // 计算漫反射（半兰伯特）部分
+        const dotProduct = Math.max(0, Vector3_1.Vector3.dot(normalizedNormal, lightDirection)) * 0.5 + 0.5;
+        // 计算高光（Phong）部分
+        // 1. 计算反射光方向 = 2*(法向量·光源方向)*法向量 - 光源方向
+        const reflectDir = normalizedNormal.clone()
+            .multiplyScalar(2 * Vector3_1.Vector3.dot(normalizedNormal, lightDirection))
+            .subtract(lightDirection)
+            .normalize();
+        // 2. 计算反射方向与视角方向的点积
+        const specDot = Math.max(0, Vector3_1.Vector3.dot(reflectDir, normalizedViewDir));
+        // 3. 计算高光因子（使用高光系数控制高光范围）
+        const specularFactor = Math.pow(specDot, shininess);
+        // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
+        const specularIntensity = 0.5; // 高光强度
+        const specularR = Math.round(light.color.r * specularIntensity * specularFactor);
+        const specularG = Math.round(light.color.g * specularIntensity * specularFactor);
+        const specularB = Math.round(light.color.b * specularIntensity * specularFactor);
+        // 提取表面颜色的RGBA通道
+        const rgba = Color_1.Color.FromUint32(surfaceColor);
+        // 计算漫反射颜色
+        const diffR = Math.round(rgba.r * (light.color.r / 255) * light.intensity * dotProduct);
+        const diffG = Math.round(rgba.g * (light.color.g / 255) * light.intensity * dotProduct);
+        const diffB = Math.round(rgba.b * (light.color.b / 255) * light.intensity * dotProduct);
+        // 合并所有光照贡献（环境光 + 漫反射 + 高光）
+        const totalR = ambientLight.r + diffR + specularR;
+        const totalG = ambientLight.g + diffG + specularG;
+        const totalB = ambientLight.b + diffB + specularB;
+        // 确保颜色值在0-255范围内
+        const clampedR = Math.min(255, Math.max(0, totalR));
+        const clampedG = Math.min(255, Math.max(0, totalG));
+        const clampedB = Math.min(255, Math.max(0, totalB));
+        // 组合成32位颜色值（保留原始Alpha）
+        return (rgba.a << 24) | (clampedB << 16) | (clampedG << 8) | clampedR;
+    }
+}
+exports.LitShader = LitShader;
+
+},{"../Component/Light":9,"../Core/Setting":20,"../Math/Color":27,"../Math/Vector2":32,"../Math/Vector3":33,"../Math/Vector4":34,"./Shader":48}],48:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Shader = void 0;
+class Shader {
+}
+exports.Shader = Shader;
+
+},{}],49:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
 const Camera_1 = require("../Component/Camera");
 const Engine_1 = require("../Core/Engine");
@@ -22871,7 +23091,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":17,"../Math/TransformTools":31}],48:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":17,"../Math/TransformTools":31}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -23137,7 +23357,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":26,"../Math/Vector2":32,"../Math/Vector3":33,"../Math/Vector4":34,"../Resources/Mesh":41}],49:[function(require,module,exports){
+},{"../Math/Bounds":26,"../Math/Vector2":32,"../Math/Vector3":33,"../Math/Vector4":34,"../Resources/Mesh":41}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Engine_1 = require("./Core/Engine");
@@ -23155,6 +23375,6 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(mainLoop);
 });
 
-},{"./Core/Engine":17}]},{},[49])
+},{"./Core/Engine":17}]},{},[51])
 
 //# sourceMappingURL=bundle.js.map

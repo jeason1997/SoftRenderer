@@ -203,6 +203,14 @@ export class TransformTools {
         return { screen, depth };
     }
 
+    public static ClipToScreenPos(clipPos: Vector4, camera: Camera): { screen: Vector2; depth: number } {
+        const ndc = this.ClipToNdcPos(clipPos);
+        const vp = this.NdcToViewportPos(ndc, camera.viewPort);
+        const screen = this.ViewportToScreenPos(vp);
+        const depth = (ndc.z + 1) / 2;
+        return { screen, depth };
+    }
+
     // 模型法线转为世界法线
     public static ModelToWorldNormal(normal: Vector3, transform: Transform): Vector3 {
         // 获取模型矩阵（局部到世界空间的变换矩阵）
