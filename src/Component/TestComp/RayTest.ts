@@ -1,12 +1,12 @@
-import { Engine } from "../Core/Engine";
-import { Input } from "../Core/Input";
-import { Color } from "../Math/Color";
-import { TransformTools } from "../Math/TransformTools";
-import { Vector3 } from "../Math/Vector3";
-import { Debug } from "../Utils/Debug";
-import { Camera } from "./Camera";
-import { Collider } from "./Collider";
-import { Component } from "./Component";
+import { Engine } from "../../Core/Engine";
+import { Input } from "../../Core/Input";
+import { Color } from "../../Math/Color";
+import { TransformTools } from "../../Math/TransformTools";
+import { Vector3 } from "../../Math/Vector3";
+import { Debug } from "../../Utils/Debug";
+import { Camera } from "../Camera";
+import { Collider } from "../Collider";
+import { Component } from "../Component";
 
 interface Line {
     start: Vector3;
@@ -28,8 +28,8 @@ export class RayTest extends Component {
                         end: hitInfo.point,
                     });
                     const scale = hitInfo.collider.transform.scale;
-                    // hitInfo.collider.transform.scale = scale.multiply(0.9);
-                    hitInfo.collider.gameObject.removeComponentInstance(hitInfo.collider);
+                    hitInfo.collider.transform.scale = scale.multiplyScalar(0.9);
+                    // hitInfo.collider.gameObject.removeComponentInstance(hitInfo.collider);
                     // console.log(hit.toString());
                 }
             }

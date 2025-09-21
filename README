@@ -151,4 +151,3 @@
 
 //物理TODO:
 1.动态添加Collider时，怎么更新物理形状，目前这部分逻辑屏蔽
-2.GameObject的Transfrom变化时，例如缩放，要更新Collider的物理形状

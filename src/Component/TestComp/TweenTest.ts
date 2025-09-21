@@ -1,6 +1,6 @@
 import { Tween, Easing } from "@tweenjs/tween.js";
-import { Component } from "./Component";
-import { TweenManager } from "../Core/TweenManager";
+import { Component } from "../Component";
+import { TweenManager } from "../../Core/TweenManager";
 
 export class TweenTest extends Component {
     private tween: Tween;

@@ -6,35 +6,35 @@ import { DisallowMultipleComponent } from "../Core/Decorators";
 @DisallowMultipleComponent
 export abstract class Renderer extends Component {
     private _bounds: Bounds = new Bounds();
-    private _material: Material | null = null;
+    private _material: Material = new Material("default");
     private _sortingLayerID: number = 0;
     private _sortingOrder: number = 0;
     private _castShadows: boolean = true;
     private _receiveShadows: boolean = true;
 
     // 材质属性
-    public get material(): Material | null {
+    public get material(): Material {
         return this._material;
     }
-    
-    public set material(value: Material | null) {
+
+    public set material(value: Material) {
         this._material = value;
     }
-    
+
     // 排序层ID
     public get sortingLayerID(): number {
         return this._sortingLayerID;
     }
-    
+
     public set sortingLayerID(value: number) {
         this._sortingLayerID = value;
     }
-    
+
     // 排序顺序
     public get sortingOrder(): number {
         return this._sortingOrder;
     }
-    
+
     public set sortingOrder(value: number) {
         this._sortingOrder = value;
     }
@@ -56,17 +56,15 @@ export abstract class Renderer extends Component {
     public set receiveShadows(value: boolean) {
         this._receiveShadows = value;
     }
-    
+
     // 是否应该被渲染
     public get shouldRender(): boolean {
         return this.enabled && this.gameObject.active;
     }
-    
+
     // 渲染方法，子类需要实现
     public abstract render(): void;
 
     public onDestroy(): void {
-        // 清理资源
-        this._material = null;
     }
 }

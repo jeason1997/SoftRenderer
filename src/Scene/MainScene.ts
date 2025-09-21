@@ -1,10 +1,10 @@
 import { BoxCollider } from "../Component/BoxCollider";
 import { Camera, CameraClearFlags } from "../Component/Camera";
-import { CameraController } from "../Component/CameraController";
+import { CameraController } from "../Component/TestComp/CameraController";
+import { Component } from "../Component/Component";
 import { Light } from "../Component/Light";
 import { MeshRenderer } from "../Component/MeshRenderer";
-import { ObjRotate } from "../Component/ObjRotate";
-import { RayTest } from "../Component/RayTest";
+import { RayTest } from "../Component/TestComp/RayTest";
 import { Rigidbody } from "../Component/RigidBody";
 import { SphereCollider } from "../Component/SphereCollider";
 import { Engine } from "../Core/Engine";
@@ -19,43 +19,30 @@ import { Resources } from "../Resources/Resources";
 import { Texture } from "../Resources/Texture";
 import { LitShader } from "../Shader/LitShader";
 import { Scene } from "./Scene";
+import { ObjRotate } from "../Component/TestComp/ObjRotate";
+import { ObjAutoRotate } from "../Component/TestComp/ObjAutoRotate";
 
 export const MainScene = {
     name: "MainScene",
     initfun: async (scene: Scene) => {
         // 相机
-        const cameraGo = new GameObject("camera");
-        cameraGo.transform.rotation = new Quaternion(new Vector3(0, 0, 0));
-        cameraGo.transform.position = new Vector3(0, 0, -5);
-        const camera = cameraGo.addComponent(Camera);
-        cameraGo.addComponent(CameraController);
-        cameraGo.addComponent(RayTest);
-        if (camera) {
-            camera.clearFlags = CameraClearFlags.Color;
-            camera.depth = 0;
-        }
-
-        // 天空盒
-
+        const cameraObj = await createObj({
+            name: "camera",
+            position: new Vector3(0, 0, -5),
+            rotation: new Quaternion(new Vector3(0, 0, 0)),
+            components: [Camera, CameraController, RayTest]
+        });
 
         // 灯
-        const lightGo = new GameObject("light");
-        lightGo.transform.rotation = new Quaternion(new Vector3(-45, 180, 0));
-        const light = lightGo.addComponent(Light);
+        const lightObj = await createObj({
+            name: "light",
+            rotation: new Quaternion(new Vector3(-45, 180, 0)),
+            components: [Light]
+        });
+        const light = lightObj.getComponent(Light);
         if (light) {
             Light.sunLight = light;
         }
-
-        // const camera2 = new GameObject("camera");
-        // camera2.transform.rotation = new Quaternion(new Vector3(0, 180, 0));
-        // camera2.transform.position = new Vector3(0, 0, 5);
-        // const cam2 = camera2.addComponent(Camera);
-        // if (cam2) {
-        //     cam2.backGroundColor = Color.BLACK;
-        //     cam2.clearFlags = CameraClearFlags.ALL;
-        //     cam2.depth = 1;
-        //     cam2.viewPort = new Vector4(0, 0, 0.3, 0.3);
-        // }
 
         // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
         //     const obj = new GameObject("female02");
@@ -65,52 +52,34 @@ export const MainScene = {
         //     scene.addGameObject(obj);
         // });
 
-        // Resources.loadAsync<Mesh>('resources/cube.obj').then(async (model) => {
-        //     const obj = new GameObject("cube");
-        //     obj.transform.position = new Vector3(0, 2.5, 0);
-        //     obj.transform.rotation = Quaternion.angleAxis(45, Vector3.UP);
-        //     obj.transform.scale = Vector3.ONE.multiplyScalar(0.5);
-        //     obj.addComponent(Rigidbody);
-        //     obj.addComponent(BoxCollider);
-        //     //obj.addComponent(ObjRotate);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) {
-        //         renderer.mesh = model;
-        //         const mat = renderer.material = new Material("cube");
-        //         mat.mainTexture = Texture.CheckerboardTexture();
-        //     }
+        // const panelObj = await createObj({
+        //     name: "panel",
+        //     scale: Vector3.ONE.multiplyScalar(1.5),
+        //     modelPath: 'resources/panel.obj',
+        //     texture: Texture.CheckerboardTexture(),
+        //     components: [BoxCollider, Rigidbody]
+        // });
+        // const panelBody = panelObj.getComponent(Rigidbody);
+        // if (panelBody) panelBody.isKinematic = true;
+
+        // const cubeObj = await createObj({
+        //     name: "cube",
+        //     position: new Vector3(0, 2.5, 0),
+        //     rotation: Quaternion.angleAxis(45, Vector3.UP),
+        //     scale: Vector3.ONE.multiplyScalar(0.5),
+        //     modelPath: 'resources/cube.obj',
+        //     texture: Texture.CheckerboardTexture(),
+        //     components: [Rigidbody, BoxCollider]
         // });
 
-        let p_obj: GameObject;
-        Resources.loadAsync<Mesh>('resources/spheres.obj').then((model) => {
-            const obj = new GameObject("spheres");
-            obj.transform.position = new Vector3(0, 1.5, 1.5);
-            // obj.addComponent(Rigidbody);
-            // obj.addComponent(SphereCollider);
-            const renderer = obj.addComponent(MeshRenderer);
-            if (renderer) {
-                renderer.mesh = model;
-                const mat = renderer.material = new Material("spheres");
-                mat.mainTexture = Texture.CheckerboardTexture();
-                mat.shader = new LitShader();
-            }
-            //obj.transform.setParent(p_obj.transform);
-            p_obj = obj;
+        const spheresObj = await createObj({
+            name: "spheres",
+            position: new Vector3(0, 1.5, 1.5),
+            modelPath: 'resources/spheres.obj',
+            texture: Texture.CheckerboardTexture(),
+            //components: [Rigidbody, SphereCollider]
+            components: [ObjAutoRotate]
         });
-
-        // const model = await Resources.loadAsync<Mesh>('resources/panel.obj');
-        // const obj = new GameObject("panel");
-        // obj.transform.scale = Vector3.ONE.multiplyScalar(1.5);
-        // obj.addComponent(ObjRotate);
-        // // obj.addComponent(BoxCollider);
-        // // const body = obj.addComponent(Rigidbody);
-        // // if (body) body.isKinematic = true;
-        // const renderer = obj.addComponent(MeshRenderer);
-        // if (renderer) {
-        //     renderer.mesh = model;
-        //     const mat = renderer.material = new Material("panel");
-        //     mat.mainTexture = Texture.CheckerboardTexture();
-        // }
 
         // Resources.loadAsync<Mesh>('resources/models/bunny2.obj').then((model) => {
         //     const obj = new GameObject("bunny");
@@ -121,22 +90,59 @@ export const MainScene = {
         //     obj.addComponent(ObjRotate);
         // });
 
-        Resources.loadAsync<Mesh>('resources/toukui/Construction_Helmet.obj').then((model) => {
-            const obj = new GameObject("toukui");
-            obj.transform.scale = Vector3.ONE.multiplyScalar(0.1);
-            const renderer = obj.addComponent(MeshRenderer);
-            if (renderer) {
-                renderer.mesh = model;
-                const mat = renderer.material = new Material("toukui");
-                Resources.loadAsync<Texture>('resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png').then((texture) => {
-                    mat.mainTexture = texture;
-                    mat.shader = new LitShader();
-                });
-            }
-            obj.addComponent(ObjRotate);
-            if (p_obj) {
-                p_obj.transform.setParent(obj.transform);
-            }
+        const toukuiObj = await createObj({
+            name: "toukui",
+            scale: Vector3.ONE.multiplyScalar(0.1),
+            modelPath: 'resources/toukui/Construction_Helmet.obj',
+            texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+            components: [ObjRotate]
         });
+        spheresObj.transform.setParent(toukuiObj.transform);
     }
+}
+
+interface CreateObjConfig {
+    name: string;
+    position?: Vector3;
+    rotation?: Quaternion;
+    scale?: Vector3;
+    modelPath?: string;
+    texture?: string | Texture;
+    components?: (new (gameObject: GameObject) => Component)[];
+}
+
+async function createObj(config: CreateObjConfig): Promise<GameObject> {
+    const obj = new GameObject(config.name);
+    obj.transform.position = config.position || Vector3.ZERO;
+    obj.transform.rotation = config.rotation || Quaternion.identity;
+    obj.transform.scale = config.scale || Vector3.ONE;
+
+    if (config.modelPath) {
+        const model = await Resources.loadAsync<Mesh>(config.modelPath);
+        const renderer = obj.addComponent(MeshRenderer);
+        if (renderer) {
+            renderer.mesh = model;
+            const mat = renderer.material;
+            if (typeof config.texture === 'string') {
+                const t = await Resources.loadAsync<Texture>(config.texture);
+                mat.mainTexture = t;
+            }
+            else if (config.texture) {
+                mat.mainTexture = config.texture;
+            }
+            mat.shader = new LitShader();
+        }
+    }
+
+    if (config.components && config.components.length > 0) {
+        for (const ComponentClass of config.components) {
+            try {
+                obj.addComponent(ComponentClass);
+            } catch (error) {
+                console.error(`Failed to add component ${ComponentClass.name}:`, error);
+            }
+        }
+    }
+
+    return obj;
 }

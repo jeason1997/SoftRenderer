@@ -36,8 +36,10 @@ export class Physics {
         // 创建物理世界
         this.world = new CANNON.World();
         this.world.gravity.set(0, -9.82, 0);
-        // this.world.broadphase = new CANNON.NaiveBroadphase();      // 碰撞检测算法
-        // this.world.solver.iterations = 10;                         // 约束求解迭代次数，影响精度
+        // @ts-ignore
+        this.world.broadphase = new CANNON.NaiveBroadphase();      // 碰撞检测算法
+        // @ts-ignore
+        this.world.solver.iterations = 10;                         // 约束求解迭代次数，影响精度
         this.world.allowSleep = true;                              // 允许物体进入睡眠状态 
     }
 
@@ -123,6 +125,19 @@ export class Physics {
         else {
             console.error('Rigidbody not found:', rigidbody);
         }
+    }
+
+    public RebuildColliders(collider: Collider): void {
+        const shape = this.colliders.get(collider);
+        if (shape == null) return;
+
+        this.RemoveCollider(collider);
+        this.CreateCollider(collider);
+        // 强制更新碰撞检测信息
+        //TODO:移除形状后，与它相邻的物体不会被激活，这不符合常理，暂时不知道怎么解决，这里手动唤醒下全部的物体
+        this.world.bodies.forEach(body => {
+            body.wakeUp();
+        });
     }
 
     public RemoveCollider(collider: Collider): void {

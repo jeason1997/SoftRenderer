@@ -411,7 +411,7 @@ export class RasterizationPipeline {
                         // const color = new Color(Math.floor((normal.x + 1) * 0.5 * 255), Math.floor((normal.y + 1) * 0.5 * 255), Math.floor((normal.z + 1) * 0.5 * 255)).ToUint32();
 
                         // 渲染管线9.绘制像素到帧缓冲
-                        if (renderer.material && renderer.material.mainTexture) {
+                        if (renderer.material.mainTexture) {
                             const texture = renderer.material.mainTexture;
                             const uv = fragment.attributes.uv as Vector2;
                             const color = texture.Sample(uv.u, uv.v);
@@ -502,7 +502,7 @@ export class RasterizationPipeline {
         // this.DrawOverdraw();
 
         // 绘制物理调试信息
-        // PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
+        PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
 
         // 绘制调试线
         const lines = Debug.GetDebugLines();

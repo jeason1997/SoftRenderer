@@ -16,7 +16,7 @@ export class Engine {
     public static pipeline: RasterizationPipeline;
     public static imageData: ImageData;
 
-    public static Init() {
+    public static async Init() {
         // 获取canvas元素和2D渲染上下文
         this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
         this.context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -37,7 +37,7 @@ export class Engine {
         // 初始化物理引擎
         this.physics.init();
         // 初始化场景
-        this.sceneManager.loadScene(MainScene);
+        await this.sceneManager.loadScene(MainScene);
         // 初始化输入系统
         Input.initialize();
     }

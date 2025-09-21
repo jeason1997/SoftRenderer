@@ -35,13 +35,13 @@ export class SceneManager {
         }
     }
 
-    public loadScene(data: any) {
+    public async loadScene(data: any) {
         if (!data.name || !data.initfun) {
             return;
         }
         // 初始化场景
         const mainScene = this.createScene(data.name);
         this.setActiveScene(mainScene);
-        data.initfun(mainScene);
+        await data.initfun(mainScene);
     }
 }

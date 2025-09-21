@@ -1,9 +1,9 @@
 import { Engine } from "./Core/Engine";
 
 // 当DOM内容加载完成后执行
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // 初始化引擎
-    Engine.Init();
+    await Engine.Init();
     // 主循环
     function mainLoop(time: number) {
         Engine.Loop(time);
