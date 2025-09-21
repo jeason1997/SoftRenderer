@@ -322,6 +322,14 @@ export class RasterizationPipeline {
             return;
         }
 
+        const shader = renderer.material.shader;
+        if (!shader) return;
+        shader.init(this.currentCamera);
+
+        if (renderer.material.shader && renderer.material.mainTexture) {
+            renderer.material.shader.mainTexture = renderer.material.mainTexture;
+        }
+
         let triangles = mesh.triangles;
 
         // 渲染管线3.背面剔除
@@ -329,15 +337,30 @@ export class RasterizationPipeline {
         // 渲染管线4.遮挡剔除
         this.OcclusionCulling();
 
-        // 渲染管线5.MVP变换
-        const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
-
         for (let i = 0; i < triangles.length; i += 3) {
-            const p1 = screenVertices[triangles[i]];
-            const p2 = screenVertices[triangles[i + 1]];
-            const p3 = screenVertices[triangles[i + 2]];
+            // 渲染管线5.顶点着色器
+            const { vertexOut: v1, attrOut: v1Attr } = shader.vertexShader({
+                vertex: mesh.vertices[triangles[i]],
+                uv: mesh.uv[triangles[i]],
+                normal: mesh.normals[triangles[i]],
+            });
+            const { vertexOut: v2, attrOut: v2Attr } = shader.vertexShader({
+                vertex: mesh.vertices[triangles[i + 1]],
+                uv: mesh.uv[triangles[i + 1]],
+                normal: mesh.normals[triangles[i + 1]],
+            });
+            const { vertexOut: v3, attrOut: v3Attr } = shader.vertexShader({
+                vertex: mesh.vertices[triangles[i + 2]],
+                uv: mesh.uv[triangles[i + 2]],
+                normal: mesh.normals[triangles[i + 2]],
+            });
 
-            // 渲染管线6.裁剪
+            // 渲染管线6.屏幕映射
+            const p1 = TransformTools.ClipToScreenPos(v1, this.currentCamera);
+            const p2 = TransformTools.ClipToScreenPos(v2, this.currentCamera);
+            const p3 = TransformTools.ClipToScreenPos(v3, this.currentCamera);
+
+            // 渲染管线7.裁剪
             // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
             // 简单粗暴的裁剪，有点在屏幕外直接抛弃
             const w = EngineConfig.canvasWidth;
@@ -345,29 +368,6 @@ export class RasterizationPipeline {
             if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
                 continue;
             }
-
-            const p1_uv = mesh.uv[triangles[i]];
-            const p2_uv = mesh.uv[triangles[i + 1]];
-            const p3_uv = mesh.uv[triangles[i + 2]];
-
-            const p1_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-            const p2_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-            const p3_normal = TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
-
-            const attrs1 = {
-                uv: p1_uv,
-                normal: p1_normal,
-            };
-
-            const attrs2 = {
-                uv: p2_uv,
-                normal: p2_normal,
-            };
-
-            const attrs3 = {
-                uv: p3_uv,
-                normal: p3_normal,
-            };
 
             if (this.drawMode & DrawMode.Wireframe) {
                 this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
@@ -378,8 +378,8 @@ export class RasterizationPipeline {
                 this.DrawPixel(p3.x, p3.y, Color.WHITE);
             }
             if (this.drawMode & DrawMode.Shader) {
-                // 渲染管线7.光栅化
-                const fragments = BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, attrs1, attrs2, attrs3);
+                // 渲染管线8.光栅化
+                const fragments = BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, v1Attr, v2Attr, v3Attr);
 
                 for (let i = 0; i < fragments.length; i++) {
                     const fragment = fragments[i];
@@ -397,91 +397,16 @@ export class RasterizationPipeline {
                     const index = y * EngineConfig.canvasWidth + x;
                     const currentDepth = this.depthBuffer[index];
 
-                    // 渲染管线8.早期深度测试
+                    // 渲染管线9.早期深度测试
                     // 深度测试：只有当前像素更近（z值更小）时才绘制
                     if (z < currentDepth) {
                         this.depthBuffer[index] = z;
-
-                        // uv
-                        // const uv = fragment.attributes.uv as Vector2;
-                        // const color = new Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
-
-                        // nroaml
-                        // const normal = fragment.attributes.normal as Vector3;
-                        // const color = new Color(Math.floor((normal.x + 1) * 0.5 * 255), Math.floor((normal.y + 1) * 0.5 * 255), Math.floor((normal.z + 1) * 0.5 * 255)).ToUint32();
-
-                        // 渲染管线9.绘制像素到帧缓冲
-                        if (renderer.material.mainTexture) {
-                            const texture = renderer.material.mainTexture;
-                            const uv = fragment.attributes.uv as Vector2;
-                            const color = texture.Sample(uv.u, uv.v);
-                            this.DrawPixel(x, y, this.calculateLighting(color, fragment.attributes.normal as Vector3, this.currentCamera.transform.forward), true);
-                        }
+                        // 渲染管线10.像素着色器，绘制像素到帧缓冲
+                        this.DrawPixel(x, y, shader.fragmentShader(fragment.attributes), true);
                     }
                 }
             }
         }
-    }
-
-    // 光照计算
-    private calculateLighting(
-        surfaceColor: number,
-        normal: Vector3,
-        viewDirection: Vector3,
-    ): number {
-        const light = Light.sunLight;
-        const ambientLight = RenderSettings.ambientLight;
-
-        // 高光系数，值越大高光越集中
-        const shininess: number = 100
-
-        // 确保法向量归一化
-        const normalizedNormal = normal.normalize();
-        const lightDirection = light.transform.forward.normalize();
-        const normalizedViewDir = viewDirection.negate().normalize();
-
-        // 计算漫反射（半兰伯特）部分
-        const dotProduct = Math.max(0, Vector3.dot(normalizedNormal, lightDirection)) * 0.5 + 0.5;
-
-        // 计算高光（Phong）部分
-        // 1. 计算反射光方向 = 2*(法向量·光源方向)*法向量 - 光源方向
-        const reflectDir = normalizedNormal.clone()
-            .multiplyScalar(2 * Vector3.dot(normalizedNormal, lightDirection))
-            .subtract(lightDirection)
-            .normalize();
-
-        // 2. 计算反射方向与视角方向的点积
-        const specDot = Math.max(0, Vector3.dot(reflectDir, normalizedViewDir));
-
-        // 3. 计算高光因子（使用高光系数控制高光范围）
-        const specularFactor = Math.pow(specDot, shininess);
-
-        // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
-        const specularIntensity = 0.5; // 高光强度
-        const specularR = Math.round(light.color.r * specularIntensity * specularFactor);
-        const specularG = Math.round(light.color.g * specularIntensity * specularFactor);
-        const specularB = Math.round(light.color.b * specularIntensity * specularFactor);
-
-        // 提取表面颜色的RGBA通道
-        const rgba = Color.FromUint32(surfaceColor);
-
-        // 计算漫反射颜色
-        const diffR = Math.round(rgba.r * (light.color.r / 255) * light.intensity * dotProduct);
-        const diffG = Math.round(rgba.g * (light.color.g / 255) * light.intensity * dotProduct);
-        const diffB = Math.round(rgba.b * (light.color.b / 255) * light.intensity * dotProduct);
-
-        // 合并所有光照贡献（环境光 + 漫反射 + 高光）
-        const totalR = ambientLight.r + diffR + specularR;
-        const totalG = ambientLight.g + diffG + specularG;
-        const totalB = ambientLight.b + diffB + specularB;
-
-        // 确保颜色值在0-255范围内
-        const clampedR = Math.min(255, Math.max(0, totalR));
-        const clampedG = Math.min(255, Math.max(0, totalG));
-        const clampedB = Math.min(255, Math.max(0, totalB));
-
-        // 组合成32位颜色值（保留原始Alpha）
-        return (rgba.a << 24) | (clampedB << 16) | (clampedG << 8) | clampedR;
     }
 
     //#endregion

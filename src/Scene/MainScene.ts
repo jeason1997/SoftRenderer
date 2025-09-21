@@ -130,7 +130,7 @@ async function createObj(config: CreateObjConfig): Promise<GameObject> {
             else if (config.texture) {
                 mat.mainTexture = config.texture;
             }
-            mat.shader = new LitShader();
+            mat.shader = new LitShader(obj.transform);
         }
     }
 

@@ -20233,7 +20233,7 @@ class TransformTools {
         const vp = this.NdcToViewportPos(ndc, camera.viewPort);
         const screen = this.ViewportToScreenPos(vp);
         const depth = (ndc.z + 1) / 2;
-        return { screen, depth };
+        return new Vector3_1.Vector3(screen.x, screen.y, depth);
     }
     // 模型法线转为世界法线
     static ModelToWorldNormal(normal, transform) {
@@ -21555,7 +21555,6 @@ const PhysicsDebugDraw_1 = require("../Physics/PhysicsDebugDraw");
 const BarycentricTriangleRasterizer_1 = require("./BarycentricTriangleRasterizer");
 const TransformTools_1 = require("../Math/TransformTools");
 const Debug_1 = require("../Utils/Debug");
-const Light_1 = require("../Component/Light");
 var DrawMode;
 (function (DrawMode) {
     DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
@@ -21806,18 +21805,40 @@ class RasterizationPipeline {
         if (!mesh) {
             return;
         }
+        const shader = renderer.material.shader;
+        if (!shader)
+            return;
+        shader.init(this.currentCamera);
+        if (renderer.material.shader && renderer.material.mainTexture) {
+            renderer.material.shader.mainTexture = renderer.material.mainTexture;
+        }
         let triangles = mesh.triangles;
         // 渲染管线3.背面剔除
         triangles = this.BackfaceCulling(triangles, mesh, renderer);
         // 渲染管线4.遮挡剔除
         this.OcclusionCulling();
-        // 渲染管线5.MVP变换
-        const screenVertices = this.VertexProcessingStage(mesh.vertices, renderer.transform);
         for (let i = 0; i < triangles.length; i += 3) {
-            const p1 = screenVertices[triangles[i]];
-            const p2 = screenVertices[triangles[i + 1]];
-            const p3 = screenVertices[triangles[i + 2]];
-            // 渲染管线6.裁剪
+            // 渲染管线5.顶点着色器
+            const { vertexOut: v1, attrOut: v1Attr } = shader.vertexShader({
+                vertex: mesh.vertices[triangles[i]],
+                uv: mesh.uv[triangles[i]],
+                normal: mesh.normals[triangles[i]],
+            });
+            const { vertexOut: v2, attrOut: v2Attr } = shader.vertexShader({
+                vertex: mesh.vertices[triangles[i + 1]],
+                uv: mesh.uv[triangles[i + 1]],
+                normal: mesh.normals[triangles[i + 1]],
+            });
+            const { vertexOut: v3, attrOut: v3Attr } = shader.vertexShader({
+                vertex: mesh.vertices[triangles[i + 2]],
+                uv: mesh.uv[triangles[i + 2]],
+                normal: mesh.normals[triangles[i + 2]],
+            });
+            // 渲染管线6.屏幕映射
+            const p1 = TransformTools_1.TransformTools.ClipToScreenPos(v1, this.currentCamera);
+            const p2 = TransformTools_1.TransformTools.ClipToScreenPos(v2, this.currentCamera);
+            const p3 = TransformTools_1.TransformTools.ClipToScreenPos(v3, this.currentCamera);
+            // 渲染管线7.裁剪
             // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
             // 简单粗暴的裁剪，有点在屏幕外直接抛弃
             const w = Setting_1.EngineConfig.canvasWidth;
@@ -21825,24 +21846,6 @@ class RasterizationPipeline {
             if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
                 continue;
             }
-            const p1_uv = mesh.uv[triangles[i]];
-            const p2_uv = mesh.uv[triangles[i + 1]];
-            const p3_uv = mesh.uv[triangles[i + 2]];
-            const p1_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i]], renderer.transform);
-            const p2_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 1]], renderer.transform);
-            const p3_normal = TransformTools_1.TransformTools.ModelToWorldNormal(mesh.normals[triangles[i + 2]], renderer.transform);
-            const attrs1 = {
-                uv: p1_uv,
-                normal: p1_normal,
-            };
-            const attrs2 = {
-                uv: p2_uv,
-                normal: p2_normal,
-            };
-            const attrs3 = {
-                uv: p3_uv,
-                normal: p3_normal,
-            };
             if (this.drawMode & DrawMode.Wireframe) {
                 this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
             }
@@ -21852,8 +21855,8 @@ class RasterizationPipeline {
                 this.DrawPixel(p3.x, p3.y, Color_1.Color.WHITE);
             }
             if (this.drawMode & DrawMode.Shader) {
-                // 渲染管线7.光栅化
-                const fragments = BarycentricTriangleRasterizer_1.BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, attrs1, attrs2, attrs3);
+                // 渲染管线8.光栅化
+                const fragments = BarycentricTriangleRasterizer_1.BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, v1Attr, v2Attr, v3Attr);
                 for (let i = 0; i < fragments.length; i++) {
                     const fragment = fragments[i];
                     const x = fragment.x;
@@ -21867,71 +21870,16 @@ class RasterizationPipeline {
                     // 计算深度缓冲区索引
                     const index = y * Setting_1.EngineConfig.canvasWidth + x;
                     const currentDepth = this.depthBuffer[index];
-                    // 渲染管线8.早期深度测试
+                    // 渲染管线9.早期深度测试
                     // 深度测试：只有当前像素更近（z值更小）时才绘制
                     if (z < currentDepth) {
                         this.depthBuffer[index] = z;
-                        // uv
-                        // const uv = fragment.attributes.uv as Vector2;
-                        // const color = new Color(Math.floor(uv.u * 255), Math.floor(uv.v * 255), 0).ToUint32();
-                        // nroaml
-                        // const normal = fragment.attributes.normal as Vector3;
-                        // const color = new Color(Math.floor((normal.x + 1) * 0.5 * 255), Math.floor((normal.y + 1) * 0.5 * 255), Math.floor((normal.z + 1) * 0.5 * 255)).ToUint32();
-                        // 渲染管线9.绘制像素到帧缓冲
-                        if (renderer.material.mainTexture) {
-                            const texture = renderer.material.mainTexture;
-                            const uv = fragment.attributes.uv;
-                            const color = texture.Sample(uv.u, uv.v);
-                            this.DrawPixel(x, y, this.calculateLighting(color, fragment.attributes.normal, this.currentCamera.transform.forward), true);
-                        }
+                        // 渲染管线10.像素着色器，绘制像素到帧缓冲
+                        this.DrawPixel(x, y, shader.fragmentShader(fragment.attributes), true);
                     }
                 }
             }
         }
-    }
-    // 光照计算
-    calculateLighting(surfaceColor, normal, viewDirection) {
-        const light = Light_1.Light.sunLight;
-        const ambientLight = Setting_1.RenderSettings.ambientLight;
-        // 高光系数，值越大高光越集中
-        const shininess = 100;
-        // 确保法向量归一化
-        const normalizedNormal = normal.normalize();
-        const lightDirection = light.transform.forward.normalize();
-        const normalizedViewDir = viewDirection.negate().normalize();
-        // 计算漫反射（半兰伯特）部分
-        const dotProduct = Math.max(0, Vector3_1.Vector3.dot(normalizedNormal, lightDirection)) * 0.5 + 0.5;
-        // 计算高光（Phong）部分
-        // 1. 计算反射光方向 = 2*(法向量·光源方向)*法向量 - 光源方向
-        const reflectDir = normalizedNormal.clone()
-            .multiplyScalar(2 * Vector3_1.Vector3.dot(normalizedNormal, lightDirection))
-            .subtract(lightDirection)
-            .normalize();
-        // 2. 计算反射方向与视角方向的点积
-        const specDot = Math.max(0, Vector3_1.Vector3.dot(reflectDir, normalizedViewDir));
-        // 3. 计算高光因子（使用高光系数控制高光范围）
-        const specularFactor = Math.pow(specDot, shininess);
-        // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
-        const specularIntensity = 0.5; // 高光强度
-        const specularR = Math.round(light.color.r * specularIntensity * specularFactor);
-        const specularG = Math.round(light.color.g * specularIntensity * specularFactor);
-        const specularB = Math.round(light.color.b * specularIntensity * specularFactor);
-        // 提取表面颜色的RGBA通道
-        const rgba = Color_1.Color.FromUint32(surfaceColor);
-        // 计算漫反射颜色
-        const diffR = Math.round(rgba.r * (light.color.r / 255) * light.intensity * dotProduct);
-        const diffG = Math.round(rgba.g * (light.color.g / 255) * light.intensity * dotProduct);
-        const diffB = Math.round(rgba.b * (light.color.b / 255) * light.intensity * dotProduct);
-        // 合并所有光照贡献（环境光 + 漫反射 + 高光）
-        const totalR = ambientLight.r + diffR + specularR;
-        const totalG = ambientLight.g + diffG + specularG;
-        const totalB = ambientLight.b + diffB + specularB;
-        // 确保颜色值在0-255范围内
-        const clampedR = Math.min(255, Math.max(0, totalR));
-        const clampedG = Math.min(255, Math.max(0, totalG));
-        const clampedB = Math.min(255, Math.max(0, totalB));
-        // 组合成32位颜色值（保留原始Alpha）
-        return (rgba.a << 24) | (clampedB << 16) | (clampedG << 8) | clampedR;
     }
     //#endregion
     //#region 工具函数
@@ -22045,7 +21993,7 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Light":8,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Physics/PhysicsDebugDraw":37,"../Utils/Debug":51,"./BarycentricTriangleRasterizer":39}],41:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Physics/PhysicsDebugDraw":37,"../Utils/Debug":51,"./BarycentricTriangleRasterizer":39}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TriangleRasterizer = void 0;
@@ -23125,7 +23073,7 @@ function createObj(config) {
                 else if (config.texture) {
                     mat.mainTexture = config.texture;
                 }
-                mat.shader = new LitShader_1.LitShader();
+                mat.shader = new LitShader_1.LitShader(obj.transform);
             }
         }
         if (config.components && config.components.length > 0) {
@@ -23313,73 +23261,58 @@ exports.SceneManager = SceneManager;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LitShader = void 0;
-const Light_1 = require("../Component/Light");
-const Setting_1 = require("../Core/Setting");
 const Color_1 = require("../Math/Color");
-const Vector2_1 = require("../Math/Vector2");
+const TransformTools_1 = require("../Math/TransformTools");
 const Vector3_1 = require("../Math/Vector3");
 const Vector4_1 = require("../Math/Vector4");
 const Shader_1 = require("./Shader");
 class LitShader extends Shader_1.Shader {
-    vertexShader() {
-        this.attr = {
-            uv: new Vector2_1.Vector2(),
-            normal: new Vector3_1.Vector3(),
+    vertexShader(inAttr) {
+        const normalOut = TransformTools_1.TransformTools.ModelToWorldNormal(inAttr.normal, this.transform);
+        const outAttr = {
+            uv: inAttr.uv,
+            normal: normalOut,
         };
-        // const modelMatrix = transform.localToWorldMatrix;
-        // const viewMatrix = camera.getViewMatrix();
-        // const projectionMatrix = camera.getProjectionMatrix();
-        // const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
-        // 另一种构建mv矩阵的方式
-        // 构建一个先朝摄影机反方向移动，再反方向旋转的矩阵，其实得到的也就是上面摄影机的世界坐标矩阵
-        // const cameraForward = camera.transform.forward;
-        // const cameraUp = camera.transform.up;
-        // const modelViewMatrix = modelMatrix.clone().transformToLookAtSpace(camera.transform.position, camera.transform.position.add(cameraForward), cameraUp);
-        // const mvpMatrix = modelViewMatrix.perspective(camera.fov, camera.aspect, camera.nearClip, camera.farClip);
-        // 要把Vec3转为齐次坐标点，即w=1
-        //return mvpMatrix.multiplyVector4(new Vector4(vertex, 1));
-        return Vector4_1.Vector4.ZERO;
+        return {
+            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(inAttr.vertex, 1)),
+            attrOut: outAttr,
+        };
     }
-    // 光照计算
-    fragmentShader() {
-        const uv = this.attr.uv;
-        const normal = this.attr.normal;
+    fragmentShader(v2fAttr) {
+        const uv = v2fAttr.uv;
+        const normal = v2fAttr.normal;
         const surfaceColor = this.mainTexture.Sample(uv.u, uv.v);
-        const light = Light_1.Light.sunLight;
-        const ambientLight = Setting_1.RenderSettings.ambientLight;
         // 高光系数，值越大高光越集中
         const shininess = 100;
         // 确保法向量归一化
         const normalizedNormal = normal.normalize();
-        const lightDirection = light.transform.forward.normalize();
-        const normalizedViewDir = this.viewDirection.negate().normalize();
         // 计算漫反射（半兰伯特）部分
-        const dotProduct = Math.max(0, Vector3_1.Vector3.dot(normalizedNormal, lightDirection)) * 0.5 + 0.5;
+        const dotProduct = Math.max(0, Vector3_1.Vector3.dot(normalizedNormal, this.lightDirection)) * 0.5 + 0.5;
         // 计算高光（Phong）部分
         // 1. 计算反射光方向 = 2*(法向量·光源方向)*法向量 - 光源方向
         const reflectDir = normalizedNormal.clone()
-            .multiplyScalar(2 * Vector3_1.Vector3.dot(normalizedNormal, lightDirection))
-            .subtract(lightDirection)
+            .multiplyScalar(2 * Vector3_1.Vector3.dot(normalizedNormal, this.lightDirection))
+            .subtract(this.lightDirection)
             .normalize();
         // 2. 计算反射方向与视角方向的点积
-        const specDot = Math.max(0, Vector3_1.Vector3.dot(reflectDir, normalizedViewDir));
+        const specDot = Math.max(0, Vector3_1.Vector3.dot(reflectDir, this.viewDir));
         // 3. 计算高光因子（使用高光系数控制高光范围）
         const specularFactor = Math.pow(specDot, shininess);
         // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
         const specularIntensity = 0.5; // 高光强度
-        const specularR = Math.round(light.color.r * specularIntensity * specularFactor);
-        const specularG = Math.round(light.color.g * specularIntensity * specularFactor);
-        const specularB = Math.round(light.color.b * specularIntensity * specularFactor);
+        const specularR = Math.round(this.lightColor.r * specularIntensity * specularFactor);
+        const specularG = Math.round(this.lightColor.g * specularIntensity * specularFactor);
+        const specularB = Math.round(this.lightColor.b * specularIntensity * specularFactor);
         // 提取表面颜色的RGBA通道
         const rgba = Color_1.Color.FromUint32(surfaceColor);
         // 计算漫反射颜色
-        const diffR = Math.round(rgba.r * (light.color.r / 255) * light.intensity * dotProduct);
-        const diffG = Math.round(rgba.g * (light.color.g / 255) * light.intensity * dotProduct);
-        const diffB = Math.round(rgba.b * (light.color.b / 255) * light.intensity * dotProduct);
+        const diffR = Math.round(rgba.r * (this.lightColor.r / 255) * this.lightIntensity * dotProduct);
+        const diffG = Math.round(rgba.g * (this.lightColor.g / 255) * this.lightIntensity * dotProduct);
+        const diffB = Math.round(rgba.b * (this.lightColor.b / 255) * this.lightIntensity * dotProduct);
         // 合并所有光照贡献（环境光 + 漫反射 + 高光）
-        const totalR = ambientLight.r + diffR + specularR;
-        const totalG = ambientLight.g + diffG + specularG;
-        const totalB = ambientLight.b + diffB + specularB;
+        const totalR = this.ambientLight.r + diffR + specularR;
+        const totalG = this.ambientLight.g + diffG + specularG;
+        const totalB = this.ambientLight.b + diffB + specularB;
         // 确保颜色值在0-255范围内
         const clampedR = Math.min(255, Math.max(0, totalR));
         const clampedG = Math.min(255, Math.max(0, totalG));
@@ -23390,15 +23323,39 @@ class LitShader extends Shader_1.Shader {
 }
 exports.LitShader = LitShader;
 
-},{"../Component/Light":8,"../Core/Setting":21,"../Math/Color":28,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":50}],50:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":50}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Shader = void 0;
-class Shader {
+const Light_1 = require("../Component/Light");
+const Setting_1 = require("../Core/Setting");
+const UObject_1 = require("../Core/UObject");
+class Shader extends UObject_1.UObject {
+    constructor(transform) {
+        super();
+        this.inAttr = {};
+        this.transform = transform;
+    }
+    init(camera) {
+        this.camera = camera;
+        this.viewDir = camera.transform.forward.negate().normalize();
+        this.modelMatrix = this.transform.localToWorldMatrix;
+        this.viewMatrix = this.camera.getViewMatrix();
+        this.projectionMatrix = this.camera.getProjectionMatrix();
+        this.mvpMatrix = this.projectionMatrix.multiply(this.viewMatrix).multiply(this.modelMatrix);
+        const light = Light_1.Light.sunLight;
+        this.ambientLight = Setting_1.RenderSettings.ambientLight;
+        this.lightColor = light.color;
+        this.lightDirection = light.transform.forward.normalize();
+        this.lightIntensity = light.intensity;
+    }
+    onDestroy() {
+        throw new Error("Method not implemented.");
+    }
 }
 exports.Shader = Shader;
 
-},{}],51:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;

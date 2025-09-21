@@ -203,12 +203,12 @@ export class TransformTools {
         return { screen, depth };
     }
 
-    public static ClipToScreenPos(clipPos: Vector4, camera: Camera): { screen: Vector2; depth: number } {
+    public static ClipToScreenPos(clipPos: Vector4, camera: Camera): Vector3 {
         const ndc = this.ClipToNdcPos(clipPos);
         const vp = this.NdcToViewportPos(ndc, camera.viewPort);
         const screen = this.ViewportToScreenPos(vp);
         const depth = (ndc.z + 1) / 2;
-        return { screen, depth };
+        return new Vector3(screen.x, screen.y, depth);  
     }
 
     // 模型法线转为世界法线
