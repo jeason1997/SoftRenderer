@@ -3,7 +3,8 @@ import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
 import { Matrix4x4 } from "../Math/Matrix4x4";
-import { Fragment, TriangleRasterizer, VertexAttributes } from "./TriangleRasterizer";
+import { Fragment, TriangleRasterizer } from "./TriangleRasterizer";
+import { VertexAttributes } from "../Shader/Shader";
 
 export class BarycentricTriangleRasterizer extends TriangleRasterizer {
     /**

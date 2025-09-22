@@ -1,9 +1,4 @@
-export enum BlendMode {
-    alpha,
-    additive,
-    multiply,
-    replace
-}
+import { BlendMode } from "../Renderer/RendererDefine";
 
 export class Color {
     // public static readonly WHITE = Object.freeze(new Color(1, 1, 1, 1)) as Readonly<Color>;
@@ -150,7 +145,7 @@ export class Color {
         let resultA, resultR, resultG, resultB;
 
         switch (mode) {
-            case BlendMode.alpha:
+            case BlendMode.AlphaBlend:
                 // Alpha 混合 (最常用的混合模式)
                 const alpha = srcA;
                 const invAlpha = 1 - alpha;
@@ -161,7 +156,7 @@ export class Color {
                 resultB = srcB * alpha + destB * invAlpha;
                 break;
 
-            case BlendMode.additive:
+            case BlendMode.Additive:
                 // 加法混合 (颜色叠加)
                 resultA = Math.min(1, destA + srcA);
                 resultR = Math.min(1, destR + srcR);
@@ -169,7 +164,7 @@ export class Color {
                 resultB = Math.min(1, destB + srcB);
                 break;
 
-            case BlendMode.multiply:
+            case BlendMode.Multiply:
                 // 乘法混合 (颜色相乘)
                 resultA = Math.min(1, destA);
                 resultR = destR * srcR;
@@ -177,7 +172,7 @@ export class Color {
                 resultB = destB * srcB;
                 break;
 
-            case BlendMode.replace:
+            case BlendMode.Opaque:
             default:
                 // 直接替换
                 return src.clone();

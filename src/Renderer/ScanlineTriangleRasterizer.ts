@@ -1,8 +1,9 @@
-import { Fragment, TriangleRasterizer, VertexAttributes, AttributeType } from "./TriangleRasterizer";
 import { Vector3 } from "../Math/Vector3";
 import { Color } from "../Math/Color";
 import { Vector2 } from "../Math/Vector2";
 import { Vector4 } from "../Math/Vector4";
+import { AttributeType, VertexAttributes } from "../Shader/Shader";
+import { Fragment, TriangleRasterizer } from "./TriangleRasterizer";
 
 /**
  * 表示三角形的边，用于扫描线算法

@@ -1,4 +1,4 @@
-import { BlendMode, Color } from "../Math/Color";
+import { Color } from "../Math/Color";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
 import { Transform } from "../Core/Transform";
@@ -6,16 +6,14 @@ import { Renderer } from "../Component/Renderer";
 import { MeshRenderer } from "../Component/MeshRenderer";
 import { Camera, CameraClearFlags } from "../Component/Camera";
 import { Engine } from "../Core/Engine";
-import { EngineConfig, RenderSettings } from "../Core/Setting";
+import { EngineConfig } from "../Core/Setting";
 import { Mesh } from "../Resources/Mesh";
 import { Bounds } from "../Math/Bounds";
-import { PhysicsDebugDraw } from "../Physics/PhysicsDebugDraw";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
-import { Vector2 } from "../Math/Vector2";
-import { Light } from "../Component/Light";
-import { ScanlineTriangleRasterizer } from "./ScanlineTriangleRasterizer";
+import { CullMode, ZTest } from "../Shader/Shader";
+import { BlendMode } from "./RendererDefine";
 
 enum DrawMode {
     Wireframe = 1,
@@ -113,7 +111,7 @@ export class RasterizationPipeline {
         }
     }
 
-    public DrawPixel(x: number, y: number, color: Color, countOverdraw: boolean = false, blendMode: BlendMode = BlendMode.replace) {
+    public DrawPixel(x: number, y: number, color: Color, countOverdraw: boolean = false, blendMode: BlendMode = BlendMode.Opaque) {
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -128,11 +126,12 @@ export class RasterizationPipeline {
         const index = y * EngineConfig.canvasWidth + x;
 
         // 颜色混合处理
-        if (blendMode !== BlendMode.replace) {
+        if (blendMode !== BlendMode.Opaque) {
             const existingColor = Color.FromUint32(this.frameBuffer[index]);
             const blendedColor = Color.blendColors(existingColor, color, blendMode);
             this.frameBuffer[index] = blendedColor.ToUint32();
-        } else {
+        }
+        else {
             // 直接替换模式
             this.frameBuffer[index] = color.ToUint32();
         }
@@ -267,7 +266,9 @@ export class RasterizationPipeline {
     }
 
     // 背面剔除
-    public BackfaceCulling(triangles: number[], mesh: Mesh, renderer: Renderer) {
+    public FaceCulling(triangles: number[], mesh: Mesh, renderer: Renderer, cullMode: CullMode) {
+        if (cullMode === CullMode.None) return triangles;
+
         const visibleTriangles: number[] = [];
         const faceNormals = mesh.faceNormals;
         const faceCenters = mesh.faceCenters;
@@ -291,7 +292,7 @@ export class RasterizationPipeline {
             const dot = world_normal.dot(centerToCamera);
 
             // 4.判断夹角是否大于等于0°小于90°
-            if (dot > 0) {
+            if ((cullMode === CullMode.Back && dot > 0) || (cullMode === CullMode.Front && dot < 0)) {
                 visibleTriangles.push(
                     triangles[i * 3 + 0],
                     triangles[i * 3 + 1],
@@ -324,94 +325,130 @@ export class RasterizationPipeline {
 
         const shader = renderer.material.shader;
         if (!shader) return;
-        shader.init(this.currentCamera);
+        shader.init(renderer.transform, this.currentCamera);
 
-        if (renderer.material.shader && renderer.material.mainTexture) {
-            renderer.material.shader.mainTexture = renderer.material.mainTexture;
-        }
+        // 渲染所有通道
+        shader.passes.forEach(pass => {
+            let triangles = mesh.triangles;
 
-        let triangles = mesh.triangles;
+            // 渲染管线3.背面剔除
+            triangles = this.FaceCulling(triangles, mesh, renderer, pass.cullMode);
+            // 渲染管线4.遮挡剔除
+            this.OcclusionCulling();
 
-        // 渲染管线3.背面剔除
-        triangles = this.BackfaceCulling(triangles, mesh, renderer);
-        // 渲染管线4.遮挡剔除
-        this.OcclusionCulling();
+            for (let i = 0; i < triangles.length; i += 3) {
+                // 渲染管线5.顶点着色器
+                const { vertexOut: v1, attrOut: v1Attr } = pass.vert({
+                    vertex: mesh.vertices[triangles[i]],
+                    uv: mesh.uv[triangles[i]],
+                    normal: mesh.normals[triangles[i]],
+                });
+                const { vertexOut: v2, attrOut: v2Attr } = pass.vert({
+                    vertex: mesh.vertices[triangles[i + 1]],
+                    uv: mesh.uv[triangles[i + 1]],
+                    normal: mesh.normals[triangles[i + 1]],
+                });
+                const { vertexOut: v3, attrOut: v3Attr } = pass.vert({
+                    vertex: mesh.vertices[triangles[i + 2]],
+                    uv: mesh.uv[triangles[i + 2]],
+                    normal: mesh.normals[triangles[i + 2]],
+                });
 
-        for (let i = 0; i < triangles.length; i += 3) {
-            // 渲染管线5.顶点着色器
-            const { vertexOut: v1, attrOut: v1Attr } = shader.vertexShader({
-                vertex: mesh.vertices[triangles[i]],
-                uv: mesh.uv[triangles[i]],
-                normal: mesh.normals[triangles[i]],
-            });
-            const { vertexOut: v2, attrOut: v2Attr } = shader.vertexShader({
-                vertex: mesh.vertices[triangles[i + 1]],
-                uv: mesh.uv[triangles[i + 1]],
-                normal: mesh.normals[triangles[i + 1]],
-            });
-            const { vertexOut: v3, attrOut: v3Attr } = shader.vertexShader({
-                vertex: mesh.vertices[triangles[i + 2]],
-                uv: mesh.uv[triangles[i + 2]],
-                normal: mesh.normals[triangles[i + 2]],
-            });
+                // 渲染管线6.屏幕映射
+                const p1 = TransformTools.ClipToScreenPos(v1, this.currentCamera);
+                const p2 = TransformTools.ClipToScreenPos(v2, this.currentCamera);
+                const p3 = TransformTools.ClipToScreenPos(v3, this.currentCamera);
 
-            // 渲染管线6.屏幕映射
-            const p1 = TransformTools.ClipToScreenPos(v1, this.currentCamera);
-            const p2 = TransformTools.ClipToScreenPos(v2, this.currentCamera);
-            const p3 = TransformTools.ClipToScreenPos(v3, this.currentCamera);
+                // 渲染管线7.裁剪
+                // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
+                // 简单粗暴的裁剪，有点在屏幕外直接抛弃
+                const w = EngineConfig.canvasWidth;
+                const h = EngineConfig.canvasHeight;
+                if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
+                    continue;
+                }
 
-            // 渲染管线7.裁剪
-            // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-            // 简单粗暴的裁剪，有点在屏幕外直接抛弃
-            const w = EngineConfig.canvasWidth;
-            const h = EngineConfig.canvasHeight;
-            if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
-                continue;
-            }
+                if (this.drawMode & DrawMode.Wireframe) {
+                    this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
+                }
+                if (this.drawMode & DrawMode.Point) {
+                    this.DrawPixel(p1.x, p1.y, Color.WHITE);
+                    this.DrawPixel(p2.x, p2.y, Color.WHITE);
+                    this.DrawPixel(p3.x, p3.y, Color.WHITE);
+                }
+                if (this.drawMode & DrawMode.Shader) {
+                    // 渲染管线8.光栅化
+                    const fragments = BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, v1Attr, v2Attr, v3Attr);
 
-            if (this.drawMode & DrawMode.Wireframe) {
-                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color.WHITE);
-            }
-            if (this.drawMode & DrawMode.Point) {
-                this.DrawPixel(p1.x, p1.y, Color.WHITE);
-                this.DrawPixel(p2.x, p2.y, Color.WHITE);
-                this.DrawPixel(p3.x, p3.y, Color.WHITE);
-            }
-            if (this.drawMode & DrawMode.Shader) {
-                // 渲染管线8.光栅化
-                const fragments = BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, v1Attr, v2Attr, v3Attr);
+                    for (let i = 0; i < fragments.length; i++) {
+                        const fragment = fragments[i];
+                        const x = fragment.x;
+                        const y = fragment.y;
+                        const z = fragment.z;
 
-                for (let i = 0; i < fragments.length; i++) {
-                    const fragment = fragments[i];
-                    const x = fragment.x;
-                    const y = fragment.y;
-                    const z = fragment.z;
+                        // 检查坐标是否在屏幕范围内
+                        if (x < 0 || x >= EngineConfig.canvasWidth ||
+                            y < 0 || y >= EngineConfig.canvasHeight) {
+                            return;
+                        }
 
-                    // 检查坐标是否在屏幕范围内
-                    if (x < 0 || x >= EngineConfig.canvasWidth ||
-                        y < 0 || y >= EngineConfig.canvasHeight) {
-                        return;
-                    }
+                        // 计算深度缓冲区索引
+                        const index = y * EngineConfig.canvasWidth + x;
+                        const currentDepth = this.depthBuffer[index];
 
-                    // 计算深度缓冲区索引
-                    const index = y * EngineConfig.canvasWidth + x;
-                    const currentDepth = this.depthBuffer[index];
+                        // 渲染管线9.早期深度测试
+                        const depthTestResult = this.depthTest(z, currentDepth, pass.zTest);
 
-                    // 渲染管线9.早期深度测试
-                    // 深度测试：只有当前像素更近（z值更小）时才绘制
-                    if (z < currentDepth) {
-                        this.depthBuffer[index] = z;
-                        // 渲染管线10.像素着色器，绘制像素到帧缓冲
-                        this.DrawPixel(x, y, shader.fragmentShader(fragment.attributes), true);
+                        if (depthTestResult) {
+                            // 渲染管线10.深度测试通过，根据 zWrite 标志决定是否写入深度缓冲区
+                            if (pass.zWrite) {
+                                this.depthBuffer[index] = z; // 更新深度缓冲区
+                            }
+                            // 渲染管线11.像素着色器
+                            const pixelColor = pass.frag(fragment.attributes);
+                            // 渲染管线12.颜色混合并绘制像素到帧缓冲
+                            this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
+                        }
                     }
                 }
             }
-        }
+        });
     }
 
     //#endregion
 
     //#region 工具函数
+
+    /**
+     * 执行深度测试
+     * @param z 当前片元的深度值
+     * @param currentDepth 深度缓冲区中对应位置的深度值
+     * @param zTestFunc 深度测试函数（ZTest 枚举值）
+     * @returns 是否通过深度测试
+     */
+    private depthTest(z: number, currentDepth: number, zTestFunc: ZTest): boolean {
+        switch (zTestFunc) {
+            case ZTest.Never:
+                return false; // 从不通过
+            case ZTest.Less:
+                return z < currentDepth; // 小于当前深度则通过（默认）
+            case ZTest.Equal:
+                return Math.abs(z - currentDepth) < 1e-6; // 等于当前深度则通过（需考虑浮点精度）
+            case ZTest.LessEqual:
+                return z <= currentDepth; // 小于或等于当前深度则通过
+            case ZTest.Greater:
+                return z > currentDepth; // 大于当前深度则通过
+            case ZTest.NotEqual:
+                return Math.abs(z - currentDepth) >= 1e-6; // 不等于当前深度则通过
+            case ZTest.GreaterEqual:
+                return z >= currentDepth; // 大于或等于当前深度则通过
+            case ZTest.Always:
+                return true; // 总是通过
+            default:
+                console.warn("Unknown ZTest function, using Less as default.");
+                return z < currentDepth;
+        }
+    }
 
     private DebugDraw(): void {
         // 绘制包围盒

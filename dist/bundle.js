@@ -17070,7 +17070,7 @@ let Renderer = (() => {
         constructor() {
             super(...arguments);
             this._bounds = new Bounds_1.Bounds();
-            this._material = new Material_1.Material("default");
+            this._material = new Material_1.Material();
             this._sortingLayerID = 0;
             this._sortingOrder = 0;
             this._castShadows = true;
@@ -17131,7 +17131,7 @@ let Renderer = (() => {
 })();
 exports.Renderer = Renderer;
 
-},{"../Core/Decorators":17,"../Math/Bounds":27,"../Resources/Material":41,"./Component":7}],11:[function(require,module,exports){
+},{"../Core/Decorators":17,"../Math/Bounds":27,"../Resources/Material":42,"./Component":7}],11:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -17732,7 +17732,7 @@ let ObjRotate = (() => {
 })();
 exports.ObjRotate = ObjRotate;
 
-},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":50,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
+},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":51,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17899,7 +17899,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":45,"../Scene/SceneManager":47,"../Utils/Debug":50,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
+},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":46,"../Scene/SceneManager":48,"../Utils/Debug":51,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -19174,14 +19174,8 @@ class Sphere {
 },{"./Vector3":34}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Color = exports.BlendMode = void 0;
-var BlendMode;
-(function (BlendMode) {
-    BlendMode[BlendMode["alpha"] = 0] = "alpha";
-    BlendMode[BlendMode["additive"] = 1] = "additive";
-    BlendMode[BlendMode["multiply"] = 2] = "multiply";
-    BlendMode[BlendMode["replace"] = 3] = "replace";
-})(BlendMode || (exports.BlendMode = BlendMode = {}));
+exports.Color = void 0;
+const RendererDefine_1 = require("../Renderer/RendererDefine");
 class Color {
     // public static readonly WHITE = Object.freeze(new Color(1, 1, 1, 1)) as Readonly<Color>;
     static get WHITE() { return new Color(1, 1, 1, 1); }
@@ -19274,7 +19268,7 @@ class Color {
         const srcB = src.b;
         let resultA, resultR, resultG, resultB;
         switch (mode) {
-            case BlendMode.alpha:
+            case RendererDefine_1.BlendMode.AlphaBlend:
                 // Alpha 混合 (最常用的混合模式)
                 const alpha = srcA;
                 const invAlpha = 1 - alpha;
@@ -19283,21 +19277,21 @@ class Color {
                 resultG = srcG * alpha + destG * invAlpha;
                 resultB = srcB * alpha + destB * invAlpha;
                 break;
-            case BlendMode.additive:
+            case RendererDefine_1.BlendMode.Additive:
                 // 加法混合 (颜色叠加)
                 resultA = Math.min(1, destA + srcA);
                 resultR = Math.min(1, destR + srcR);
                 resultG = Math.min(1, destG + srcG);
                 resultB = Math.min(1, destB + srcB);
                 break;
-            case BlendMode.multiply:
+            case RendererDefine_1.BlendMode.Multiply:
                 // 乘法混合 (颜色相乘)
                 resultA = Math.min(1, destA);
                 resultR = destR * srcR;
                 resultG = destG * srcG;
                 resultB = destB * srcB;
                 break;
-            case BlendMode.replace:
+            case RendererDefine_1.BlendMode.Opaque:
             default:
                 // 直接替换
                 return src.clone();
@@ -19311,7 +19305,7 @@ class Color {
 }
 exports.Color = Color;
 
-},{}],29:[function(require,module,exports){
+},{"../Renderer/RendererDefine":40}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -21304,7 +21298,7 @@ class BarycentricTriangleRasterizer extends TriangleRasterizer_1.TriangleRasteri
 }
 exports.BarycentricTriangleRasterizer = BarycentricTriangleRasterizer;
 
-},{"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"./TriangleRasterizer":40}],39:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"./TriangleRasterizer":41}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -21318,6 +21312,8 @@ const Setting_1 = require("../Core/Setting");
 const BarycentricTriangleRasterizer_1 = require("./BarycentricTriangleRasterizer");
 const TransformTools_1 = require("../Math/TransformTools");
 const Debug_1 = require("../Utils/Debug");
+const Shader_1 = require("../Shader/Shader");
+const RendererDefine_1 = require("./RendererDefine");
 var DrawMode;
 (function (DrawMode) {
     DrawMode[DrawMode["Wireframe"] = 1] = "Wireframe";
@@ -21399,7 +21395,7 @@ class RasterizationPipeline {
             buffer.subarray(startIndex, endIndex).fill(value);
         }
     }
-    DrawPixel(x, y, color, countOverdraw = false, blendMode = Color_1.BlendMode.replace) {
+    DrawPixel(x, y, color, countOverdraw = false, blendMode = RendererDefine_1.BlendMode.Opaque) {
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -21411,7 +21407,7 @@ class RasterizationPipeline {
         }
         const index = y * Setting_1.EngineConfig.canvasWidth + x;
         // 颜色混合处理
-        if (blendMode !== Color_1.BlendMode.replace) {
+        if (blendMode !== RendererDefine_1.BlendMode.Opaque) {
             const existingColor = Color_1.Color.FromUint32(this.frameBuffer[index]);
             const blendedColor = Color_1.Color.blendColors(existingColor, color, blendMode);
             this.frameBuffer[index] = blendedColor.ToUint32();
@@ -21531,7 +21527,9 @@ class RasterizationPipeline {
     FrustumCulling() {
     }
     // 背面剔除
-    BackfaceCulling(triangles, mesh, renderer) {
+    FaceCulling(triangles, mesh, renderer, cullMode) {
+        if (cullMode === Shader_1.CullMode.None)
+            return triangles;
         const visibleTriangles = [];
         const faceNormals = mesh.faceNormals;
         const faceCenters = mesh.faceCenters;
@@ -21550,7 +21548,7 @@ class RasterizationPipeline {
             // 3.计算这2个向量的夹角
             const dot = world_normal.dot(centerToCamera);
             // 4.判断夹角是否大于等于0°小于90°
-            if (dot > 0) {
+            if ((cullMode === Shader_1.CullMode.Back && dot > 0) || (cullMode === Shader_1.CullMode.Front && dot < 0)) {
                 visibleTriangles.push(triangles[i * 3 + 0], triangles[i * 3 + 1], triangles[i * 3 + 2]);
             }
         }
@@ -21571,81 +21569,116 @@ class RasterizationPipeline {
         const shader = renderer.material.shader;
         if (!shader)
             return;
-        shader.init(this.currentCamera);
-        if (renderer.material.shader && renderer.material.mainTexture) {
-            renderer.material.shader.mainTexture = renderer.material.mainTexture;
-        }
-        let triangles = mesh.triangles;
-        // 渲染管线3.背面剔除
-        triangles = this.BackfaceCulling(triangles, mesh, renderer);
-        // 渲染管线4.遮挡剔除
-        this.OcclusionCulling();
-        for (let i = 0; i < triangles.length; i += 3) {
-            // 渲染管线5.顶点着色器
-            const { vertexOut: v1, attrOut: v1Attr } = shader.vertexShader({
-                vertex: mesh.vertices[triangles[i]],
-                uv: mesh.uv[triangles[i]],
-                normal: mesh.normals[triangles[i]],
-            });
-            const { vertexOut: v2, attrOut: v2Attr } = shader.vertexShader({
-                vertex: mesh.vertices[triangles[i + 1]],
-                uv: mesh.uv[triangles[i + 1]],
-                normal: mesh.normals[triangles[i + 1]],
-            });
-            const { vertexOut: v3, attrOut: v3Attr } = shader.vertexShader({
-                vertex: mesh.vertices[triangles[i + 2]],
-                uv: mesh.uv[triangles[i + 2]],
-                normal: mesh.normals[triangles[i + 2]],
-            });
-            // 渲染管线6.屏幕映射
-            const p1 = TransformTools_1.TransformTools.ClipToScreenPos(v1, this.currentCamera);
-            const p2 = TransformTools_1.TransformTools.ClipToScreenPos(v2, this.currentCamera);
-            const p3 = TransformTools_1.TransformTools.ClipToScreenPos(v3, this.currentCamera);
-            // 渲染管线7.裁剪
-            // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
-            // 简单粗暴的裁剪，有点在屏幕外直接抛弃
-            const w = Setting_1.EngineConfig.canvasWidth;
-            const h = Setting_1.EngineConfig.canvasHeight;
-            if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
-                continue;
-            }
-            if (this.drawMode & DrawMode.Wireframe) {
-                this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
-            }
-            if (this.drawMode & DrawMode.Point) {
-                this.DrawPixel(p1.x, p1.y, Color_1.Color.WHITE);
-                this.DrawPixel(p2.x, p2.y, Color_1.Color.WHITE);
-                this.DrawPixel(p3.x, p3.y, Color_1.Color.WHITE);
-            }
-            if (this.drawMode & DrawMode.Shader) {
-                // 渲染管线8.光栅化
-                const fragments = BarycentricTriangleRasterizer_1.BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, v1Attr, v2Attr, v3Attr);
-                for (let i = 0; i < fragments.length; i++) {
-                    const fragment = fragments[i];
-                    const x = fragment.x;
-                    const y = fragment.y;
-                    const z = fragment.z;
-                    // 检查坐标是否在屏幕范围内
-                    if (x < 0 || x >= Setting_1.EngineConfig.canvasWidth ||
-                        y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
-                        return;
-                    }
-                    // 计算深度缓冲区索引
-                    const index = y * Setting_1.EngineConfig.canvasWidth + x;
-                    const currentDepth = this.depthBuffer[index];
-                    // 渲染管线9.早期深度测试
-                    // 深度测试：只有当前像素更近（z值更小）时才绘制
-                    if (z < currentDepth) {
-                        this.depthBuffer[index] = z;
-                        // 渲染管线10.像素着色器，绘制像素到帧缓冲
-                        this.DrawPixel(x, y, shader.fragmentShader(fragment.attributes), true);
+        shader.init(renderer.transform, this.currentCamera);
+        // 渲染所有通道
+        shader.passes.forEach(pass => {
+            let triangles = mesh.triangles;
+            // 渲染管线3.背面剔除
+            triangles = this.FaceCulling(triangles, mesh, renderer, pass.cullMode);
+            // 渲染管线4.遮挡剔除
+            this.OcclusionCulling();
+            for (let i = 0; i < triangles.length; i += 3) {
+                // 渲染管线5.顶点着色器
+                const { vertexOut: v1, attrOut: v1Attr } = pass.vert({
+                    vertex: mesh.vertices[triangles[i]],
+                    uv: mesh.uv[triangles[i]],
+                    normal: mesh.normals[triangles[i]],
+                });
+                const { vertexOut: v2, attrOut: v2Attr } = pass.vert({
+                    vertex: mesh.vertices[triangles[i + 1]],
+                    uv: mesh.uv[triangles[i + 1]],
+                    normal: mesh.normals[triangles[i + 1]],
+                });
+                const { vertexOut: v3, attrOut: v3Attr } = pass.vert({
+                    vertex: mesh.vertices[triangles[i + 2]],
+                    uv: mesh.uv[triangles[i + 2]],
+                    normal: mesh.normals[triangles[i + 2]],
+                });
+                // 渲染管线6.屏幕映射
+                const p1 = TransformTools_1.TransformTools.ClipToScreenPos(v1, this.currentCamera);
+                const p2 = TransformTools_1.TransformTools.ClipToScreenPos(v2, this.currentCamera);
+                const p3 = TransformTools_1.TransformTools.ClipToScreenPos(v3, this.currentCamera);
+                // 渲染管线7.裁剪
+                // 画三角形前要进行边检查，确保三角形的三个点都在屏幕内，如果有点超出屏幕范围，则裁剪，并生成新的三角形
+                // 简单粗暴的裁剪，有点在屏幕外直接抛弃
+                const w = Setting_1.EngineConfig.canvasWidth;
+                const h = Setting_1.EngineConfig.canvasHeight;
+                if (((p1.x | p1.y) < 0) || (p1.x >= w) || (p1.y >= h) || ((p2.x | p2.y) < 0) || (p2.x >= w) || (p2.y >= h) || ((p3.x | p3.y) < 0) || (p3.x >= w) || (p3.y >= h)) {
+                    continue;
+                }
+                if (this.drawMode & DrawMode.Wireframe) {
+                    this.DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color_1.Color.WHITE);
+                }
+                if (this.drawMode & DrawMode.Point) {
+                    this.DrawPixel(p1.x, p1.y, Color_1.Color.WHITE);
+                    this.DrawPixel(p2.x, p2.y, Color_1.Color.WHITE);
+                    this.DrawPixel(p3.x, p3.y, Color_1.Color.WHITE);
+                }
+                if (this.drawMode & DrawMode.Shader) {
+                    // 渲染管线8.光栅化
+                    const fragments = BarycentricTriangleRasterizer_1.BarycentricTriangleRasterizer.rasterizeTriangle(p1, p2, p3, v1Attr, v2Attr, v3Attr);
+                    for (let i = 0; i < fragments.length; i++) {
+                        const fragment = fragments[i];
+                        const x = fragment.x;
+                        const y = fragment.y;
+                        const z = fragment.z;
+                        // 检查坐标是否在屏幕范围内
+                        if (x < 0 || x >= Setting_1.EngineConfig.canvasWidth ||
+                            y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
+                            return;
+                        }
+                        // 计算深度缓冲区索引
+                        const index = y * Setting_1.EngineConfig.canvasWidth + x;
+                        const currentDepth = this.depthBuffer[index];
+                        // 渲染管线9.早期深度测试
+                        const depthTestResult = this.depthTest(z, currentDepth, pass.zTest);
+                        if (depthTestResult) {
+                            // 渲染管线10.深度测试通过，根据 zWrite 标志决定是否写入深度缓冲区
+                            if (pass.zWrite) {
+                                this.depthBuffer[index] = z; // 更新深度缓冲区
+                            }
+                            // 渲染管线11.像素着色器
+                            const pixelColor = pass.frag(fragment.attributes);
+                            // 渲染管线12.颜色混合并绘制像素到帧缓冲
+                            this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
+                        }
                     }
                 }
             }
-        }
+        });
     }
     //#endregion
     //#region 工具函数
+    /**
+     * 执行深度测试
+     * @param z 当前片元的深度值
+     * @param currentDepth 深度缓冲区中对应位置的深度值
+     * @param zTestFunc 深度测试函数（ZTest 枚举值）
+     * @returns 是否通过深度测试
+     */
+    depthTest(z, currentDepth, zTestFunc) {
+        switch (zTestFunc) {
+            case Shader_1.ZTest.Never:
+                return false; // 从不通过
+            case Shader_1.ZTest.Less:
+                return z < currentDepth; // 小于当前深度则通过（默认）
+            case Shader_1.ZTest.Equal:
+                return Math.abs(z - currentDepth) < 1e-6; // 等于当前深度则通过（需考虑浮点精度）
+            case Shader_1.ZTest.LessEqual:
+                return z <= currentDepth; // 小于或等于当前深度则通过
+            case Shader_1.ZTest.Greater:
+                return z > currentDepth; // 大于当前深度则通过
+            case Shader_1.ZTest.NotEqual:
+                return Math.abs(z - currentDepth) >= 1e-6; // 不等于当前深度则通过
+            case Shader_1.ZTest.GreaterEqual:
+                return z >= currentDepth; // 大于或等于当前深度则通过
+            case Shader_1.ZTest.Always:
+                return true; // 总是通过
+            default:
+                console.warn("Unknown ZTest function, using Less as default.");
+                return z < currentDepth;
+        }
+    }
     DebugDraw() {
         // 绘制包围盒
         // this.DrawBound(mesh, renderer);
@@ -21753,7 +21786,43 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Utils/Debug":50,"./BarycentricTriangleRasterizer":38}],40:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Shader/Shader":50,"../Utils/Debug":51,"./BarycentricTriangleRasterizer":38,"./RendererDefine":40}],40:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ZTest = exports.CullMode = exports.RenderType = exports.BlendMode = void 0;
+var BlendMode;
+(function (BlendMode) {
+    BlendMode[BlendMode["Opaque"] = 0] = "Opaque";
+    BlendMode[BlendMode["AlphaBlend"] = 1] = "AlphaBlend";
+    BlendMode[BlendMode["Additive"] = 2] = "Additive";
+    BlendMode[BlendMode["Multiply"] = 3] = "Multiply";
+})(BlendMode || (exports.BlendMode = BlendMode = {}));
+var RenderType;
+(function (RenderType) {
+    RenderType[RenderType["Opaque"] = 0] = "Opaque";
+    RenderType[RenderType["Transparent"] = 1] = "Transparent";
+    RenderType[RenderType["Additive"] = 2] = "Additive";
+    RenderType[RenderType["Multiply"] = 3] = "Multiply";
+})(RenderType || (exports.RenderType = RenderType = {}));
+var CullMode;
+(function (CullMode) {
+    CullMode[CullMode["None"] = 0] = "None";
+    CullMode[CullMode["Front"] = 1] = "Front";
+    CullMode[CullMode["Back"] = 2] = "Back";
+})(CullMode || (exports.CullMode = CullMode = {}));
+var ZTest;
+(function (ZTest) {
+    ZTest[ZTest["Never"] = 0] = "Never";
+    ZTest[ZTest["Less"] = 1] = "Less";
+    ZTest[ZTest["Equal"] = 2] = "Equal";
+    ZTest[ZTest["LessEqual"] = 3] = "LessEqual";
+    ZTest[ZTest["Greater"] = 4] = "Greater";
+    ZTest[ZTest["NotEqual"] = 5] = "NotEqual";
+    ZTest[ZTest["GreaterEqual"] = 6] = "GreaterEqual";
+    ZTest[ZTest["Always"] = 7] = "Always";
+})(ZTest || (exports.ZTest = ZTest = {}));
+
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TriangleRasterizer = void 0;
@@ -21764,44 +21833,136 @@ class TriangleRasterizer {
 }
 exports.TriangleRasterizer = TriangleRasterizer;
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Material = void 0;
 const UObject_1 = require("../Core/UObject");
-const Color_1 = require("../Math/Color");
-const Vector2_1 = require("../Math/Vector2");
 class Material extends UObject_1.UObject {
-    constructor(name) {
-        super();
+    constructor() {
+        super(...arguments);
         this.shader = null;
-        this.color = Color_1.Color.WHITE;
-        this.mainTexture = null;
-        this.textureOffset = Vector2_1.Vector2.ZERO;
-        this.textureScale = Vector2_1.Vector2.ONE;
-        // 渲染模式
-        this.wireframe = false;
-        this.transparent = false;
-        this.name = name;
-    }
-    // 克隆材质
-    clone() {
-        const material = new Material(this.name + "_Clone");
-        material.color = this.color;
-        material.mainTexture = this.mainTexture;
-        material.textureOffset = this.textureOffset.clone();
-        material.textureScale = this.textureScale.clone();
-        material.wireframe = this.wireframe;
-        material.transparent = this.transparent;
-        return material;
+        this.currentPass = -1;
     }
     onDestroy() {
         throw new Error("Method not implemented.");
     }
+    /**
+    * 激活指定索引的Pass，默认-1，表示所有的PASS都会执行，激活后只执行激活的那个PASS
+    * @param passIndex Pass的索引，从0开始
+    * @returns 是否激活成功
+    */
+    setPass(passIndex) {
+        if (!this.shader) {
+            console.warn("未指定着色器，无法激活Pass");
+            return false;
+        }
+        // 检查Pass索引是否有效（假设Shader有passCount属性）
+        if (passIndex < 0 || passIndex >= this.shader.passCount) {
+            console.warn(`Pass索引 ${passIndex} 无效`);
+            return false;
+        }
+        // 调用Shader的激活Pass方法（假设Shader有activatePass方法）
+        if (typeof this.shader.activatePass === 'function') {
+            this.shader.activatePass(passIndex);
+            this.currentPass = passIndex;
+            return true;
+        }
+        console.warn("着色器不支持Pass激活操作");
+        return false;
+    }
+    /**
+     * 批量设置多个属性
+     * @param properties 包含多个属性键值对的对象
+     */
+    setProperties(properties) {
+        if (!this.shader) {
+            console.warn("未指定着色器，无法批量设置属性");
+            return;
+        }
+        // 遍历所有属性并设置
+        for (const [propertyName, value] of Object.entries(properties)) {
+            this.setValue(propertyName, value);
+        }
+    }
+    /**
+     * 给着色器中的颜色属性设置值
+     * @param propertyName 属性名称
+     * @param color 颜色值
+     */
+    setColor(propertyName, color) {
+        this.setValue(propertyName, color);
+    }
+    /**
+     * 给着色器中的数字属性设置值
+     * @param propertyName 属性名称
+     * @param value 数字值
+     */
+    setNumber(propertyName, value) {
+        this.setValue(propertyName, value);
+    }
+    /**
+     * 给着色器中的矩阵属性设置值
+     * @param propertyName 属性名称
+     * @param matrix 矩阵值
+     */
+    setMatrix4x4(propertyName, matrix) {
+        this.setValue(propertyName, matrix);
+    }
+    /**
+     * 给着色器中的纹理属性设置值
+     * @param propertyName 属性名称
+     * @param texture 纹理对象
+     */
+    setTexture(propertyName, texture) {
+        this.setValue(propertyName, texture);
+    }
+    /**
+     * 给着色器中的Vector4属性设置值
+     * @param propertyName 属性名称
+     * @param vector 向量值
+     */
+    setVector4(propertyName, vector) {
+        this.setValue(propertyName, vector);
+    }
+    /**
+     * 通用的属性设置方法，用于实际执行设置操作
+     * @param propertyName 属性名称
+     * @param value 要设置的值
+     */
+    setValue(propertyName, value) {
+        if (!this.shader) {
+            console.warn(`未指定着色器，无法设置属性 ${propertyName}`);
+            return;
+        }
+        // 检查着色器是否有该属性
+        if (!(propertyName in this.shader)) {
+            console.warn(`着色器中不存在属性 ${propertyName}`);
+            return;
+        }
+        // 尝试直接设置着色器的属性值
+        try {
+            this.shader[propertyName] = value;
+        }
+        catch (error) {
+            console.error(`设置属性 ${propertyName} 失败:`, error);
+        }
+    }
+    /**
+     * 获取着色器中属性的当前值
+     * @param propertyName 属性名称
+     * @returns 属性值或null
+     */
+    getPropertyValue(propertyName) {
+        if (!this.shader || !(propertyName in this.shader)) {
+            return null;
+        }
+        return this.shader[propertyName];
+    }
 }
 exports.Material = Material;
 
-},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],42:[function(require,module,exports){
+},{"../Core/UObject":25}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubMesh = exports.Mesh = void 0;
@@ -21852,7 +22013,7 @@ class SubMesh {
 }
 exports.SubMesh = SubMesh;
 
-},{"../Core/UObject":25,"../Math/Bounds":27}],43:[function(require,module,exports){
+},{"../Core/UObject":25,"../Math/Bounds":27}],44:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22058,7 +22219,7 @@ exports.Resources = Resources;
 Resources.fileCache = new Map();
 Resources.loadingPromises = new Map();
 
-},{"../Utils/ObjParser":51,"./Texture":44}],44:[function(require,module,exports){
+},{"../Utils/ObjParser":52,"./Texture":45}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
@@ -22734,7 +22895,7 @@ class Texture extends UObject_1.UObject {
 }
 exports.Texture = Texture;
 
-},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],45:[function(require,module,exports){
+},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],46:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22757,6 +22918,7 @@ const RigidBody_1 = require("../Component/RigidBody");
 const GameObject_1 = require("../Core/GameObject");
 const Quaternion_1 = require("../Math/Quaternion");
 const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
 const Resources_1 = require("../Resources/Resources");
 const Texture_1 = require("../Resources/Texture");
 const LitShader_1 = require("../Shader/LitShader");
@@ -22846,14 +23008,16 @@ function createObj(config) {
             if (renderer) {
                 renderer.mesh = model;
                 const mat = renderer.material;
+                mat.shader = config.shader || new LitShader_1.LitShader();
+                mat.setVector4('mainTextureST', new Vector4_1.Vector4(0, 0, 1, 1));
                 if (typeof config.texture === 'string') {
                     const t = yield Resources_1.Resources.loadAsync(config.texture);
-                    mat.mainTexture = t;
+                    if (t)
+                        mat.setTexture('mainTexture', t);
                 }
                 else if (config.texture) {
-                    mat.mainTexture = config.texture;
+                    mat.setTexture('mainTexture', config.texture);
                 }
-                mat.shader = new LitShader_1.LitShader(obj.transform);
             }
         }
         if (config.components && config.components.length > 0) {
@@ -22870,7 +23034,7 @@ function createObj(config) {
     });
 }
 
-},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Math/Quaternion":30,"../Math/Vector3":34,"../Resources/Resources":43,"../Resources/Texture":44,"../Shader/LitShader":48}],46:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Math/Quaternion":30,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Resources":44,"../Resources/Texture":45,"../Shader/LitShader":49}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -22977,7 +23141,7 @@ class Scene {
 }
 exports.Scene = Scene;
 
-},{"../Component/Renderer":10,"../Core/GameObject":19,"../Math/BVHTree":26,"../Math/TransformTools":32,"../Math/Vector2":33}],47:[function(require,module,exports){
+},{"../Component/Renderer":10,"../Core/GameObject":19,"../Math/BVHTree":26,"../Math/TransformTools":32,"../Math/Vector2":33}],48:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23037,7 +23201,7 @@ class SceneManager {
 }
 exports.SceneManager = SceneManager;
 
-},{"./Scene":46}],48:[function(require,module,exports){
+},{"./Scene":47}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LitShader = void 0;
@@ -23045,8 +23209,25 @@ const Color_1 = require("../Math/Color");
 const TransformTools_1 = require("../Math/TransformTools");
 const Vector3_1 = require("../Math/Vector3");
 const Vector4_1 = require("../Math/Vector4");
+const RendererDefine_1 = require("../Renderer/RendererDefine");
 const Shader_1 = require("./Shader");
 class LitShader extends Shader_1.Shader {
+    constructor() {
+        super(...arguments);
+        this.mainTexture = null;
+        this.mainTextureST = new Vector4_1.Vector4(0, 0, 1, 1);
+        this.passes = [
+            {
+                name: "Forward",
+                vert: this.vertexShader.bind(this),
+                frag: this.fragmentShader.bind(this),
+                blendMode: RendererDefine_1.BlendMode.Opaque,
+                cullMode: RendererDefine_1.CullMode.Back,
+                zTest: RendererDefine_1.ZTest.LessEqual,
+                zWrite: true,
+            }
+        ];
+    }
     vertexShader(inAttr) {
         const normalOut = TransformTools_1.TransformTools.ModelToWorldNormal(inAttr.normal, this.transform);
         const outAttr = {
@@ -23059,6 +23240,9 @@ class LitShader extends Shader_1.Shader {
         };
     }
     fragmentShader(v2fAttr) {
+        if (!this.mainTexture) {
+            return Color_1.Color.MAGENTA;
+        }
         const uv = v2fAttr.uv;
         const normal = v2fAttr.normal;
         const surfaceColor = this.mainTexture.Sample(uv.u, uv.v);
@@ -23101,19 +23285,25 @@ class LitShader extends Shader_1.Shader {
 }
 exports.LitShader = LitShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":49}],49:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":50}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Shader = void 0;
+exports.ZTest = exports.CullMode = exports.Shader = void 0;
 const Light_1 = require("../Component/Light");
 const Setting_1 = require("../Core/Setting");
 const UObject_1 = require("../Core/UObject");
+const RendererDefine_1 = require("../Renderer/RendererDefine");
+Object.defineProperty(exports, "CullMode", { enumerable: true, get: function () { return RendererDefine_1.CullMode; } });
+Object.defineProperty(exports, "ZTest", { enumerable: true, get: function () { return RendererDefine_1.ZTest; } });
 class Shader extends UObject_1.UObject {
-    constructor(transform) {
-        super();
-        this.transform = transform;
+    constructor() {
+        super(...arguments);
+        this.renderType = RendererDefine_1.RenderType.Opaque;
+        this.renderQueue = 0;
+        this.passes = [];
     }
-    init(camera) {
+    init(transform, camera) {
+        this.transform = transform;
         this.camera = camera;
         this.viewDir = camera.transform.forward.negate().normalize();
         this.modelMatrix = this.transform.localToWorldMatrix;
@@ -23132,7 +23322,7 @@ class Shader extends UObject_1.UObject {
 }
 exports.Shader = Shader;
 
-},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25}],50:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25,"../Renderer/RendererDefine":40}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
@@ -23200,7 +23390,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],51:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -23466,7 +23656,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":42}],52:[function(require,module,exports){
+},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":43}],53:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23493,6 +23683,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     requestAnimationFrame(mainLoop);
 }));
 
-},{"./Core/Engine":18}]},{},[52])
+},{"./Core/Engine":18}]},{},[53])
 
 //# sourceMappingURL=bundle.js.map

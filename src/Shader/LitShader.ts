@@ -3,10 +3,26 @@ import { TransformTools } from "../Math/TransformTools";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { VertexAttributes } from "../Renderer/TriangleRasterizer";
-import { Shader } from "./Shader";
+import { BlendMode, CullMode, VertexAttributes, ZTest } from "../Renderer/RendererDefine";
+import { Texture } from "../Resources/Texture";
+import { Shader, ShaderPass } from "./Shader";
 
 export class LitShader extends Shader {
+
+    public mainTexture: Texture | null = null;
+    public mainTextureST: Vector4 = new Vector4(0, 0, 1, 1);
+
+    public passes: ShaderPass[] = [
+        {
+            name: "Forward",
+            vert: this.vertexShader.bind(this),
+            frag: this.fragmentShader.bind(this),
+            blendMode: BlendMode.Opaque,
+            cullMode: CullMode.Back,
+            zTest: ZTest.LessEqual,
+            zWrite: true,
+        }
+    ];
 
     public vertexShader(inAttr: VertexAttributes): { vertexOut: Vector4; attrOut: VertexAttributes } {
         const normalOut = TransformTools.ModelToWorldNormal(inAttr.normal as Vector3, this.transform);
@@ -21,6 +37,8 @@ export class LitShader extends Shader {
     }
 
     public fragmentShader(v2fAttr: VertexAttributes): Color {
+        if (!this.mainTexture) { return Color.MAGENTA; }
+
         const uv = v2fAttr.uv as Vector2;
         const normal = v2fAttr.normal as Vector3;
 

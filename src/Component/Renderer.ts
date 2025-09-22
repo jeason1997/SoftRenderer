@@ -6,7 +6,7 @@ import { DisallowMultipleComponent } from "../Core/Decorators";
 @DisallowMultipleComponent
 export abstract class Renderer extends Component {
     private _bounds: Bounds = new Bounds();
-    private _material: Material = new Material("default");
+    private _material: Material = new Material();
     private _sortingLayerID: number = 0;
     private _sortingOrder: number = 0;
     private _castShadows: boolean = true;

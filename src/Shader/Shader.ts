@@ -5,14 +5,27 @@ import { Transform } from "../Core/Transform";
 import { UObject } from "../Core/UObject";
 import { Color } from "../Math/Color";
 import { Matrix4x4 } from "../Math/Matrix4x4";
-import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { VertexAttributes } from "../Renderer/TriangleRasterizer";
-import { Texture } from "../Resources/Texture";
+import { BlendMode, CullMode, RenderType, VertexAttributes, ZTest } from "../Renderer/RendererDefine";
+
+// 着色器Pass接口
+export interface ShaderPass {
+    name?: string;
+    // 顶点着色器：带默认实现
+    vert: (input: VertexAttributes) => { vertexOut: Vector4; attrOut: VertexAttributes; };
+    // 片段着色器：默认返回洋红色
+    frag: (input: VertexAttributes) => Color;
+    // 渲染状态
+    blendMode: BlendMode;
+    cullMode: CullMode;
+    zTest: ZTest;
+    zWrite: boolean;
+}
 
 export abstract class Shader extends UObject {
-    public mainTexture: Texture;
+    public renderType: RenderType = RenderType.Opaque;
+    public renderQueue: number = 0;
 
     protected transform: Transform;
     protected camera: Camera;
@@ -26,15 +39,10 @@ export abstract class Shader extends UObject {
     protected lightColor: Color;
     protected lightIntensity: number;
 
-    public abstract vertexShader(inAttr: VertexAttributes): { vertexOut: Vector4, attrOut: VertexAttributes };
-    public abstract fragmentShader(v2fAttr: VertexAttributes): Color;
+    public passes: ShaderPass[] = [];
 
-    constructor(transform: Transform) {
-        super();
+    public init(transform: Transform, camera: Camera): void {
         this.transform = transform;
-    }
-
-    public init(camera: Camera): void {
         this.camera = camera;
         this.viewDir = camera.transform.forward.negate().normalize();
 
@@ -54,3 +62,5 @@ export abstract class Shader extends UObject {
         throw new Error("Method not implemented.");
     }
 }
+
+export { VertexAttributes, CullMode, ZTest };

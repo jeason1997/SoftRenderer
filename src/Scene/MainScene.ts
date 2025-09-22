@@ -21,6 +21,7 @@ import { LitShader } from "../Shader/LitShader";
 import { Scene } from "./Scene";
 import { ObjRotate } from "../Component/TestComp/ObjRotate";
 import { ObjAutoRotate } from "../Component/TestComp/ObjAutoRotate";
+import { Shader } from "../Shader/Shader";
 
 export const MainScene = {
     name: "MainScene",
@@ -108,6 +109,7 @@ interface CreateObjConfig {
     scale?: Vector3;
     modelPath?: string;
     texture?: string | Texture;
+    shader?: Shader;
     components?: (new (gameObject: GameObject) => Component)[];
 }
 
@@ -123,14 +125,15 @@ async function createObj(config: CreateObjConfig): Promise<GameObject> {
         if (renderer) {
             renderer.mesh = model;
             const mat = renderer.material;
+            mat.shader = config.shader || new LitShader();
+            mat.setVector4('mainTextureST', new Vector4(0, 0, 1, 1));
             if (typeof config.texture === 'string') {
                 const t = await Resources.loadAsync<Texture>(config.texture);
-                mat.mainTexture = t;
+                if(t) mat.setTexture('mainTexture', t);
             }
             else if (config.texture) {
-                mat.mainTexture = config.texture;
+                mat.setTexture('mainTexture', config.texture);
             }
-            mat.shader = new LitShader(obj.transform);
         }
     }
 
