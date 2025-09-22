@@ -78,7 +78,7 @@ export class RasterizationPipeline {
             // 绘制天空盒
         }
         else if (clearFlags == CameraClearFlags.Color) {
-            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor);
+            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor.ToUint32());
         }
 
         if (clearFlags != CameraClearFlags.None) {
@@ -113,7 +113,7 @@ export class RasterizationPipeline {
         }
     }
 
-    public DrawPixel(x: number, y: number, color: number, countOverdraw: boolean = false, blendMode: BlendMode = BlendMode.replace) {
+    public DrawPixel(x: number, y: number, color: Color, countOverdraw: boolean = false, blendMode: BlendMode = BlendMode.replace) {
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -129,19 +129,19 @@ export class RasterizationPipeline {
 
         // 颜色混合处理
         if (blendMode !== BlendMode.replace) {
-            const existingColor = this.frameBuffer[index];
+            const existingColor = Color.FromUint32(this.frameBuffer[index]);
             const blendedColor = Color.blendColors(existingColor, color, blendMode);
-            this.frameBuffer[index] = blendedColor;
+            this.frameBuffer[index] = blendedColor.ToUint32();
         } else {
             // 直接替换模式
-            this.frameBuffer[index] = color;
+            this.frameBuffer[index] = color.ToUint32();
         }
 
         // Overdraw计数
         if (countOverdraw) this.overdrawBuffer[index]++
     }
 
-    public DrawLine(x1: number, y1: number, x2: number, y2: number, color1: number, color2?: number) {
+    public DrawLine(x1: number, y1: number, x2: number, y2: number, color1: Color, color2?: Color) {
         // 使用位运算优化边界检查
         // 画线前要进行边检查，确保线的两端点都在屏幕内，如果线的范围很长并且不在屏幕范围内，都进行计算会造成浪费大量的资源，裁剪掉超出的部分
         const w = EngineConfig.canvasWidth;
@@ -227,7 +227,7 @@ export class RasterizationPipeline {
         }
     }
 
-    public DrawTriangle(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, color: number) {
+    public DrawTriangle(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, color: Color) {
         this.DrawLine(x1, y1, x2, y2, color);
         this.DrawLine(x2, y2, x3, y3, color);
         this.DrawLine(x3, y3, x1, y1, color);
@@ -415,7 +415,7 @@ export class RasterizationPipeline {
 
     private DebugDraw(): void {
         // 绘制包围盒
-        // this.DrawBounds(mesh, renderer);
+        // this.DrawBound(mesh, renderer);
 
         // 调试：绘制面法线
         // this.DrawFaceNormal(mesh, renderer);
@@ -427,7 +427,7 @@ export class RasterizationPipeline {
         // this.DrawOverdraw();
 
         // 绘制物理调试信息
-        PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
+        // PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
 
         // 绘制调试线
         const lines = Debug.GetDebugLines();
@@ -451,17 +451,15 @@ export class RasterizationPipeline {
             for (let y = 0; y < EngineConfig.canvasHeight; y++) {
                 const index = y * EngineConfig.canvasWidth + x;
                 const currentDepth = this.depthBuffer[index];
-                // 将深度值(0-1)转换为灰度值(0-255)
-                const grayValue = Math.floor(currentDepth * 255);
                 // 创建灰度颜色对象
-                const depthColor = new Color(grayValue, grayValue, grayValue);
-                this.DrawPixel(x, y, depthColor.ToUint32());
+                const depthColor = new Color(currentDepth, currentDepth, currentDepth);
+                this.DrawPixel(x, y, depthColor);
             }
         }
     }
 
     private DrawOverdraw(): void {
-        this.frameBuffer.fill(Color.BLACK);
+        this.frameBuffer.fill(0);
         // 使用预设的最大可视化范围来归一化 Overdraw 计数
         const MAX_VISUALIZATION_RANGE = 8;
         for (let x = 0; x < EngineConfig.canvasWidth; x++) {
@@ -472,17 +470,17 @@ export class RasterizationPipeline {
                     // 将 Overdraw 计数限制在可视化范围内并归一化
                     const normalizedCount = Math.min(overdrawCount, MAX_VISUALIZATION_RANGE) / MAX_VISUALIZATION_RANGE;
                     // 计算透明度：Overdraw 越多，越不透明
-                    const alpha = Math.floor(normalizedCount * 255);
+                    const alpha = normalizedCount;
                     // 组合颜色（ARGB格式）
-                    const color = Color.FromUint32(Color.ORANGE);
+                    const color = Color.ORANGE;
                     color.a = alpha;
-                    this.DrawPixel(x, y, color.ToUint32());
+                    this.DrawPixel(x, y, color);
                 }
             }
         }
     }
 
-    private DrawBound(bounds: Bounds, transform: Transform, color: number) {
+    private DrawBound(bounds: Bounds, transform: Transform, color: Color) {
         // 将所有顶点转换到屏幕空间
         const screenVertices = bounds.vertices.map(v =>
             TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera).screen
@@ -524,17 +522,17 @@ export class RasterizationPipeline {
      * @param t 插值因子 (0 到 1)
      * @returns 插值后的颜色
      */
-    private interpolateColor(color1: number, color2: number, t: number): number {
+    private interpolateColor(color1: Color, color2: Color, t: number): Color {
         // 提取ARGB分量
-        const a1 = (color1 >> 24) & 0xFF;
-        const r1 = (color1 >> 16) & 0xFF;
-        const g1 = (color1 >> 8) & 0xFF;
-        const b1 = color1 & 0xFF;
+        const a1 = color1.a;
+        const r1 = color1.r;
+        const g1 = color1.g;
+        const b1 = color1.b;
 
-        const a2 = (color2 >> 24) & 0xFF;
-        const r2 = (color2 >> 16) & 0xFF;
-        const g2 = (color2 >> 8) & 0xFF;
-        const b2 = color2 & 0xFF;
+        const a2 = color2.a;
+        const r2 = color2.r;
+        const g2 = color2.g;
+        const b2 = color2.b;
 
         // 线性插值每个分量
         const a = Math.round(a1 + (a2 - a1) * t);
@@ -542,8 +540,7 @@ export class RasterizationPipeline {
         const g = Math.round(g1 + (g2 - g1) * t);
         const b = Math.round(b1 + (b2 - b1) * t);
 
-        // 组合成32位颜色值
-        return (a << 24) | (r << 16) | (g << 8) | b;
+        return new Color(r, g, b, a);
     }
 
     //#endregion

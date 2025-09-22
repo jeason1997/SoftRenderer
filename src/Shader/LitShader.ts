@@ -20,7 +20,7 @@ export class LitShader extends Shader {
         };
     }
 
-    public fragmentShader(v2fAttr: VertexAttributes): number {
+    public fragmentShader(v2fAttr: VertexAttributes): Color {
         const uv = v2fAttr.uv as Vector2;
         const normal = v2fAttr.normal as Vector3;
 
@@ -50,29 +50,26 @@ export class LitShader extends Shader {
 
         // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
         const specularIntensity = 0.5; // 高光强度
-        const specularR = Math.round(this.lightColor.r * specularIntensity * specularFactor);
-        const specularG = Math.round(this.lightColor.g * specularIntensity * specularFactor);
-        const specularB = Math.round(this.lightColor.b * specularIntensity * specularFactor);
-
-        // 提取表面颜色的RGBA通道
-        const rgba = Color.FromUint32(surfaceColor);
+        const specularR = this.lightColor.r * specularIntensity * specularFactor;
+        const specularG = this.lightColor.g * specularIntensity * specularFactor;
+        const specularB = this.lightColor.b * specularIntensity * specularFactor;
 
         // 计算漫反射颜色
-        const diffR = Math.round(rgba.r * (this.lightColor.r / 255) * this.lightIntensity * dotProduct);
-        const diffG = Math.round(rgba.g * (this.lightColor.g / 255) * this.lightIntensity * dotProduct);
-        const diffB = Math.round(rgba.b * (this.lightColor.b / 255) * this.lightIntensity * dotProduct);
+        const diffR = surfaceColor.r * this.lightColor.r * this.lightIntensity * dotProduct;
+        const diffG = surfaceColor.g * this.lightColor.g * this.lightIntensity * dotProduct;
+        const diffB = surfaceColor.b * this.lightColor.b * this.lightIntensity * dotProduct;
 
         // 合并所有光照贡献（环境光 + 漫反射 + 高光）
         const totalR = this.ambientLight.r + diffR + specularR;
         const totalG = this.ambientLight.g + diffG + specularG;
         const totalB = this.ambientLight.b + diffB + specularB;
 
-        // 确保颜色值在0-255范围内
-        const clampedR = Math.min(255, Math.max(0, totalR));
-        const clampedG = Math.min(255, Math.max(0, totalG));
-        const clampedB = Math.min(255, Math.max(0, totalB));
+        // 确保颜色值在0-1范围内
+        const clampedR = Math.min(1, Math.max(0, totalR));
+        const clampedG = Math.min(1, Math.max(0, totalG));
+        const clampedB = Math.min(1, Math.max(0, totalB));
 
         // 组合成32位颜色值（保留原始Alpha）
-        return (rgba.a << 24) | (clampedB << 16) | (clampedG << 8) | clampedR;
+        return new Color(clampedR, clampedG, clampedB, surfaceColor.a);
     }
 }

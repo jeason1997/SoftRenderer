@@ -16987,7 +16987,7 @@ class Light extends Component_1.Component {
     constructor() {
         super(...arguments);
         this.type = LightType.Directional;
-        this.color = Color_1.Color.FromUint32(Color_1.Color.WHITE);
+        this.color = Color_1.Color.WHITE;
         this.intensity = 1;
         this.shadowType = ShadowType.None;
     }
@@ -17131,7 +17131,7 @@ let Renderer = (() => {
 })();
 exports.Renderer = Renderer;
 
-},{"../Core/Decorators":17,"../Math/Bounds":27,"../Resources/Material":42,"./Component":7}],11:[function(require,module,exports){
+},{"../Core/Decorators":17,"../Math/Bounds":27,"../Resources/Material":41,"./Component":7}],11:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -17732,7 +17732,7 @@ let ObjRotate = (() => {
 })();
 exports.ObjRotate = ObjRotate;
 
-},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":51,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
+},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":50,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17899,7 +17899,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":40,"../Scene/MainScene":46,"../Scene/SceneManager":48,"../Utils/Debug":51,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
+},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":45,"../Scene/SceneManager":47,"../Utils/Debug":50,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -18455,7 +18455,7 @@ RenderSettings.fogMode = FogMode.Exp2;
 RenderSettings.fogDensity = 0.01;
 RenderSettings.linearFogStart = 0;
 RenderSettings.linearFogEnd = 300;
-RenderSettings.ambientLight = Color_1.Color.FromUint32(Color_1.Color.BLACK);
+RenderSettings.ambientLight = Color_1.Color.BLACK;
 
 },{"../Math/Color":28,"../Math/Vector3":34}],22:[function(require,module,exports){
 "use strict";
@@ -19180,34 +19180,82 @@ var BlendMode;
     BlendMode[BlendMode["alpha"] = 0] = "alpha";
     BlendMode[BlendMode["additive"] = 1] = "additive";
     BlendMode[BlendMode["multiply"] = 2] = "multiply";
-    BlendMode[BlendMode["screen"] = 3] = "screen";
-    BlendMode[BlendMode["overlay"] = 4] = "overlay";
-    BlendMode[BlendMode["replace"] = 5] = "replace";
+    BlendMode[BlendMode["replace"] = 3] = "replace";
 })(BlendMode || (exports.BlendMode = BlendMode = {}));
 class Color {
-    constructor(r, g, b, a = 255) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
+    // public static readonly WHITE = Object.freeze(new Color(1, 1, 1, 1)) as Readonly<Color>;
+    static get WHITE() { return new Color(1, 1, 1, 1); }
+    static get BLACK() { return new Color(0, 0, 0, 1); }
+    static get GRAY() { return new Color(0.5, 0.5, 0.5, 1); }
+    static get RED() { return new Color(1, 0, 0, 1); }
+    static get GREEN() { return new Color(0, 1, 0, 1); }
+    static get BLUE() { return new Color(0, 0, 1, 1); }
+    static get YELLOW() { return new Color(1, 1, 0, 1); }
+    static get CYAN() { return new Color(0, 1, 1, 1); }
+    static get MAGENTA() { return new Color(1, 0, 1, 1); }
+    static get ORANGE() { return new Color(1, 0.647, 0, 1); }
+    static get PURPLE() { return new Color(0.502, 0, 0.502, 1); }
+    static get BROWN() { return new Color(0.647, 0.165, 0, 1); }
+    static get MAROON() { return new Color(0.5, 0, 0, 1); }
+    static get CLEAR() { return new Color(0, 0, 0, 0); }
+    constructor(r, g, b, a = 1) {
+        this.r = Color.clamp01(r);
+        this.g = Color.clamp01(g);
+        this.b = Color.clamp01(b);
+        this.a = Color.clamp01(a);
+    }
+    clone() {
+        return new Color(this.r, this.g, this.b, this.a);
+    }
+    add(c) {
+        this.r = Math.min(1, this.r + c.r);
+        this.g = Math.min(1, this.g + c.g);
+        this.b = Math.min(1, this.b + c.b);
+        this.a = Math.min(1, this.a + c.a);
+        return this;
+    }
+    subtract(c) {
+        this.r = Math.max(0, this.r - c.r);
+        this.g = Math.max(0, this.g - c.g);
+        this.b = Math.max(0, this.b - c.b);
+        this.a = Math.max(0, this.a - c.a);
+        return this;
+    }
+    multiply(c) {
+        this.r = Math.min(1, this.r * c.r);
+        this.g = Math.min(1, this.g * c.g);
+        this.b = Math.min(1, this.b * c.b);
+        this.a = Math.min(1, this.a * c.a);
+        return this;
+    }
+    multiplyScalar(scalar) {
+        this.r = Math.min(1, this.r * scalar);
+        this.g = Math.min(1, this.g * scalar);
+        this.b = Math.min(1, this.b * scalar);
+        this.a = Math.min(1, this.a * scalar);
+        return this;
     }
     ToUint32() {
-        return (this.a << 24) | (this.b << 16) | (this.g << 8) | this.r;
+        return ((this.a * 255) << 24) | ((this.b * 255) << 16) | ((this.g * 255) << 8) | (this.r * 255);
     }
     static FromUint32(uint32) {
-        return new Color(uint32 & 0xFF, (uint32 >> 8) & 0xFF, (uint32 >> 16) & 0xFF, (uint32 >> 24) & 0xFF);
+        return new Color((uint32 & 0xFF) / 255, ((uint32 >> 8) & 0xFF) / 255, ((uint32 >> 16) & 0xFF) / 255, ((uint32 >> 24) & 0xFF) / 255);
     }
     static add(c1, c2) {
-        return new Color(Math.min(255, c1.r + c2.r), Math.min(255, c1.g + c2.g), Math.min(255, c1.b + c2.b), Math.min(255, c1.a + c2.a));
+        return new Color(Math.min(1, c1.r + c2.r), Math.min(1, c1.g + c2.g), Math.min(1, c1.b + c2.b), Math.min(1, c1.a + c2.a));
     }
     static subtract(c1, c2) {
         return new Color(Math.max(0, c1.r - c2.r), Math.max(0, c1.g - c2.g), Math.max(0, c1.b - c2.b), Math.max(0, c1.a - c2.a));
     }
+    static multiply(c1, c2) {
+        return new Color(Math.min(1, c1.r * c2.r), Math.min(1, c1.g * c2.g), Math.min(1, c1.b * c2.b), Math.min(1, c1.a * c2.a));
+    }
     static multiplyScalar(c, scalar) {
-        return new Color(Math.min(255, c.r * scalar), Math.min(255, c.g * scalar), Math.min(255, c.b * scalar), Math.min(255, c.a * scalar));
+        return new Color(Math.min(1, c.r * scalar), Math.min(1, c.g * scalar), Math.min(1, c.b * scalar), Math.min(1, c.a * scalar));
     }
     static lerp(c1, c2, t) {
-        return new Color(Math.floor(c1.r + (c2.r - c1.r) * t), Math.floor(c1.g + (c2.g - c1.g) * t), Math.floor(c1.b + (c2.b - c1.b) * t), Math.floor(c1.a + (c2.a - c1.a) * t));
+        t = Color.clamp01(t);
+        return new Color(Color.clamp01(c1.r + (c2.r - c1.r) * t), Color.clamp01(c1.g + (c2.g - c1.g) * t), Color.clamp01(c1.b + (c2.b - c1.b) * t), Color.clamp01(c1.a + (c2.a - c1.a) * t));
     }
     /**
      * 颜色混合方法
@@ -19215,90 +19263,53 @@ class Color {
      */
     static blendColors(dest, src, mode) {
         // 提取目标颜色分量 (ARGB格式)
-        const destA = (dest >> 24) & 0xFF;
-        const destR = (dest >> 16) & 0xFF;
-        const destG = (dest >> 8) & 0xFF;
-        const destB = dest & 0xFF;
+        const destA = dest.a;
+        const destR = dest.r;
+        const destG = dest.g;
+        const destB = dest.b;
         // 提取源颜色分量 (ARGB格式)
-        const srcA = (src >> 24) & 0xFF;
-        const srcR = (src >> 16) & 0xFF;
-        const srcG = (src >> 8) & 0xFF;
-        const srcB = src & 0xFF;
+        const srcA = src.a;
+        const srcR = src.r;
+        const srcG = src.g;
+        const srcB = src.b;
         let resultA, resultR, resultG, resultB;
         switch (mode) {
             case BlendMode.alpha:
                 // Alpha 混合 (最常用的混合模式)
-                const alpha = srcA / 255;
+                const alpha = srcA;
                 const invAlpha = 1 - alpha;
-                resultA = Math.min(255, destA + srcA - (destA * srcA) / 255);
-                resultR = Math.floor(srcR * alpha + destR * invAlpha);
-                resultG = Math.floor(srcG * alpha + destG * invAlpha);
-                resultB = Math.floor(srcB * alpha + destB * invAlpha);
+                resultA = Math.min(1, destA + srcA - (destA * srcA));
+                resultR = srcR * alpha + destR * invAlpha;
+                resultG = srcG * alpha + destG * invAlpha;
+                resultB = srcB * alpha + destB * invAlpha;
                 break;
             case BlendMode.additive:
                 // 加法混合 (颜色叠加)
-                resultA = Math.min(255, destA + srcA);
-                resultR = Math.min(255, destR + srcR);
-                resultG = Math.min(255, destG + srcG);
-                resultB = Math.min(255, destB + srcB);
+                resultA = Math.min(1, destA + srcA);
+                resultR = Math.min(1, destR + srcR);
+                resultG = Math.min(1, destG + srcG);
+                resultB = Math.min(1, destB + srcB);
                 break;
             case BlendMode.multiply:
                 // 乘法混合 (颜色相乘)
-                resultA = Math.min(255, destA);
-                resultR = Math.floor((destR * srcR) / 255);
-                resultG = Math.floor((destG * srcG) / 255);
-                resultB = Math.floor((destB * srcB) / 255);
-                break;
-            case BlendMode.screen:
-                // 屏幕混合 (颜色反相相乘后再反相)
-                resultA = Math.min(255, destA);
-                resultR = 255 - Math.floor(((255 - destR) * (255 - srcR)) / 255);
-                resultG = 255 - Math.floor(((255 - destG) * (255 - srcG)) / 255);
-                resultB = 255 - Math.floor(((255 - destB) * (255 - srcB)) / 255);
-                break;
-            case BlendMode.overlay:
-                // 叠加混合 (根据底色决定乘或屏)
-                resultA = Math.min(255, destA);
-                resultR = this.overlayBlend(destR, srcR);
-                resultG = this.overlayBlend(destG, srcG);
-                resultB = this.overlayBlend(destB, srcB);
+                resultA = Math.min(1, destA);
+                resultR = destR * srcR;
+                resultG = destG * srcG;
+                resultB = destB * srcB;
                 break;
             case BlendMode.replace:
             default:
                 // 直接替换
-                return src;
+                return src.clone();
         }
         // 组合颜色分量
-        return (resultA << 24) | (resultR << 16) | (resultG << 8) | resultB;
+        return new Color(resultR, resultG, resultB, resultA);
     }
-    /**
-     * 叠加混合的辅助函数
-     */
-    static overlayBlend(dest, src) {
-        if (dest < 128) {
-            return Math.floor((2 * dest * src) / 255);
-        }
-        else {
-            return 255 - Math.floor((2 * (255 - dest) * (255 - src)) / 255);
-        }
+    static clamp01(value) {
+        return Math.max(0, Math.min(1, value));
     }
 }
 exports.Color = Color;
-Color.WHITE = new Color(255, 255, 255).ToUint32();
-Color.BLACK = new Color(0, 0, 0).ToUint32();
-Color.GRAY = new Color(128, 128, 128).ToUint32();
-Color.RED = new Color(255, 0, 0).ToUint32();
-Color.GREEN = new Color(0, 255, 0).ToUint32();
-Color.BLUE = new Color(0, 0, 255).ToUint32();
-Color.YELLOW = new Color(255, 255, 0).ToUint32();
-Color.CYAN = new Color(0, 255, 255).ToUint32();
-Color.MAGENTA = new Color(255, 0, 255).ToUint32();
-Color.ORANGE = new Color(255, 165, 0).ToUint32();
-Color.PURPLE = new Color(128, 0, 128).ToUint32();
-Color.BROWN = new Color(165, 42, 0).ToUint32();
-Color.MAROON = new Color(128, 0, 0).ToUint32();
-// 颜色混合查找表
-Color.blendLUT = [];
 
 },{}],29:[function(require,module,exports){
 "use strict";
@@ -20577,6 +20588,9 @@ class Vector3 {
         v.z = v1.z + t * (v2.z - v1.z);
         return v;
     }
+    static reflect(v, n) {
+        return Vector3.subtract(v, Vector3.multiplyScalar(n, 2 * Vector3.dot(v, n)));
+    }
     static dot(v1, v2) {
         return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
     }
@@ -21013,257 +21027,7 @@ class Physics {
 }
 exports.Physics = Physics;
 
-},{"../Component/BoxCollider":4,"../Component/SphereCollider":12,"../Core/Time":22,"../Math/Quaternion":30,"../Math/Vector3":34,"./RaycastHit":38,"cannon":2}],37:[function(require,module,exports){
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PhysicsDebugDraw = void 0;
-const CANNON = __importStar(require("cannon"));
-const Color_1 = require("../Math/Color");
-const Camera_1 = require("../Component/Camera");
-const TransformTools_1 = require("../Math/TransformTools");
-const Vector3_1 = require("../Math/Vector3");
-const Quaternion_1 = require("../Math/Quaternion");
-const Engine_1 = require("../Core/Engine");
-class PhysicsDebugDraw {
-    static setColor(body) {
-        let color = Color_1.Color.FromUint32(Color_1.Color.GRAY);
-        // 根据物体类型设置基础颜色
-        if (body.type === CANNON.Body.DYNAMIC) {
-            // 动态物体 - 红色系
-            color = Color_1.Color.FromUint32(Color_1.Color.RED);
-        }
-        else if (body.type === CANNON.Body.STATIC) {
-            // 静态物体 - 绿色系
-            color = Color_1.Color.FromUint32(Color_1.Color.GREEN);
-        }
-        else if (body.type === CANNON.Body.KINEMATIC) {
-            // 运动学物体 - 蓝色系
-            color = Color_1.Color.FromUint32(Color_1.Color.BLUE);
-        }
-        // 根据睡眠状态调整颜色
-        if (body.sleepState === CANNON.Body.AWAKE) {
-            // 清醒状态 - 原色
-        }
-        else if (body.sleepState === CANNON.Body.SLEEPY) {
-            // 困倦状态 - 半暗淡
-            color.r *= 0.7;
-            color.g *= 0.7;
-            color.b *= 0.7;
-        }
-        else if (body.sleepState === CANNON.Body.SLEEPING) {
-            // 睡眠状态 - 全暗淡
-            color.r *= 0.4;
-            color.g *= 0.4;
-            color.b *= 0.4;
-        }
-        return color.ToUint32();
-    }
-    // 绘制单个刚体的所有碰撞形状
-    static drawRigidBody(body) {
-        const color = this.setColor(body);
-        body.shapes.forEach((shape, i) => {
-            const offset = body.shapeOffsets[i];
-            const orientation = body.shapeOrientations[i];
-            // 根据形状类型绘制不同的调试线框
-            if (shape instanceof CANNON.Box) {
-                this.drawBox(body, shape, offset, orientation, color);
-            }
-            else if (shape instanceof CANNON.Sphere) {
-                this.drawSphere(body, shape, offset, orientation, color);
-            }
-            else if (shape instanceof CANNON.Plane) {
-                this.drawPlane(body, shape, offset, orientation, color);
-            }
-        });
-    }
-    // 绘制盒子形状
-    static drawBox(body, shape, offset, orientation, color) {
-        // 计算盒子的8个顶点
-        const halfExtents = shape.halfExtents;
-        const vertices = [
-            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
-            new CANNON.Vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
-            new CANNON.Vec3(halfExtents.x, halfExtents.y, halfExtents.z),
-            new CANNON.Vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
-        ];
-        // 应用偏移和旋转，并转换到屏幕空间
-        const screenVertices = vertices.map(v => {
-            // 应用形状自身的旋转
-            const rotated = this.rotateVector(v, orientation);
-            // 应用形状偏移
-            const offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
-            // 应用刚体旋转
-            const bodyRotated = this.rotateVector(offsetApplied, body.quaternion);
-            // 应用刚体位置
-            const worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
-            // 转换到屏幕坐标
-            return this.WorldToScreenPos(worldPos);
-        });
-        // 定义盒子的边
-        const edges = [
-            [0, 1], [1, 2], [2, 3], [3, 0], // 前面
-            [4, 5], [5, 6], [6, 7], [7, 4], // 后面
-            [0, 4], [1, 5], [2, 6], [3, 7] // 连接前后
-        ];
-        // 绘制所有边
-        edges.forEach(([i1, i2]) => {
-            const v1 = screenVertices[i1];
-            const v2 = screenVertices[i2];
-            // 确保转换后的顶点有效
-            if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
-                this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
-            }
-        });
-    }
-    // 绘制球体形状
-    static drawSphere(body, shape, offset, orientation, color) {
-        const radius = shape.radius;
-        const segments = 16; // 球体分段数
-        // 计算球体中心在世界空间中的位置
-        const center = new CANNON.Vec3(offset.x, offset.y, offset.z);
-        const rotatedCenter = this.rotateVector(center, body.quaternion);
-        const worldCenter = new CANNON.Vec3(rotatedCenter.x + body.position.x, rotatedCenter.y + body.position.y, rotatedCenter.z + body.position.z);
-        const screenCenter = this.WorldToScreenPos(worldCenter);
-        if (!screenCenter)
-            return;
-        // 绘制球体的赤道圆
-        for (let i = 0; i < segments; i++) {
-            const angle1 = (i / segments) * Math.PI * 2;
-            const angle2 = ((i + 1) / segments) * Math.PI * 2;
-            // 计算圆上两点
-            const p1 = new CANNON.Vec3(Math.cos(angle1) * radius, 0, Math.sin(angle1) * radius);
-            const p2 = new CANNON.Vec3(Math.cos(angle2) * radius, 0, Math.sin(angle2) * radius);
-            // 应用旋转和位置
-            const rotatedP1 = this.rotateVector(p1, orientation);
-            const rotatedP2 = this.rotateVector(p2, orientation);
-            const offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
-            const offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
-            const bodyP1 = this.rotateVector(offsetP1, body.quaternion);
-            const bodyP2 = this.rotateVector(offsetP2, body.quaternion);
-            const worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
-            const worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
-            // 转换到屏幕坐标
-            const screenP1 = this.WorldToScreenPos(worldP1);
-            const screenP2 = this.WorldToScreenPos(worldP2);
-            if (screenP1 && screenP2) {
-                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
-            }
-        }
-        // 绘制球体的子午线（垂直方向）
-        for (let i = 0; i < segments / 2; i++) {
-            const angle1 = (i / (segments / 2)) * Math.PI;
-            const angle2 = ((i + 1) / (segments / 2)) * Math.PI;
-            const p1 = new CANNON.Vec3(0, Math.cos(angle1) * radius, Math.sin(angle1) * radius);
-            const p2 = new CANNON.Vec3(0, Math.cos(angle2) * radius, Math.sin(angle2) * radius);
-            // 应用旋转和位置（与赤道圆处理相同）
-            const rotatedP1 = this.rotateVector(p1, orientation);
-            const rotatedP2 = this.rotateVector(p2, orientation);
-            const offsetP1 = new CANNON.Vec3(rotatedP1.x + offset.x, rotatedP1.y + offset.y, rotatedP1.z + offset.z);
-            const offsetP2 = new CANNON.Vec3(rotatedP2.x + offset.x, rotatedP2.y + offset.y, rotatedP2.z + offset.z);
-            const bodyP1 = this.rotateVector(offsetP1, body.quaternion);
-            const bodyP2 = this.rotateVector(offsetP2, body.quaternion);
-            const worldP1 = new CANNON.Vec3(bodyP1.x + body.position.x, bodyP1.y + body.position.y, bodyP1.z + body.position.z);
-            const worldP2 = new CANNON.Vec3(bodyP2.x + body.position.x, bodyP2.y + body.position.y, bodyP2.z + body.position.z);
-            const screenP1 = this.WorldToScreenPos(worldP1);
-            const screenP2 = this.WorldToScreenPos(worldP2);
-            if (screenP1 && screenP2) {
-                this.drawLineFunc(screenP1.x, screenP1.y, screenP2.x, screenP2.y, color);
-            }
-        }
-    }
-    // 绘制平面形状
-    static drawPlane(body, shape, offset, orientation, color) {
-        const size = 5; // 平面可视大小
-        const vertices = [
-            new CANNON.Vec3(-size, 0, -size),
-            new CANNON.Vec3(size, 0, -size),
-            new CANNON.Vec3(size, 0, size),
-            new CANNON.Vec3(-size, 0, size),
-        ];
-        // 应用变换并转换到屏幕坐标
-        const screenVertices = vertices.map(v => {
-            const rotated = this.rotateVector(v, orientation);
-            const offsetApplied = new CANNON.Vec3(rotated.x + offset.x, rotated.y + offset.y, rotated.z + offset.z);
-            const bodyRotated = this.rotateVector(offsetApplied, body.quaternion);
-            const worldPos = new CANNON.Vec3(bodyRotated.x + body.position.x, bodyRotated.y + body.position.y, bodyRotated.z + body.position.z);
-            return this.WorldToScreenPos(worldPos);
-        });
-        // 定义平面的边和对角线
-        const edges = [
-            [0, 1], [1, 2], [2, 3], [3, 0], // 四边形边框
-            [0, 2], [1, 3] // 对角线
-        ];
-        // 绘制所有边
-        edges.forEach(([i1, i2]) => {
-            const v1 = screenVertices[i1];
-            const v2 = screenVertices[i2];
-            if (v1 && v2) {
-                this.drawLineFunc(v1.x, v1.y, v2.x, v2.y, color);
-            }
-        });
-    }
-    // 将3D世界坐标转换为2D屏幕坐标
-    static WorldToScreenPos(pos) {
-        return TransformTools_1.TransformTools.WorldToScreenPos(new Vector3_1.Vector3(pos.x, pos.y, pos.z), Camera_1.Camera.mainCamera).screen;
-    }
-    // 用四元数旋转向量（不依赖内置方法）
-    static rotateVector(v, q) {
-        const v2 = new Vector3_1.Vector3(v.x, v.y, v.z);
-        const q2 = new Quaternion_1.Quaternion(q.x, q.y, q.z, q.w);
-        TransformTools_1.TransformTools.ApplyRotationToVertex(v2, q2);
-        return new CANNON.Vec3(v2.x, v2.y, v2.z);
-    }
-    // 完善的物理调试绘制入口
-    static DrawPhysicsDebug(DrawLine) {
-        // @ts-ignore
-        const world = Engine_1.Engine.physics.world;
-        this.drawLineFunc = DrawLine;
-        // 遍历所有刚体并绘制
-        world.bodies.forEach(body => {
-            this.drawRigidBody(body);
-        });
-    }
-}
-exports.PhysicsDebugDraw = PhysicsDebugDraw;
-
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/Color":28,"../Math/Quaternion":30,"../Math/TransformTools":32,"../Math/Vector3":34,"cannon":2}],38:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/SphereCollider":12,"../Core/Time":22,"../Math/Quaternion":30,"../Math/Vector3":34,"./RaycastHit":37,"cannon":2}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RaycastHit = void 0;
@@ -21351,7 +21115,7 @@ class RaycastHit {
 }
 exports.RaycastHit = RaycastHit;
 
-},{"../Math/Vector3":34}],39:[function(require,module,exports){
+},{"../Math/Vector3":34}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BarycentricTriangleRasterizer = void 0;
@@ -21540,7 +21304,7 @@ class BarycentricTriangleRasterizer extends TriangleRasterizer_1.TriangleRasteri
 }
 exports.BarycentricTriangleRasterizer = BarycentricTriangleRasterizer;
 
-},{"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"./TriangleRasterizer":41}],40:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"./TriangleRasterizer":40}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -21551,7 +21315,6 @@ const Renderer_1 = require("../Component/Renderer");
 const Camera_1 = require("../Component/Camera");
 const Engine_1 = require("../Core/Engine");
 const Setting_1 = require("../Core/Setting");
-const PhysicsDebugDraw_1 = require("../Physics/PhysicsDebugDraw");
 const BarycentricTriangleRasterizer_1 = require("./BarycentricTriangleRasterizer");
 const TransformTools_1 = require("../Math/TransformTools");
 const Debug_1 = require("../Utils/Debug");
@@ -21606,7 +21369,7 @@ class RasterizationPipeline {
             // 绘制天空盒
         }
         else if (clearFlags == Camera_1.CameraClearFlags.Color) {
-            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor);
+            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor.ToUint32());
         }
         if (clearFlags != Camera_1.CameraClearFlags.None) {
             this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
@@ -21649,13 +21412,13 @@ class RasterizationPipeline {
         const index = y * Setting_1.EngineConfig.canvasWidth + x;
         // 颜色混合处理
         if (blendMode !== Color_1.BlendMode.replace) {
-            const existingColor = this.frameBuffer[index];
+            const existingColor = Color_1.Color.FromUint32(this.frameBuffer[index]);
             const blendedColor = Color_1.Color.blendColors(existingColor, color, blendMode);
-            this.frameBuffer[index] = blendedColor;
+            this.frameBuffer[index] = blendedColor.ToUint32();
         }
         else {
             // 直接替换模式
-            this.frameBuffer[index] = color;
+            this.frameBuffer[index] = color.ToUint32();
         }
         // Overdraw计数
         if (countOverdraw)
@@ -21885,7 +21648,7 @@ class RasterizationPipeline {
     //#region 工具函数
     DebugDraw() {
         // 绘制包围盒
-        // this.DrawBounds(mesh, renderer);
+        // this.DrawBound(mesh, renderer);
         // 调试：绘制面法线
         // this.DrawFaceNormal(mesh, renderer);
         // 绘制深度纹理
@@ -21893,7 +21656,7 @@ class RasterizationPipeline {
         // 绘制Overdarw
         // this.DrawOverdraw();
         // 绘制物理调试信息
-        PhysicsDebugDraw_1.PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
+        // PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
         // 绘制调试线
         const lines = Debug_1.Debug.GetDebugLines();
         lines.forEach(line => {
@@ -21914,16 +21677,14 @@ class RasterizationPipeline {
             for (let y = 0; y < Setting_1.EngineConfig.canvasHeight; y++) {
                 const index = y * Setting_1.EngineConfig.canvasWidth + x;
                 const currentDepth = this.depthBuffer[index];
-                // 将深度值(0-1)转换为灰度值(0-255)
-                const grayValue = Math.floor(currentDepth * 255);
                 // 创建灰度颜色对象
-                const depthColor = new Color_1.Color(grayValue, grayValue, grayValue);
-                this.DrawPixel(x, y, depthColor.ToUint32());
+                const depthColor = new Color_1.Color(currentDepth, currentDepth, currentDepth);
+                this.DrawPixel(x, y, depthColor);
             }
         }
     }
     DrawOverdraw() {
-        this.frameBuffer.fill(Color_1.Color.BLACK);
+        this.frameBuffer.fill(0);
         // 使用预设的最大可视化范围来归一化 Overdraw 计数
         const MAX_VISUALIZATION_RANGE = 8;
         for (let x = 0; x < Setting_1.EngineConfig.canvasWidth; x++) {
@@ -21934,11 +21695,11 @@ class RasterizationPipeline {
                     // 将 Overdraw 计数限制在可视化范围内并归一化
                     const normalizedCount = Math.min(overdrawCount, MAX_VISUALIZATION_RANGE) / MAX_VISUALIZATION_RANGE;
                     // 计算透明度：Overdraw 越多，越不透明
-                    const alpha = Math.floor(normalizedCount * 255);
+                    const alpha = normalizedCount;
                     // 组合颜色（ARGB格式）
-                    const color = Color_1.Color.FromUint32(Color_1.Color.ORANGE);
+                    const color = Color_1.Color.ORANGE;
                     color.a = alpha;
-                    this.DrawPixel(x, y, color.ToUint32());
+                    this.DrawPixel(x, y, color);
                 }
             }
         }
@@ -21974,26 +21735,25 @@ class RasterizationPipeline {
      */
     interpolateColor(color1, color2, t) {
         // 提取ARGB分量
-        const a1 = (color1 >> 24) & 0xFF;
-        const r1 = (color1 >> 16) & 0xFF;
-        const g1 = (color1 >> 8) & 0xFF;
-        const b1 = color1 & 0xFF;
-        const a2 = (color2 >> 24) & 0xFF;
-        const r2 = (color2 >> 16) & 0xFF;
-        const g2 = (color2 >> 8) & 0xFF;
-        const b2 = color2 & 0xFF;
+        const a1 = color1.a;
+        const r1 = color1.r;
+        const g1 = color1.g;
+        const b1 = color1.b;
+        const a2 = color2.a;
+        const r2 = color2.r;
+        const g2 = color2.g;
+        const b2 = color2.b;
         // 线性插值每个分量
         const a = Math.round(a1 + (a2 - a1) * t);
         const r = Math.round(r1 + (r2 - r1) * t);
         const g = Math.round(g1 + (g2 - g1) * t);
         const b = Math.round(b1 + (b2 - b1) * t);
-        // 组合成32位颜色值
-        return (a << 24) | (r << 16) | (g << 8) | b;
+        return new Color_1.Color(r, g, b, a);
     }
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Physics/PhysicsDebugDraw":37,"../Utils/Debug":51,"./BarycentricTriangleRasterizer":39}],41:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Utils/Debug":50,"./BarycentricTriangleRasterizer":38}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TriangleRasterizer = void 0;
@@ -22004,7 +21764,7 @@ class TriangleRasterizer {
 }
 exports.TriangleRasterizer = TriangleRasterizer;
 
-},{}],42:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Material = void 0;
@@ -22041,7 +21801,7 @@ class Material extends UObject_1.UObject {
 }
 exports.Material = Material;
 
-},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],43:[function(require,module,exports){
+},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubMesh = exports.Mesh = void 0;
@@ -22092,7 +21852,7 @@ class SubMesh {
 }
 exports.SubMesh = SubMesh;
 
-},{"../Core/UObject":25,"../Math/Bounds":27}],44:[function(require,module,exports){
+},{"../Core/UObject":25,"../Math/Bounds":27}],43:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22298,7 +22058,7 @@ exports.Resources = Resources;
 Resources.fileCache = new Map();
 Resources.loadingPromises = new Map();
 
-},{"../Utils/ObjParser":52,"./Texture":45}],45:[function(require,module,exports){
+},{"../Utils/ObjParser":51,"./Texture":44}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
@@ -22507,7 +22267,7 @@ class Texture extends UObject_1.UObject {
         const clampedY = Math.max(0, Math.min(mip.height - 1, y));
         // 获取像素颜色
         const index = (clampedY * mip.width + clampedX) * 4;
-        return this.packColor(mip.data[index], mip.data[index + 1], mip.data[index + 2], mip.data[index + 3]);
+        return new Color_1.Color(mip.data[index] / 255, mip.data[index + 1] / 255, mip.data[index + 2] / 255, mip.data[index + 3] / 255);
     }
     /**
      * 双线性过滤采样
@@ -22568,21 +22328,20 @@ class Texture extends UObject_1.UObject {
      */
     lerpColor(a, b, t) {
         // 提取ARGB四个通道
-        const aA = (a >> 24) & 0xff;
-        const aR = (a >> 16) & 0xff;
-        const aG = (a >> 8) & 0xff;
-        const aB = a & 0xff;
-        const bA = (b >> 24) & 0xff;
-        const bR = (b >> 16) & 0xff;
-        const bG = (b >> 8) & 0xff;
-        const bB = b & 0xff;
+        const aA = a.a;
+        const aR = a.r;
+        const aG = a.g;
+        const aB = a.b;
+        const bA = b.a;
+        const bR = b.r;
+        const bG = b.g;
+        const bB = b.b;
         // 每个通道单独插值
         const lerpA = Math.round(aA + (bA - aA) * t);
         const lerpR = Math.round(aR + (bR - aR) * t);
         const lerpG = Math.round(aG + (bG - aG) * t);
         const lerpB = Math.round(aB + (bB - aB) * t);
-        // 组合成32位颜色值
-        return (lerpA << 24) | (lerpR << 16) | (lerpG << 8) | lerpB;
+        return new Color_1.Color(lerpA, lerpR, lerpG, lerpB);
     }
     /**
      * 生成Mipmap层级
@@ -22699,7 +22458,7 @@ class Texture extends UObject_1.UObject {
         const clampedX = Math.max(0, Math.min(mip.width - 1, x));
         const clampedY = Math.max(0, Math.min(mip.height - 1, y));
         const index = (clampedY * mip.width + clampedX) * 4;
-        return this.packColor(mip.data[index], mip.data[index + 1], mip.data[index + 2], mip.data[index + 3]);
+        return new Color_1.Color(mip.data[index] / 255, mip.data[index + 1] / 255, mip.data[index + 2] / 255, mip.data[index + 3] / 255);
     }
     /**
      * 将RGBA分量打包为32位整数
@@ -22726,10 +22485,10 @@ class Texture extends UObject_1.UObject {
                 const color = (tileX + tileY) % 2 === 0 ? color1 : color2;
                 // 设置像素颜色
                 const index = (y * width + x) * 4;
-                data[index] = (color >> 0) & 0xff;
-                data[index + 1] = (color >> 8) & 0xff;
-                data[index + 2] = (color >> 16) & 0xff;
-                data[index + 3] = (color >> 24) & 0xff;
+                data[index] = color.r * 255;
+                data[index + 1] = color.g * 255;
+                data[index + 2] = color.b * 255;
+                data[index + 3] = color.a * 255;
             }
         }
         texture.LoadImage(data);
@@ -22745,31 +22504,41 @@ class Texture extends UObject_1.UObject {
      * @returns 生成的噪声纹理
      */
     static NoiseTexture(width = 64, height = 64, type = 'perlin', scale = 4, monochrome = true) {
+        // 参数验证和边界检查
+        width = Math.max(1, Math.min(2048, width));
+        height = Math.max(1, Math.min(2048, height));
+        scale = Math.max(0.1, scale);
         const texture = new Texture(width, height);
         const data = new Uint8ClampedArray(width * height * 4);
-        // 随机噪声生成函数
+        // 更高效的随机噪声生成函数（使用位运算优化）
         const generateRandomNoise = (x, y) => {
-            // 简单的哈希算法生成伪随机值
             let hash = x << 12 ^ y;
             hash = (hash ^ (hash >> 16)) * 0x45d9f3b;
             hash = (hash ^ (hash >> 13)) * 0x45d9f3b;
-            return Math.abs(hash ^ (hash >> 16)) / 0x7fffffff;
+            return (hash & 0x7fffffff) / 0x7fffffff; // 直接使用位运算代替Math.abs
         };
-        // 插值函数（用于平滑噪声）
+        // 优化的插值函数（使用缓动函数提高视觉质量）
+        const fade = (t) => {
+            return t * t * t * (t * (t * 6 - 15) + 10); // 平滑的缓动函数
+        };
         const interpolate = (a, b, t) => {
-            return a + t * (b - a);
+            return a + fade(t) * (b - a);
         };
+        // 预先计算随机偏移（避免每次生成噪声都创建新变量）
         const randomOffsetX = Math.random() * 10000;
         const randomOffsetY = Math.random() * 10000;
-        // 柏林噪声生成（简化版）
+        // 缓存1/scale值，避免重复除法运算
+        const invScale = 1 / scale;
+        // 优化的柏林噪声生成（减少重复计算）
         const generatePerlinNoise = (x, y) => {
-            // 这个柏林噪声函数，传入固定的xy，生成的内容是固定的，这里加个随机的offset，每次生成的都不同
+            // 添加随机偏移，使每次生成的噪声不同
             x += randomOffsetX;
             y += randomOffsetY;
-            const xGrid = Math.floor(x / scale);
-            const yGrid = Math.floor(y / scale);
-            const xFrac = (x / scale) - xGrid;
-            const yFrac = (y / scale) - yGrid;
+            // 使用缓存的invScale进行计算
+            const xGrid = Math.floor(x * invScale);
+            const yGrid = Math.floor(y * invScale);
+            const xFrac = (x * invScale) - xGrid;
+            const yFrac = (y * invScale) - yGrid;
             // 四个角的随机值
             const c00 = generateRandomNoise(xGrid, yGrid);
             const c10 = generateRandomNoise(xGrid + 1, yGrid);
@@ -22780,73 +22549,81 @@ class Texture extends UObject_1.UObject {
             const x2 = interpolate(c01, c11, xFrac);
             return interpolate(x1, x2, yFrac);
         };
-        // 纤维噪声生成（模拟方向性纹理）
+        // 纤维噪声生成（使用一次柏林噪声计算结果）
         const generateFibrousNoise = (x, y) => {
-            const angle = Math.sin(x / scale) * Math.cos(y / scale) * Math.PI;
+            // 减少三角函数计算，使用更简单的角度计算
+            const angle = (Math.sin(x * invScale) * Math.cos(y * invScale)) * Math.PI;
             const dx = Math.cos(angle) * scale;
             const dy = Math.sin(angle) * scale;
-            return generatePerlinNoise(x + dx, y + dy) * 0.7 + generatePerlinNoise(x, y) * 0.3;
+            // 计算一次基础噪声值，避免重复调用
+            const baseNoise = generatePerlinNoise(x, y);
+            // 使用基础噪声值与偏移后的噪声值混合
+            return generatePerlinNoise(x + dx, y + dy) * 0.7 + baseNoise * 0.3;
         };
-        // 填充纹理数据
+        // 填充纹理数据的主要逻辑（优化内存访问模式）
+        const generateNoiseForPixel = (x, y) => {
+            switch (type) {
+                case 'random':
+                    return generateRandomNoise(x, y);
+                case 'fibrous':
+                    return generateFibrousNoise(x, y);
+                default: // perlin
+                    return generatePerlinNoise(x, y);
+            }
+        };
+        // 优化的彩色噪声生成函数（减少重复计算）
+        const getRGBFromNoise = (value) => {
+            // HSV转RGB的高效实现
+            const hue = (value * 360) % 360;
+            const sat = 0.5 + value * 0.5;
+            const val = 0.3 + value * 0.7;
+            const c = val * sat;
+            const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
+            const m = val - c;
+            let r = 0, g = 0, b = 0;
+            if (hue < 60) {
+                [r, g, b] = [c, x, 0];
+            }
+            else if (hue < 120) {
+                [r, g, b] = [x, c, 0];
+            }
+            else if (hue < 180) {
+                [r, g, b] = [0, c, x];
+            }
+            else if (hue < 240) {
+                [r, g, b] = [0, x, c];
+            }
+            else if (hue < 300) {
+                [r, g, b] = [x, 0, c];
+            }
+            else {
+                [r, g, b] = [c, 0, x];
+            }
+            return [r + m, g + m, b + m];
+        };
+        // 主要循环：按行主序填充纹理数据，提高缓存命中率
         for (let y = 0; y < height; y++) {
+            const rowOffset = y * width * 4; // 预计算行偏移量
             for (let x = 0; x < width; x++) {
-                let value;
                 // 根据噪声类型生成值（0-1范围）
-                switch (type) {
-                    case 'random':
-                        value = generateRandomNoise(x, y);
-                        break;
-                    case 'fibrous':
-                        value = generateFibrousNoise(x, y);
-                        break;
-                    default: // perlin
-                        value = generatePerlinNoise(x, y);
-                }
-                // 确保值在0-1范围内
+                let value = generateNoiseForPixel(x, y);
+                // 确保值在0-1范围内（使用一次clamp操作）
                 value = Math.max(0, Math.min(1, value));
                 let r, g, b;
                 if (monochrome) {
                     // 单色噪声（灰度）
-                    const gray = Math.round(value * 255);
-                    r = g = b = gray;
+                    r = g = b = value;
                 }
                 else {
-                    // 彩色噪声（基于HSV转换）
-                    const hue = (value * 360) % 360; // 色相随噪声值变化
-                    const sat = 0.5 + value * 0.5; // 饱和度变化
-                    const val = 0.3 + value * 0.7; // 明度变化
-                    // HSV转RGB（简化实现）
-                    const c = val * sat;
-                    const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
-                    const m = val - c;
-                    if (hue < 60) {
-                        [r, g, b] = [c, x, 0];
-                    }
-                    else if (hue < 120) {
-                        [r, g, b] = [x, c, 0];
-                    }
-                    else if (hue < 180) {
-                        [r, g, b] = [0, c, x];
-                    }
-                    else if (hue < 240) {
-                        [r, g, b] = [0, x, c];
-                    }
-                    else if (hue < 300) {
-                        [r, g, b] = [x, 0, c];
-                    }
-                    else {
-                        [r, g, b] = [c, 0, x];
-                    }
-                    r = Math.round((r + m) * 255);
-                    g = Math.round((g + m) * 255);
-                    b = Math.round((b + m) * 255);
+                    // 彩色噪声（使用优化的HSV转RGB函数）
+                    [r, g, b] = getRGBFromNoise(value);
                 }
                 // 写入纹理数据（RGBA）
-                const index = (y * width + x) * 4;
-                data[index] = r; // 红色通道
-                data[index + 1] = g; // 绿色通道
-                data[index + 2] = b; // 蓝色通道
-                data[index + 3] = 255; //  alpha通道（完全不透明）
+                const index = rowOffset + x * 4;
+                data[index] = r * 255; // 红色通道
+                data[index + 1] = g * 255; // 绿色通道
+                data[index + 2] = b * 255; // 蓝色通道
+                data[index + 3] = 255; // alpha通道（完全不透明）
             }
         }
         texture.LoadImage(data);
@@ -22874,10 +22651,10 @@ class Texture extends UObject_1.UObject {
         colorStops.sort((a, b) => a.offset - b.offset);
         // 提取颜色通道值
         const getColorChannels = (color) => ({
-            r: (color >> 16) & 0xff,
-            g: (color >> 8) & 0xff,
-            b: color & 0xff,
-            a: (color >> 24) & 0xff || 255 // 默认为不透明
+            r: color.r,
+            g: color.g,
+            b: color.b,
+            a: color.a || 1 // 默认为不透明
         });
         // 颜色插值函数
         const interpolateColor = (t) => {
@@ -22901,10 +22678,10 @@ class Texture extends UObject_1.UObject {
             const endColor = getColorChannels(end.color);
             // 线性插值每个颜色通道
             return {
-                r: Math.round(startColor.r + (endColor.r - startColor.r) * ratio),
-                g: Math.round(startColor.g + (endColor.g - startColor.g) * ratio),
-                b: Math.round(startColor.b + (endColor.b - startColor.b) * ratio),
-                a: Math.round(startColor.a + (endColor.a - startColor.a) * ratio)
+                r: startColor.r + (endColor.r - startColor.r) * ratio,
+                g: startColor.g + (endColor.g - startColor.g) * ratio,
+                b: startColor.b + (endColor.b - startColor.b) * ratio,
+                a: startColor.a + (endColor.a - startColor.a) * ratio
             };
         };
         // 填充纹理数据
@@ -22941,10 +22718,10 @@ class Texture extends UObject_1.UObject {
                 // 获取插值颜色并写入数据
                 const color = interpolateColor(t);
                 const index = (y * width + x) * 4;
-                data[index] = color.r;
-                data[index + 1] = color.g;
-                data[index + 2] = color.b;
-                data[index + 3] = color.a;
+                data[index] = color.r * 255;
+                data[index + 1] = color.g * 255;
+                data[index + 2] = color.b * 255;
+                data[index + 3] = color.a * 255;
             }
         }
         texture.LoadImage(data);
@@ -22957,7 +22734,7 @@ class Texture extends UObject_1.UObject {
 }
 exports.Texture = Texture;
 
-},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],46:[function(require,module,exports){
+},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],45:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22970,11 +22747,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
+const BoxCollider_1 = require("../Component/BoxCollider");
 const Camera_1 = require("../Component/Camera");
 const CameraController_1 = require("../Component/TestComp/CameraController");
 const Light_1 = require("../Component/Light");
 const MeshRenderer_1 = require("../Component/MeshRenderer");
 const RayTest_1 = require("../Component/TestComp/RayTest");
+const RigidBody_1 = require("../Component/RigidBody");
 const GameObject_1 = require("../Core/GameObject");
 const Quaternion_1 = require("../Math/Quaternion");
 const Vector3_1 = require("../Math/Vector3");
@@ -23010,15 +22789,16 @@ exports.MainScene = {
         //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
-        // const panelObj = await createObj({
-        //     name: "panel",
-        //     scale: Vector3.ONE.multiplyScalar(1.5),
-        //     modelPath: 'resources/panel.obj',
-        //     texture: Texture.CheckerboardTexture(),
-        //     components: [BoxCollider, Rigidbody]
-        // });
-        // const panelBody = panelObj.getComponent(Rigidbody);
-        // if (panelBody) panelBody.isKinematic = true;
+        const panelObj = yield createObj({
+            name: "panel",
+            scale: Vector3_1.Vector3.ONE.multiplyScalar(1.5),
+            modelPath: 'resources/panel.obj',
+            texture: Texture_1.Texture.NoiseTexture(),
+            components: [BoxCollider_1.BoxCollider, RigidBody_1.Rigidbody]
+        });
+        const panelBody = panelObj.getComponent(RigidBody_1.Rigidbody);
+        if (panelBody)
+            panelBody.isKinematic = true;
         // const cubeObj = await createObj({
         //     name: "cube",
         //     position: new Vector3(0, 2.5, 0),
@@ -23090,7 +22870,7 @@ function createObj(config) {
     });
 }
 
-},{"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Math/Quaternion":30,"../Math/Vector3":34,"../Resources/Resources":44,"../Resources/Texture":45,"../Shader/LitShader":49}],47:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Math/Quaternion":30,"../Math/Vector3":34,"../Resources/Resources":43,"../Resources/Texture":44,"../Shader/LitShader":48}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -23197,7 +22977,7 @@ class Scene {
 }
 exports.Scene = Scene;
 
-},{"../Component/Renderer":10,"../Core/GameObject":19,"../Math/BVHTree":26,"../Math/TransformTools":32,"../Math/Vector2":33}],48:[function(require,module,exports){
+},{"../Component/Renderer":10,"../Core/GameObject":19,"../Math/BVHTree":26,"../Math/TransformTools":32,"../Math/Vector2":33}],47:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23257,7 +23037,7 @@ class SceneManager {
 }
 exports.SceneManager = SceneManager;
 
-},{"./Scene":47}],49:[function(require,module,exports){
+},{"./Scene":46}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LitShader = void 0;
@@ -23300,30 +23080,28 @@ class LitShader extends Shader_1.Shader {
         const specularFactor = Math.pow(specDot, shininess);
         // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
         const specularIntensity = 0.5; // 高光强度
-        const specularR = Math.round(this.lightColor.r * specularIntensity * specularFactor);
-        const specularG = Math.round(this.lightColor.g * specularIntensity * specularFactor);
-        const specularB = Math.round(this.lightColor.b * specularIntensity * specularFactor);
-        // 提取表面颜色的RGBA通道
-        const rgba = Color_1.Color.FromUint32(surfaceColor);
+        const specularR = this.lightColor.r * specularIntensity * specularFactor;
+        const specularG = this.lightColor.g * specularIntensity * specularFactor;
+        const specularB = this.lightColor.b * specularIntensity * specularFactor;
         // 计算漫反射颜色
-        const diffR = Math.round(rgba.r * (this.lightColor.r / 255) * this.lightIntensity * dotProduct);
-        const diffG = Math.round(rgba.g * (this.lightColor.g / 255) * this.lightIntensity * dotProduct);
-        const diffB = Math.round(rgba.b * (this.lightColor.b / 255) * this.lightIntensity * dotProduct);
+        const diffR = surfaceColor.r * this.lightColor.r * this.lightIntensity * dotProduct;
+        const diffG = surfaceColor.g * this.lightColor.g * this.lightIntensity * dotProduct;
+        const diffB = surfaceColor.b * this.lightColor.b * this.lightIntensity * dotProduct;
         // 合并所有光照贡献（环境光 + 漫反射 + 高光）
         const totalR = this.ambientLight.r + diffR + specularR;
         const totalG = this.ambientLight.g + diffG + specularG;
         const totalB = this.ambientLight.b + diffB + specularB;
-        // 确保颜色值在0-255范围内
-        const clampedR = Math.min(255, Math.max(0, totalR));
-        const clampedG = Math.min(255, Math.max(0, totalG));
-        const clampedB = Math.min(255, Math.max(0, totalB));
+        // 确保颜色值在0-1范围内
+        const clampedR = Math.min(1, Math.max(0, totalR));
+        const clampedG = Math.min(1, Math.max(0, totalG));
+        const clampedB = Math.min(1, Math.max(0, totalB));
         // 组合成32位颜色值（保留原始Alpha）
-        return (rgba.a << 24) | (clampedB << 16) | (clampedG << 8) | clampedR;
+        return new Color_1.Color(clampedR, clampedG, clampedB, surfaceColor.a);
     }
 }
 exports.LitShader = LitShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":50}],50:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":49}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Shader = void 0;
@@ -23333,7 +23111,6 @@ const UObject_1 = require("../Core/UObject");
 class Shader extends UObject_1.UObject {
     constructor(transform) {
         super();
-        this.inAttr = {};
         this.transform = transform;
     }
     init(camera) {
@@ -23355,7 +23132,7 @@ class Shader extends UObject_1.UObject {
 }
 exports.Shader = Shader;
 
-},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25}],51:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
@@ -23423,7 +23200,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],52:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -23689,7 +23466,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":43}],53:[function(require,module,exports){
+},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":42}],52:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23716,6 +23493,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     requestAnimationFrame(mainLoop);
 }));
 
-},{"./Core/Engine":18}]},{},[53])
+},{"./Core/Engine":18}]},{},[52])
 
 //# sourceMappingURL=bundle.js.map

@@ -10,19 +10,19 @@ export class PhysicsDebugDraw {
     // 存储绘图函数的引用
     private static drawLineFunc: Function;
 
-    private static setColor(body: CANNON.Body) {
-        let color: Color = Color.FromUint32(Color.GRAY);
+    private static setColor(body: CANNON.Body): Color {
+        let color: Color = Color.GRAY;
 
         // 根据物体类型设置基础颜色
         if (body.type === CANNON.Body.DYNAMIC) {
             // 动态物体 - 红色系
-            color = Color.FromUint32(Color.RED);
+            color = Color.RED;
         } else if (body.type === CANNON.Body.STATIC) {
             // 静态物体 - 绿色系
-            color = Color.FromUint32(Color.GREEN);
+            color = Color.GREEN;
         } else if (body.type === CANNON.Body.KINEMATIC) {
             // 运动学物体 - 蓝色系
-            color = Color.FromUint32(Color.BLUE);
+            color = Color.BLUE;
         }
 
         // 根据睡眠状态调整颜色
@@ -30,17 +30,13 @@ export class PhysicsDebugDraw {
             // 清醒状态 - 原色
         } else if (body.sleepState === CANNON.Body.SLEEPY) {
             // 困倦状态 - 半暗淡
-            color.r *= 0.7;
-            color.g *= 0.7;
-            color.b *= 0.7;
+            color.multiplyScalar(0.7);
         } else if (body.sleepState === CANNON.Body.SLEEPING) {
             // 睡眠状态 - 全暗淡
-            color.r *= 0.4;
-            color.g *= 0.4;
-            color.b *= 0.4;
+            color.multiplyScalar(0.4);
         }
 
-        return color.ToUint32();
+        return color;
     }
 
     // 绘制单个刚体的所有碰撞形状
@@ -63,7 +59,7 @@ export class PhysicsDebugDraw {
     }
 
     // 绘制盒子形状
-    private static drawBox(body: CANNON.Body, shape: CANNON.Box, offset: CANNON.Vec3, orientation: CANNON.Quaternion, color: number) {
+    private static drawBox(body: CANNON.Body, shape: CANNON.Box, offset: CANNON.Vec3, orientation: CANNON.Quaternion, color: Color) {
         // 计算盒子的8个顶点
         const halfExtents = shape.halfExtents;
         const vertices = [
@@ -118,7 +114,7 @@ export class PhysicsDebugDraw {
     }
 
     // 绘制球体形状
-    private static drawSphere(body: CANNON.Body, shape: CANNON.Sphere, offset: CANNON.Vec3, orientation: CANNON.Quaternion, color: number) {
+    private static drawSphere(body: CANNON.Body, shape: CANNON.Sphere, offset: CANNON.Vec3, orientation: CANNON.Quaternion, color: Color) {
         const radius = shape.radius;
         const segments = 16; // 球体分段数
 
@@ -244,7 +240,7 @@ export class PhysicsDebugDraw {
     }
 
     // 绘制平面形状
-    private static drawPlane(body: CANNON.Body, shape: CANNON.Plane, offset: CANNON.Vec3, orientation: CANNON.Quaternion, color: number) {
+    private static drawPlane(body: CANNON.Body, shape: CANNON.Plane, offset: CANNON.Vec3, orientation: CANNON.Quaternion, color: Color) {
         const size = 5; // 平面可视大小
         const vertices = [
             new CANNON.Vec3(-size, 0, -size),

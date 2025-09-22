@@ -27,7 +27,7 @@ export abstract class Shader extends UObject {
     protected lightIntensity: number;
 
     public abstract vertexShader(inAttr: VertexAttributes): { vertexOut: Vector4, attrOut: VertexAttributes };
-    public abstract fragmentShader(v2fAttr: VertexAttributes): number;
+    public abstract fragmentShader(v2fAttr: VertexAttributes): Color;
 
     constructor(transform: Transform) {
         super();

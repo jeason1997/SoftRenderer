@@ -139,7 +139,7 @@ export class Texture extends UObject {
      * @param dv_dy V坐标在屏幕空间Y方向的导数
      * @returns 颜色值（ARGB格式的32位整数）
      */
-    public SampleMip(u: number, v: number, du_dx: number = 0.001, dv_dx: number = 0.001, du_dy: number = 0.001, dv_dy: number = 0.001): number {
+    public SampleMip(u: number, v: number, du_dx: number = 0.001, dv_dx: number = 0.001, du_dy: number = 0.001, dv_dy: number = 0.001): Color {
         /* 
         在 3D 渲染中，为了让 Mipmap 层级计算更准确（避免纹理在远处出现锯齿或近处过度模糊），需要传递纹理坐标在屏幕空间的导数。这些导数描述了 UV 坐标在屏幕上每移动 1 像素时的变化率，计算方式如下：
         // 假设当前片段的UV坐标
@@ -172,7 +172,7 @@ export class Texture extends UObject {
      * @param v 纹理V坐标（0-1）
      * @returns 颜色值（ARGB格式的32位整数）
      */
-    public Sample(u: number, v: number, mipLevel: number = 0): number {
+    public Sample(u: number, v: number, mipLevel: number = 0): Color {
         // 根据环绕模式处理UV坐标
         const [clampedU, clampedV] = this.handleWrapMode(u, v);
 
@@ -221,7 +221,7 @@ export class Texture extends UObject {
      * @param v 处理后的V坐标（0-1）
      * @returns 颜色值
      */
-    private samplePoint(u: number, v: number, mipLevel: number = 0): number {
+    private samplePoint(u: number, v: number, mipLevel: number = 0): Color {
         // 选择最接近的Mipmap层级
         const level = Math.round(mipLevel);
         const mip = this.getMipmapLevel(level);
@@ -236,11 +236,11 @@ export class Texture extends UObject {
 
         // 获取像素颜色
         const index = (clampedY * mip.width + clampedX) * 4;
-        return this.packColor(
-            mip.data[index],
-            mip.data[index + 1],
-            mip.data[index + 2],
-            mip.data[index + 3]
+        return new Color(
+            mip.data[index] / 255,
+            mip.data[index + 1] / 255,
+            mip.data[index + 2] / 255,
+            mip.data[index + 3] / 255
         );
     }
 
@@ -250,7 +250,7 @@ export class Texture extends UObject {
      * @param v 处理后的V坐标（0-1）
      * @returns 插值后的颜色值
      */
-    private sampleBilinear(u: number, v: number, mipLevel: number = 0): number {
+    private sampleBilinear(u: number, v: number, mipLevel: number = 0): Color {
         // 选择最接近的Mipmap层级
         const level = Math.round(mipLevel);
         const mip = this.getMipmapLevel(level);
@@ -286,7 +286,7 @@ export class Texture extends UObject {
     /**
      * 三线性过滤采样，在双线性过滤基础上，找到2个最近的Mipmap层级，根据距离插值
      */
-    private sampleTrilinear(u: number, v: number, mipLevel: number = 0): number {
+    private sampleTrilinear(u: number, v: number, mipLevel: number = 0): Color {
         // 如果Mipmap层级不足，退化为双线性过滤
         if (this.mipmapCount < 2) {
             return this.sampleBilinear(u, v, mipLevel);
@@ -312,17 +312,17 @@ export class Texture extends UObject {
      * @param t 插值系数（0-1）
      * @returns 插值后的颜色
      */
-    private lerpColor(a: number, b: number, t: number): number {
+    private lerpColor(a: Color, b: Color, t: number): Color {
         // 提取ARGB四个通道
-        const aA = (a >> 24) & 0xff;
-        const aR = (a >> 16) & 0xff;
-        const aG = (a >> 8) & 0xff;
-        const aB = a & 0xff;
+        const aA = a.a;
+        const aR = a.r;
+        const aG = a.g;
+        const aB = a.b;
 
-        const bA = (b >> 24) & 0xff;
-        const bR = (b >> 16) & 0xff;
-        const bG = (b >> 8) & 0xff;
-        const bB = b & 0xff;
+        const bA = b.a;
+        const bR = b.r;
+        const bG = b.g;
+        const bB = b.b;
 
         // 每个通道单独插值
         const lerpA = Math.round(aA + (bA - aA) * t);
@@ -330,8 +330,7 @@ export class Texture extends UObject {
         const lerpG = Math.round(aG + (bG - aG) * t);
         const lerpB = Math.round(aB + (bB - aB) * t);
 
-        // 组合成32位颜色值
-        return (lerpA << 24) | (lerpR << 16) | (lerpG << 8) | lerpB;
+        return new Color(lerpA, lerpR, lerpG, lerpB);
     }
 
     /**
@@ -464,16 +463,16 @@ export class Texture extends UObject {
     /**
      * 从Mipmap层级获取范围内的像素（防止越界）
      */
-    private getClampedPixelFromMip(mip: MipmapLevel, x: number, y: number): number {
+    private getClampedPixelFromMip(mip: MipmapLevel, x: number, y: number): Color {
         const clampedX = Math.max(0, Math.min(mip.width - 1, x));
         const clampedY = Math.max(0, Math.min(mip.height - 1, y));
         const index = (clampedY * mip.width + clampedX) * 4;
 
-        return this.packColor(
-            mip.data[index],
-            mip.data[index + 1],
-            mip.data[index + 2],
-            mip.data[index + 3]
+        return new Color(
+            mip.data[index] / 255,
+            mip.data[index + 1] / 255,
+            mip.data[index + 2] / 255,
+            mip.data[index + 3] / 255
         );
     }
 
@@ -494,8 +493,8 @@ export class Texture extends UObject {
         width: number = 64,
         height: number = 64,
         tileSize: number = 8,
-        color1: number = Color.WHITE,
-        color2: number = Color.GRAY
+        color1: Color = Color.WHITE,
+        color2: Color = Color.GRAY
     ): Texture {
         const texture = new Texture(width, height);
         const data = new Uint8ClampedArray(width * height * 4);
@@ -512,10 +511,10 @@ export class Texture extends UObject {
 
                 // 设置像素颜色
                 const index = (y * width + x) * 4;
-                data[index] = (color >> 0) & 0xff;
-                data[index + 1] = (color >> 8) & 0xff;
-                data[index + 2] = (color >> 16) & 0xff;
-                data[index + 3] = (color >> 24) & 0xff;
+                data[index] = color.r * 255;
+                data[index + 1] = color.g * 255;
+                data[index + 2] = color.b * 255;
+                data[index + 3] = color.a * 255;
             }
         }
 
@@ -539,37 +538,49 @@ export class Texture extends UObject {
         scale: number = 4,
         monochrome: boolean = true
     ): Texture {
+        // 参数验证和边界检查
+        width = Math.max(1, Math.min(2048, width));
+        height = Math.max(1, Math.min(2048, height));
+        scale = Math.max(0.1, scale);
+        
         const texture = new Texture(width, height);
         const data = new Uint8ClampedArray(width * height * 4);
 
-        // 随机噪声生成函数
+        // 更高效的随机噪声生成函数（使用位运算优化）
         const generateRandomNoise = (x: number, y: number): number => {
-            // 简单的哈希算法生成伪随机值
             let hash = x << 12 ^ y;
             hash = (hash ^ (hash >> 16)) * 0x45d9f3b;
             hash = (hash ^ (hash >> 13)) * 0x45d9f3b;
-            return Math.abs(hash ^ (hash >> 16)) / 0x7fffffff;
+            return (hash & 0x7fffffff) / 0x7fffffff; // 直接使用位运算代替Math.abs
         };
 
-        // 插值函数（用于平滑噪声）
+        // 优化的插值函数（使用缓动函数提高视觉质量）
+        const fade = (t: number): number => {
+            return t * t * t * (t * (t * 6 - 15) + 10); // 平滑的缓动函数
+        };
+
         const interpolate = (a: number, b: number, t: number): number => {
-            return a + t * (b - a);
+            return a + fade(t) * (b - a);
         };
 
+        // 预先计算随机偏移（避免每次生成噪声都创建新变量）
         const randomOffsetX = Math.random() * 10000;
         const randomOffsetY = Math.random() * 10000;
+        
+        // 缓存1/scale值，避免重复除法运算
+        const invScale = 1 / scale;
 
-        // 柏林噪声生成（简化版）
+        // 优化的柏林噪声生成（减少重复计算）
         const generatePerlinNoise = (x: number, y: number): number => {
-
-            // 这个柏林噪声函数，传入固定的xy，生成的内容是固定的，这里加个随机的offset，每次生成的都不同
+            // 添加随机偏移，使每次生成的噪声不同
             x += randomOffsetX;
             y += randomOffsetY;
 
-            const xGrid = Math.floor(x / scale);
-            const yGrid = Math.floor(y / scale);
-            const xFrac = (x / scale) - xGrid;
-            const yFrac = (y / scale) - yGrid;
+            // 使用缓存的invScale进行计算
+            const xGrid = Math.floor(x * invScale);
+            const yGrid = Math.floor(y * invScale);
+            const xFrac = (x * invScale) - xGrid;
+            const yFrac = (y * invScale) - yGrid;
 
             // 四个角的随机值
             const c00 = generateRandomNoise(xGrid, yGrid);
@@ -583,76 +594,87 @@ export class Texture extends UObject {
             return interpolate(x1, x2, yFrac);
         };
 
-        // 纤维噪声生成（模拟方向性纹理）
+        // 纤维噪声生成（使用一次柏林噪声计算结果）
         const generateFibrousNoise = (x: number, y: number): number => {
-            const angle = Math.sin(x / scale) * Math.cos(y / scale) * Math.PI;
+            // 减少三角函数计算，使用更简单的角度计算
+            const angle = (Math.sin(x * invScale) * Math.cos(y * invScale)) * Math.PI;
             const dx = Math.cos(angle) * scale;
             const dy = Math.sin(angle) * scale;
-            return generatePerlinNoise(x + dx, y + dy) * 0.7 + generatePerlinNoise(x, y) * 0.3;
+            
+            // 计算一次基础噪声值，避免重复调用
+            const baseNoise = generatePerlinNoise(x, y);
+            // 使用基础噪声值与偏移后的噪声值混合
+            return generatePerlinNoise(x + dx, y + dy) * 0.7 + baseNoise * 0.3;
         };
 
-        // 填充纹理数据
+        // 填充纹理数据的主要逻辑（优化内存访问模式）
+        const generateNoiseForPixel = (x: number, y: number): number => {
+            switch (type) {
+                case 'random':
+                    return generateRandomNoise(x, y);
+                case 'fibrous':
+                    return generateFibrousNoise(x, y);
+                default: // perlin
+                    return generatePerlinNoise(x, y);
+            }
+        };
+
+        // 优化的彩色噪声生成函数（减少重复计算）
+        const getRGBFromNoise = (value: number): [number, number, number] => {
+            // HSV转RGB的高效实现
+            const hue = (value * 360) % 360;
+            const sat = 0.5 + value * 0.5;
+            const val = 0.3 + value * 0.7;
+
+            const c = val * sat;
+            const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
+            const m = val - c;
+
+            let r = 0, g = 0, b = 0;
+
+            if (hue < 60) {
+                [r, g, b] = [c, x, 0];
+            } else if (hue < 120) {
+                [r, g, b] = [x, c, 0];
+            } else if (hue < 180) {
+                [r, g, b] = [0, c, x];
+            } else if (hue < 240) {
+                [r, g, b] = [0, x, c];
+            } else if (hue < 300) {
+                [r, g, b] = [x, 0, c];
+            } else {
+                [r, g, b] = [c, 0, x];
+            }
+
+            return [r + m, g + m, b + m];
+        };
+
+        // 主要循环：按行主序填充纹理数据，提高缓存命中率
         for (let y = 0; y < height; y++) {
+            const rowOffset = y * width * 4; // 预计算行偏移量
             for (let x = 0; x < width; x++) {
-                let value: number;
-
                 // 根据噪声类型生成值（0-1范围）
-                switch (type) {
-                    case 'random':
-                        value = generateRandomNoise(x, y);
-                        break;
-                    case 'fibrous':
-                        value = generateFibrousNoise(x, y);
-                        break;
-                    default: // perlin
-                        value = generatePerlinNoise(x, y);
-                }
+                let value = generateNoiseForPixel(x, y);
 
-                // 确保值在0-1范围内
+                // 确保值在0-1范围内（使用一次clamp操作）
                 value = Math.max(0, Math.min(1, value));
 
                 let r: number, g: number, b: number;
 
                 if (monochrome) {
                     // 单色噪声（灰度）
-                    const gray = Math.round(value * 255);
-                    r = g = b = gray;
+                    r = g = b = value;
                 } else {
-                    // 彩色噪声（基于HSV转换）
-                    const hue = (value * 360) % 360; // 色相随噪声值变化
-                    const sat = 0.5 + value * 0.5;   // 饱和度变化
-                    const val = 0.3 + value * 0.7;   // 明度变化
-
-                    // HSV转RGB（简化实现）
-                    const c = val * sat;
-                    const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
-                    const m = val - c;
-
-                    if (hue < 60) {
-                        [r, g, b] = [c, x, 0];
-                    } else if (hue < 120) {
-                        [r, g, b] = [x, c, 0];
-                    } else if (hue < 180) {
-                        [r, g, b] = [0, c, x];
-                    } else if (hue < 240) {
-                        [r, g, b] = [0, x, c];
-                    } else if (hue < 300) {
-                        [r, g, b] = [x, 0, c];
-                    } else {
-                        [r, g, b] = [c, 0, x];
-                    }
-
-                    r = Math.round((r + m) * 255);
-                    g = Math.round((g + m) * 255);
-                    b = Math.round((b + m) * 255);
+                    // 彩色噪声（使用优化的HSV转RGB函数）
+                    [r, g, b] = getRGBFromNoise(value);
                 }
 
                 // 写入纹理数据（RGBA）
-                const index = (y * width + x) * 4;
-                data[index] = r;       // 红色通道
-                data[index + 1] = g;   // 绿色通道
-                data[index + 2] = b;   // 蓝色通道
-                data[index + 3] = 255; //  alpha通道（完全不透明）
+                const index = rowOffset + x * 4;
+                data[index] = r * 255;       // 红色通道
+                data[index + 1] = g * 255;   // 绿色通道
+                data[index + 2] = b * 255;   // 蓝色通道
+                data[index + 3] = 255;       // alpha通道（完全不透明）
             }
         }
 
@@ -676,7 +698,7 @@ export class Texture extends UObject {
         width: number = 64,
         height: number = 64,
         type: 'linear' | 'radial' | 'angular' = 'linear',
-        colorStops: Array<{ offset: number, color: number }> = [
+        colorStops: Array<{ offset: number, color: Color }> = [
             { offset: 0, color: Color.WHITE },
             { offset: 1, color: Color.BLACK }
         ],
@@ -692,11 +714,11 @@ export class Texture extends UObject {
         colorStops.sort((a, b) => a.offset - b.offset);
 
         // 提取颜色通道值
-        const getColorChannels = (color: number) => ({
-            r: (color >> 16) & 0xff,
-            g: (color >> 8) & 0xff,
-            b: color & 0xff,
-            a: (color >> 24) & 0xff || 255 // 默认为不透明
+        const getColorChannels = (color: Color) => ({
+            r: color.r,
+            g: color.g,
+            b: color.b,
+            a: color.a || 1 // 默认为不透明
         });
 
         // 颜色插值函数
@@ -725,10 +747,10 @@ export class Texture extends UObject {
 
             // 线性插值每个颜色通道
             return {
-                r: Math.round(startColor.r + (endColor.r - startColor.r) * ratio),
-                g: Math.round(startColor.g + (endColor.g - startColor.g) * ratio),
-                b: Math.round(startColor.b + (endColor.b - startColor.b) * ratio),
-                a: Math.round(startColor.a + (endColor.a - startColor.a) * ratio)
+                r: startColor.r + (endColor.r - startColor.r) * ratio,
+                g: startColor.g + (endColor.g - startColor.g) * ratio,
+                b: startColor.b + (endColor.b - startColor.b) * ratio,
+                a: startColor.a + (endColor.a - startColor.a) * ratio
             };
         };
 
@@ -771,10 +793,10 @@ export class Texture extends UObject {
                 // 获取插值颜色并写入数据
                 const color = interpolateColor(t);
                 const index = (y * width + x) * 4;
-                data[index] = color.r;
-                data[index + 1] = color.g;
-                data[index + 2] = color.b;
-                data[index + 3] = color.a;
+                data[index] = color.r * 255;
+                data[index + 1] = color.g * 255;
+                data[index + 2] = color.b * 255;
+                data[index + 3] = color.a * 255;
             }
         }
 

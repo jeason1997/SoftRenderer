@@ -1,5 +1,6 @@
 import { Camera } from "../Component/Camera";
 import { Engine } from "../Core/Engine";
+import { Color } from "../Math/Color";
 import { TransformTools } from "../Math/TransformTools";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
@@ -19,7 +20,7 @@ interface ILog {
 interface ILine {
     start: Vector2;
     end: Vector2;
-    color: number;
+    color: Color;
     duration: number;
 }
 
@@ -60,7 +61,7 @@ export class Debug {
         this.push(message, LogType.Error, duration);
     }
 
-    static DrawLine(start: Vector2, end: Vector2, color: number, duration?: number) {
+    static DrawLine(start: Vector2, end: Vector2, color: Color, duration?: number) {
         const line: ILine = {
             start,
             end,
@@ -70,7 +71,7 @@ export class Debug {
         this.lines.push(line);
     }
 
-    static DrawLine3D(start: Vector3, end: Vector3, color: number, duration?: number) {
+    static DrawLine3D(start: Vector3, end: Vector3, color: Color, duration?: number) {
         const a = TransformTools.WorldToScreenPos(start, Camera.mainCamera).screen;
         const b = TransformTools.WorldToScreenPos(end, Camera.mainCamera).screen;
         this.DrawLine(a, b, color, duration);

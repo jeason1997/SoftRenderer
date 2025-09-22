@@ -7,7 +7,7 @@ import { Texture } from "./Texture";
 export class Material extends UObject {
     public name: string;
     public shader: Shader | null = null;
-    public color: number = Color.WHITE;
+    public color: Color = Color.WHITE;
     public mainTexture: Texture | null = null;
     public textureOffset: Vector2 = Vector2.ZERO;
     public textureScale: Vector2 = Vector2.ONE;

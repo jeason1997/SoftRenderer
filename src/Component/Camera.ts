@@ -31,7 +31,7 @@ export class Camera extends Component {
     public static cameras: Array<Camera> = new Array<Camera>();
 
     public targetTexture: Texture;
-    public backGroundColor: number = Color.GRAY;
+    public backGroundColor: Color = Color.GRAY;
     public clearFlags: CameraClearFlags = CameraClearFlags.Color;
     private _nearClip: number = 1;
     private _farClip: number = 128;

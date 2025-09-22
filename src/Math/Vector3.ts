@@ -175,6 +175,10 @@ export class Vector3 {
         return v;
     }
 
+    public static reflect(v: Vector3, n: Vector3): Vector3 {
+        return Vector3.subtract(v, Vector3.multiplyScalar(n, 2 * Vector3.dot(v, n)));
+    }
+
     public static dot(v1: Vector3, v2: Vector3): number {
         return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
     }

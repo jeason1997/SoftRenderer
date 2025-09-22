@@ -52,15 +52,15 @@ export const MainScene = {
         //     scene.addGameObject(obj);
         // });
 
-        // const panelObj = await createObj({
-        //     name: "panel",
-        //     scale: Vector3.ONE.multiplyScalar(1.5),
-        //     modelPath: 'resources/panel.obj',
-        //     texture: Texture.CheckerboardTexture(),
-        //     components: [BoxCollider, Rigidbody]
-        // });
-        // const panelBody = panelObj.getComponent(Rigidbody);
-        // if (panelBody) panelBody.isKinematic = true;
+        const panelObj = await createObj({
+            name: "panel",
+            scale: Vector3.ONE.multiplyScalar(1.5),
+            modelPath: 'resources/panel.obj',
+            texture: Texture.NoiseTexture(),
+            components: [BoxCollider, Rigidbody]
+        });
+        const panelBody = panelObj.getComponent(Rigidbody);
+        if (panelBody) panelBody.isKinematic = true;
 
         // const cubeObj = await createObj({
         //     name: "cube",
