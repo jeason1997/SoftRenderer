@@ -14,7 +14,6 @@ import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
 import { CullMode, ZTest } from "../Shader/Shader";
 import { BlendMode } from "./RendererDefine";
-import { Matrix4x4 } from "../Math/Matrix4x4";
 
 enum DrawMode {
     Wireframe = 1,
@@ -24,10 +23,15 @@ enum DrawMode {
 
 export class RasterizationPipeline {
     public drawMode: DrawMode = DrawMode.Shader;
+
+    // 缓冲区
     private frameBuffer: Uint32Array;
     private depthBuffer: Float32Array;
-    private currentCamera: Camera;
     private overdrawBuffer: Uint32Array;
+
+    // 上下文内容
+    private currentCamera: Camera;
+    private currentRendererObjs: MeshRenderer[];
 
     constructor(frameBuffer: Uint32Array) {
         this.frameBuffer = frameBuffer;
@@ -45,10 +49,10 @@ export class RasterizationPipeline {
             for (let i = 0, len = cameras.length; i < len; i++) {
                 this.currentCamera = cameras[i];
                 this.Clear(this.currentCamera);
-                const renders = rootObject.getComponentsInChildren(Renderer);
+                this.currentRendererObjs = rootObject.getComponentsInChildren(MeshRenderer);
                 // 渲染管线1.排序场景物体，按照相机空间进行Z轴排序，先绘制近的
                 // 渲染管线2.视锥体剔除
-                for (const render of renders) {
+                for (const render of this.currentRendererObjs) {
                     this.DrawObject(render);
                     Debug.Log(render.gameObject.name);
                 }
@@ -362,11 +366,9 @@ export class RasterizationPipeline {
 
     //#region 绘制物体
 
-    public DrawObject(renderer: Renderer) {
-        const mesh = (renderer as MeshRenderer).mesh;
-        if (!mesh) {
-            return;
-        }
+    public DrawObject(renderer: MeshRenderer) {
+        const mesh = renderer.mesh;
+        if (!mesh) return;
 
         const shader = renderer.material.shader;
         if (!shader) return;
@@ -497,10 +499,7 @@ export class RasterizationPipeline {
 
     private DebugDraw(): void {
         // 绘制包围盒
-        // this.DrawBound(mesh, renderer);
-
-        // 调试：绘制面法线
-        // this.DrawFaceNormal(mesh, renderer);
+        // this.DrawBounds();
 
         // 绘制深度纹理
         // this.DrawDepthBuffer();
@@ -562,38 +561,49 @@ export class RasterizationPipeline {
         }
     }
 
-    private DrawBound(bounds: Bounds, transform: Transform, color: Color) {
-        // 将所有顶点转换到屏幕空间
-        const screenVertices = bounds.vertices.map(v =>
-            TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera).screen
-        );
+    private DrawBounds() {
+        for (const renderer of this.currentRendererObjs) {
+            const mesh = renderer.mesh;
+            if (!mesh) return;
 
-        // 绘制所有边
-        bounds.edges.forEach(([i1, i2]) => {
-            const v1 = screenVertices[i1];
-            const v2 = screenVertices[i2];
-            // 确保转换后的顶点有效
-            if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
-                this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
+            const transform = renderer.transform;
+            const bounds = mesh.bounds;
+            const color = Color.WHITE;
+
+            const bound = bounds[0];
+
+            // 将所有顶点转换到屏幕空间
+            const screenVertices = bound.vertices.map(v =>
+                TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera).screen
+            );
+
+            // 绘制所有边
+            bound.edges.forEach(([i1, i2]) => {
+                const v1 = screenVertices[i1];
+                const v2 = screenVertices[i2];
+                // 确保转换后的顶点有效
+                if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
+                    this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
+                }
+            });
+
+            // 绘制中心点
+            const center = bound.center;
+            const screenCenter = TransformTools.ModelToScreenPos(center, transform, this.currentCamera).screen;
+            if (screenCenter) {
+                // 绘制一个小十字作为中心点标记
+                const size = 5;
+                this.DrawLine(
+                    screenCenter.x - size, screenCenter.y,
+                    screenCenter.x + size, screenCenter.y,
+                    Color.RED
+                );
+                this.DrawLine(
+                    screenCenter.x, screenCenter.y - size,
+                    screenCenter.x, screenCenter.y + size,
+                    Color.RED
+                );
             }
-        });
-
-        // 绘制中心点
-        const center = bounds.center;
-        const screenCenter = TransformTools.ModelToScreenPos(center, transform, this.currentCamera).screen;
-        if (screenCenter) {
-            // 绘制一个小十字作为中心点标记
-            const size = 5;
-            this.DrawLine(
-                screenCenter.x - size, screenCenter.y,
-                screenCenter.x + size, screenCenter.y,
-                Color.RED
-            );
-            this.DrawLine(
-                screenCenter.x, screenCenter.y - size,
-                screenCenter.x, screenCenter.y + size,
-                Color.RED
-            );
         }
     }
 

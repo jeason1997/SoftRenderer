@@ -66,13 +66,13 @@ export const MainScene = {
             );
         }
 
-        // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
-        //     const obj = new GameObject("female02");
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) renderer.mesh = model;
-        //     obj.addComponent(ObjRotate);
-        //     scene.addGameObject(obj);
-        // });
+        const female02Obj = await createObj({
+            name: "female02",
+            modelPath: 'resources/female02/female02.obj',
+            modelScale: 0.01,
+            texture: Texture.CheckerboardTexture(),
+            components: [ObjRotate],
+        });
 
         // const panelObj = await createObj({
         //     name: "panel",
@@ -94,42 +94,32 @@ export const MainScene = {
         //     components: [Rigidbody, BoxCollider]
         // });
 
-        const spheresObj = await createObj({
-            name: "spheres",
-            position: new Vector3(0, 1.5, 1.5),
-            modelPath: 'resources/spheres.obj',
-            texture: Texture.CheckerboardTexture(),
-            //components: [Rigidbody, SphereCollider]
-            components: [ObjAutoRotate],
-            shader: ToonShader,
-            shaderProp: {
-                outlineThickness: 0.05,
-            }
-        });
+        // const spheresObj = await createObj({
+        //     name: "spheres",
+        //     position: new Vector3(0, 1.5, 1.5),
+        //     modelPath: 'resources/spheres.obj',
+        //     texture: Texture.CheckerboardTexture(),
+        //     //components: [Rigidbody, SphereCollider]
+        //     components: [ObjAutoRotate],
+        //     shader: ToonShader,
+        // });
 
         // const bunnyObj = await createObj({
         //     name: "bunny",
-        //     scale: Vector3.ONE.multiplyScalar(10),
         //     modelPath: 'resources/models/bunny2.obj',
+        //     modelScale: 10,
         //     texture: Texture.CheckerboardTexture(),
-        //     shader: ToonShader,
-        //     shaderProp: {
-        //         outlineThickness: 0.005,
-        //     }
         // });
 
-        const toukuiObj = await createObj({
-            name: "toukui",
-            scale: Vector3.ONE.multiplyScalar(0.1),
-            modelPath: 'resources/toukui/Construction_Helmet.obj',
-            texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-            components: [ObjRotate],
-            shader: ToonShader,
-            shaderProp: {
-                outlineThickness: 0.5,
-            }
-        });
-        spheresObj.transform.setParent(toukuiObj.transform);
+        // const toukuiObj = await createObj({
+        //     name: "toukui",
+        //     modelPath: 'resources/toukui/Construction_Helmet.obj',
+        //     modelScale: 0.1,
+        //     texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+        //     components: [ObjRotate],
+        //     shader: ToonShader,
+        // });
+        // spheresObj.transform.setParent(toukuiObj.transform);
     }
 }
 
@@ -139,6 +129,7 @@ interface CreateObjConfig {
     rotation?: Quaternion;
     scale?: Vector3;
     modelPath?: string;
+    modelScale?: number;
     texture?: string | Texture;
     shader?: new (...args: any[]) => Shader;
     shaderProp?: VertexAttributes;
@@ -153,6 +144,8 @@ async function createObj(config: CreateObjConfig): Promise<GameObject> {
 
     if (config.modelPath) {
         const model = await Resources.loadAsync<Mesh>(config.modelPath);
+        if (config.modelScale) model?.scale(config.modelScale);
+
         const renderer = obj.addComponent(MeshRenderer);
         if (renderer) {
             renderer.mesh = model;

@@ -178,151 +178,17 @@ export class OBJParser {
         mesh.subMeshes.forEach(subMesh => {
             subMesh.vertexCount = mesh.vertices.length - subMesh.firstVertex;
             subMesh.indexCount = mesh.triangles.length - subMesh.indexStart;
-
-            // 计算子网格包围盒
-            const subVertices = mesh.vertices.slice(
-                subMesh.firstVertex,
-                subMesh.firstVertex + subMesh.vertexCount
-            );
-            subMesh.bounds = Bounds.fromPoints(subVertices);
         });
 
         // 收集所有材质到mesh.material数组
         mesh.material = Array.from(materialSet);
 
-        // 计算切线向量
-        this.calculateTangents(mesh);
-
-        // 计算整体包围盒
-        mesh.bounds = mesh.subMeshes.map(sm => sm.bounds);
-
-        // 计算三角面的法向量
-        this.calculateFaceNormals(mesh);
+        mesh.calculateMeshData();
 
         if (!mesh.checkValid()) {
             console.error("Mesh check valid faild.");
         }
 
         return mesh;
-    }
-
-    private static calculateFaceNormals(mesh: Mesh) {
-        if (mesh.vertices.length === 0 || mesh.triangles.length === 0) return;
-
-        mesh.faceNormals = [];
-        mesh.faceCenters = [];
-
-        for (let i = 0; i < mesh.triangles.length; i += 3) {
-            const i0 = mesh.triangles[i];
-            const i1 = mesh.triangles[i + 1];
-            const i2 = mesh.triangles[i + 2];
-
-            const v0 = mesh.vertices[i0];
-            const v1 = mesh.vertices[i1];
-            const v2 = mesh.vertices[i2];
-
-            const e1 = Vector3.subtract(v1, v0);
-            const e2 = Vector3.subtract(v2, v0);
-            const faceNormal = Vector3.cross(e1, e2).normalize();
-            mesh.faceNormals.push(faceNormal);
-
-            const center = Vector3.add(v0, v1).add(v2).divide(3);
-            mesh.faceCenters.push(center);
-        }
-    }
-
-    /**
-     * 计算网格的切线向量
-     * 基于顶点位置、UV和三角形索引计算
-     */
-    private static calculateTangents(mesh: Mesh) {
-        if (mesh.vertices.length === 0 || mesh.triangles.length === 0) return;
-
-        // 临时数组存储每个顶点的切线计算数据
-        const tan1 = new Array(mesh.vertices.length).fill(0).map(() => new Vector3(0, 0, 0));
-        const tan2 = new Array(mesh.vertices.length).fill(0).map(() => new Vector3(0, 0, 0));
-
-        // 遍历所有三角形
-        for (let i = 0; i < mesh.triangles.length; i += 3) {
-            const i0 = mesh.triangles[i];
-            const i1 = mesh.triangles[i + 1];
-            const i2 = mesh.triangles[i + 2];
-
-            // 获取三角形的三个顶点
-            const v0 = mesh.vertices[i0];
-            const v1 = mesh.vertices[i1];
-            const v2 = mesh.vertices[i2];
-
-            // 获取对应的UV坐标
-            const w0 = mesh.uv[i0];
-            const w1 = mesh.uv[i1];
-            const w2 = mesh.uv[i2];
-
-            // 计算边向量
-            const x1 = v1.x - v0.x;
-            const y1 = v1.y - v0.y;
-            const z1 = v1.z - v0.z;
-
-            const x2 = v2.x - v0.x;
-            const y2 = v2.y - v0.y;
-            const z2 = v2.z - v0.z;
-
-            // 计算UV差值
-            const s1 = w1.x - w0.x;
-            const t1 = w1.y - w0.y;
-            const s2 = w2.x - w0.x;
-            const t2 = w2.y - w0.y;
-
-            // 计算切线向量
-            const r = 1.0 / (s1 * t2 - s2 * t1);
-            const tx = (t2 * x1 - t1 * x2) * r;
-            const ty = (t2 * y1 - t1 * y2) * r;
-            const tz = (t2 * z1 - t1 * z2) * r;
-
-            // 累加切线数据
-            tan1[i0].x += tx;
-            tan1[i0].y += ty;
-            tan1[i0].z += tz;
-
-            tan1[i1].x += tx;
-            tan1[i1].y += ty;
-            tan1[i1].z += tz;
-
-            tan1[i2].x += tx;
-            tan1[i2].y += ty;
-            tan1[i2].z += tz;
-
-            // 计算副切线向量
-            const bx = (s1 * x2 - s2 * x1) * r;
-            const by = (s1 * y2 - s2 * y1) * r;
-            const bz = (s1 * z2 - s2 * z1) * r;
-
-            tan2[i0].x += bx;
-            tan2[i0].y += by;
-            tan2[i0].z += bz;
-
-            tan2[i1].x += bx;
-            tan2[i1].y += by;
-            tan2[i1].z += bz;
-
-            tan2[i2].x += bx;
-            tan2[i2].y += by;
-            tan2[i2].z += bz;
-        }
-
-        // 计算最终切线并规范化
-        for (let i = 0; i < mesh.vertices.length; i++) {
-            const n = mesh.normals[i];
-            const t = tan1[i];
-
-            // 正交化切线（Gram-Schmidt过程）
-            const tangent = Vector3.subtract(t, Vector3.multiplyScalar(n, Vector3.dot(n, t))).normalize();
-
-            // 计算切线方向（ handedness ）
-            const handedness = Vector3.dot(Vector3.cross(n, t), tan2[i]) < 0.0 ? -1 : 1;
-
-            // 存储切线（w分量表示方向）
-            mesh.tangents[i] = new Vector4(tangent.x, tangent.y, tangent.z, handedness);
-        }
     }
 }
