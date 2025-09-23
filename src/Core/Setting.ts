@@ -1,5 +1,6 @@
 import { Color } from "../Math/Color";
 import { Vector3 } from "../Math/Vector3";
+import { CubeMap } from "../Resources/CubeMap";
 import { LayerMask } from "./LayerMask";
 
 export enum FogMode {
@@ -39,5 +40,5 @@ export class RenderSettings {
     public static linearFogStart: number = 0;
     public static linearFogEnd: number = 300;
     public static ambientLight: Color = Color.BLACK;
-    public static skyboxMaterial;
+    public static skybox: CubeMap;
 }

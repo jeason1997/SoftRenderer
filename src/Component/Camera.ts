@@ -32,7 +32,7 @@ export class Camera extends Component {
 
     public targetTexture: Texture;
     public backGroundColor: Color = Color.GRAY;
-    public clearFlags: CameraClearFlags = CameraClearFlags.Color;
+    public clearFlags: CameraClearFlags = CameraClearFlags.Skybox;
     private _nearClip: number = 1;
     private _farClip: number = 128;
     private _fov: number = 60;

@@ -21,7 +21,10 @@ import { LitShader } from "../Shader/LitShader";
 import { Scene } from "./Scene";
 import { ObjRotate } from "../Component/TestComp/ObjRotate";
 import { ObjAutoRotate } from "../Component/TestComp/ObjAutoRotate";
-import { Shader } from "../Shader/Shader";
+import { Shader, VertexAttributes } from "../Shader/Shader";
+import { ToonShader } from "../Shader/ToonShader";
+import { CubeMap } from "../Resources/CubeMap";
+import { RenderSettings } from "../Core/Setting";
 
 export const MainScene = {
     name: "MainScene",
@@ -45,6 +48,24 @@ export const MainScene = {
             Light.sunLight = light;
         }
 
+        // 天空盒
+        const POSITIVE_X = await Resources.loadAsync<Texture>("resources/skybox/POSITIVE_X.jpg");
+        const NEGATIVE_X = await Resources.loadAsync<Texture>("resources/skybox/NEGATIVE_X.jpg");
+        const POSITIVE_Y = await Resources.loadAsync<Texture>("resources/skybox/POSITIVE_Y.jpg");
+        const NEGATIVE_Y = await Resources.loadAsync<Texture>("resources/skybox/NEGATIVE_Y.jpg");
+        const POSITIVE_Z = await Resources.loadAsync<Texture>("resources/skybox/POSITIVE_Z.jpg");
+        const NEGATIVE_Z = await Resources.loadAsync<Texture>("resources/skybox/NEGATIVE_Z.jpg");
+        if (POSITIVE_X && NEGATIVE_X && POSITIVE_Y && NEGATIVE_Y && POSITIVE_Z && NEGATIVE_Z) {
+            RenderSettings.skybox = new CubeMap(
+                POSITIVE_X,
+                NEGATIVE_X,
+                POSITIVE_Y,
+                NEGATIVE_Y,
+                POSITIVE_Z,
+                NEGATIVE_Z,
+            );
+        }
+
         // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
         //     const obj = new GameObject("female02");
         //     const renderer = obj.addComponent(MeshRenderer);
@@ -53,15 +74,15 @@ export const MainScene = {
         //     scene.addGameObject(obj);
         // });
 
-        const panelObj = await createObj({
-            name: "panel",
-            scale: Vector3.ONE.multiplyScalar(1.5),
-            modelPath: 'resources/panel.obj',
-            texture: Texture.NoiseTexture(),
-            components: [BoxCollider, Rigidbody]
-        });
-        const panelBody = panelObj.getComponent(Rigidbody);
-        if (panelBody) panelBody.isKinematic = true;
+        // const panelObj = await createObj({
+        //     name: "panel",
+        //     scale: Vector3.ONE.multiplyScalar(1.5),
+        //     modelPath: 'resources/panel.obj',
+        //     texture: Texture.NoiseTexture(),
+        //     components: [BoxCollider, Rigidbody]
+        // });
+        // const panelBody = panelObj.getComponent(Rigidbody);
+        // if (panelBody) panelBody.isKinematic = true;
 
         // const cubeObj = await createObj({
         //     name: "cube",
@@ -79,16 +100,22 @@ export const MainScene = {
             modelPath: 'resources/spheres.obj',
             texture: Texture.CheckerboardTexture(),
             //components: [Rigidbody, SphereCollider]
-            components: [ObjAutoRotate]
+            components: [ObjAutoRotate],
+            shader: ToonShader,
+            shaderProp: {
+                outlineThickness: 0.05,
+            }
         });
 
-        // Resources.loadAsync<Mesh>('resources/models/bunny2.obj').then((model) => {
-        //     const obj = new GameObject("bunny");
-        //     obj.transform.position = new Vector3(0, 0.5, 0);
-        //     obj.transform.scale = Vector3.ONE.multiplyScalar(10);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) renderer.mesh = model;
-        //     obj.addComponent(ObjRotate);
+        // const bunnyObj = await createObj({
+        //     name: "bunny",
+        //     scale: Vector3.ONE.multiplyScalar(10),
+        //     modelPath: 'resources/models/bunny2.obj',
+        //     texture: Texture.CheckerboardTexture(),
+        //     shader: ToonShader,
+        //     shaderProp: {
+        //         outlineThickness: 0.005,
+        //     }
         // });
 
         const toukuiObj = await createObj({
@@ -96,7 +123,11 @@ export const MainScene = {
             scale: Vector3.ONE.multiplyScalar(0.1),
             modelPath: 'resources/toukui/Construction_Helmet.obj',
             texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-            components: [ObjRotate]
+            components: [ObjRotate],
+            shader: ToonShader,
+            shaderProp: {
+                outlineThickness: 0.5,
+            }
         });
         spheresObj.transform.setParent(toukuiObj.transform);
     }
@@ -109,7 +140,8 @@ interface CreateObjConfig {
     scale?: Vector3;
     modelPath?: string;
     texture?: string | Texture;
-    shader?: Shader;
+    shader?: new (...args: any[]) => Shader;
+    shaderProp?: VertexAttributes;
     components?: (new (gameObject: GameObject) => Component)[];
 }
 
@@ -125,11 +157,11 @@ async function createObj(config: CreateObjConfig): Promise<GameObject> {
         if (renderer) {
             renderer.mesh = model;
             const mat = renderer.material;
-            mat.shader = config.shader || new LitShader();
-            mat.setVector4('mainTextureST', new Vector4(0, 0, 1, 1));
+            mat.shader = config.shader ? new config.shader() : new LitShader();
+            mat.setProperties(config.shaderProp || {});
             if (typeof config.texture === 'string') {
                 const t = await Resources.loadAsync<Texture>(config.texture);
-                if(t) mat.setTexture('mainTexture', t);
+                if (t) mat.setTexture('mainTexture', t);
             }
             else if (config.texture) {
                 mat.setTexture('mainTexture', config.texture);

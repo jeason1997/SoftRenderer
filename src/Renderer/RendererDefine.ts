@@ -3,6 +3,7 @@ import { Matrix4x4 } from "../Math/Matrix4x4";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
+import { CubeMap } from "../Resources/CubeMap";
 
 export enum BlendMode {
     Opaque,
@@ -12,7 +13,7 @@ export enum BlendMode {
 }
 
 // 支持的属性类型
-export type AttributeType = number | Color | Vector2 | Vector3 | Vector4 | Matrix4x4;
+export type AttributeType = number | Color | Vector2 | Vector3 | Vector4 | Matrix4x4 | CubeMap;
 
 // 顶点属性集合，键为属性名称，值为任意支持的类型
 export interface VertexAttributes {

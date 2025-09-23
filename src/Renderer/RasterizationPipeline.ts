@@ -6,7 +6,7 @@ import { Renderer } from "../Component/Renderer";
 import { MeshRenderer } from "../Component/MeshRenderer";
 import { Camera, CameraClearFlags } from "../Component/Camera";
 import { Engine } from "../Core/Engine";
-import { EngineConfig } from "../Core/Setting";
+import { EngineConfig, RenderSettings } from "../Core/Setting";
 import { Mesh } from "../Resources/Mesh";
 import { Bounds } from "../Math/Bounds";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
@@ -14,6 +14,7 @@ import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
 import { CullMode, ZTest } from "../Shader/Shader";
 import { BlendMode } from "./RendererDefine";
+import { Matrix4x4 } from "../Math/Matrix4x4";
 
 enum DrawMode {
     Wireframe = 1,
@@ -51,6 +52,8 @@ export class RasterizationPipeline {
                     this.DrawObject(render);
                     Debug.Log(render.gameObject.name);
                 }
+                // 绘制天空盒
+                this.DrawSkybox(this.currentCamera);
             }
             // 调试信息
             this.DebugDraw();
@@ -73,7 +76,7 @@ export class RasterizationPipeline {
 
         // 2. 根据清除标志，清除视口对应的区域
         if (camera.clearFlags == CameraClearFlags.Skybox) {
-            // 绘制天空盒
+            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
         }
         else if (clearFlags == CameraClearFlags.Color) {
             this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor.ToUint32());
@@ -108,6 +111,48 @@ export class RasterizationPipeline {
             const endIndex = startIndex + width;
             // 使用 subarray 和 fill 来填充一行中的连续区域，比逐个像素设置更快
             buffer.subarray(startIndex, endIndex).fill(value);
+        }
+    }
+
+    private DrawSkybox(camera: Camera): void {
+        if (camera.clearFlags !== CameraClearFlags.Skybox) return;
+        if (!RenderSettings.skybox) return;
+
+        // 获取相机的视图和投影矩阵
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        // 计算逆视图投影矩阵，用于将屏幕坐标转换为世界方向
+        const invViewProj = projectionMatrix.multiply(viewMatrix).invert();
+
+        // 视口像素范围计算
+        const viewport = camera.viewPort;
+        const viewportPixelX = Math.floor(viewport.x * EngineConfig.canvasWidth);
+        const viewportPixelY = Math.floor(viewport.y * EngineConfig.canvasHeight);
+        const viewportPixelWidth = Math.floor(viewport.z * EngineConfig.canvasWidth);
+        const viewportPixelHeight = Math.floor(viewport.w * EngineConfig.canvasHeight);
+
+        // 遍历视口内的像素
+        for (let y = viewportPixelY; y < viewportPixelY + viewportPixelHeight; y++) {
+            for (let x = viewportPixelX; x < viewportPixelX + viewportPixelWidth; x++) {
+                // 检查深度缓冲，如果该像素已有物体则跳过
+                const depth = this.depthBuffer[y * EngineConfig.canvasWidth + x];
+                if (depth < 0.999) continue; // 使用接近1的值避免精度问题
+
+                // 将屏幕坐标转换为标准化设备坐标(NDC)
+                const ndcX = (x / EngineConfig.canvasWidth) * 2 - 1;
+                const ndcY = 1 - (y / EngineConfig.canvasHeight) * 2; // 翻转Y轴，因为屏幕坐标Y向下为正
+
+                // 创建NDC空间中的点（远平面）
+                const ndcPos = new Vector4(ndcX, ndcY, 1.0, 1.0);
+
+                // 将NDC坐标转换为世界空间方向
+                const worldDir = invViewProj.multiplyVector4(ndcPos);
+                const direction = new Vector3(worldDir.x, worldDir.y, worldDir.z).normalize();
+
+                // 采样天空盒并绘制像素
+                const skyColor = RenderSettings.skybox.SampleCube(direction);
+                this.DrawPixel(x, y, skyColor);
+            }
         }
     }
 

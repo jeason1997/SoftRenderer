@@ -16650,7 +16650,7 @@ let Camera = (() => {
         constructor() {
             super(...arguments);
             this.backGroundColor = Color_1.Color.GRAY;
-            this.clearFlags = CameraClearFlags.Color;
+            this.clearFlags = CameraClearFlags.Skybox;
             this._nearClip = 1;
             this._farClip = 128;
             this._fov = 60;
@@ -17131,7 +17131,7 @@ let Renderer = (() => {
 })();
 exports.Renderer = Renderer;
 
-},{"../Core/Decorators":17,"../Math/Bounds":27,"../Resources/Material":42,"./Component":7}],11:[function(require,module,exports){
+},{"../Core/Decorators":17,"../Math/Bounds":27,"../Resources/Material":43,"./Component":7}],11:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -17732,7 +17732,7 @@ let ObjRotate = (() => {
 })();
 exports.ObjRotate = ObjRotate;
 
-},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":51,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
+},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":53,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17899,7 +17899,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":46,"../Scene/SceneManager":48,"../Utils/Debug":51,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
+},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":47,"../Scene/SceneManager":49,"../Utils/Debug":53,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -21345,6 +21345,8 @@ class RasterizationPipeline {
                     this.DrawObject(render);
                     Debug_1.Debug.Log(render.gameObject.name);
                 }
+                // 绘制天空盒
+                this.DrawSkybox(this.currentCamera);
             }
             // 调试信息
             this.DebugDraw();
@@ -21362,7 +21364,7 @@ class RasterizationPipeline {
         const viewportPixelHeight = Math.floor(viewport.w * Setting_1.EngineConfig.canvasHeight);
         // 2. 根据清除标志，清除视口对应的区域
         if (camera.clearFlags == Camera_1.CameraClearFlags.Skybox) {
-            // 绘制天空盒
+            this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
         }
         else if (clearFlags == Camera_1.CameraClearFlags.Color) {
             this.clearViewportRegion(this.frameBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, backgroundColor.ToUint32());
@@ -21393,6 +21395,43 @@ class RasterizationPipeline {
             const endIndex = startIndex + width;
             // 使用 subarray 和 fill 来填充一行中的连续区域，比逐个像素设置更快
             buffer.subarray(startIndex, endIndex).fill(value);
+        }
+    }
+    DrawSkybox(camera) {
+        if (camera.clearFlags !== Camera_1.CameraClearFlags.Skybox)
+            return;
+        if (!Setting_1.RenderSettings.skybox)
+            return;
+        // 获取相机的视图和投影矩阵
+        const viewMatrix = camera.getViewMatrix();
+        const projectionMatrix = camera.getProjectionMatrix();
+        // 计算逆视图投影矩阵，用于将屏幕坐标转换为世界方向
+        const invViewProj = projectionMatrix.multiply(viewMatrix).invert();
+        // 视口像素范围计算
+        const viewport = camera.viewPort;
+        const viewportPixelX = Math.floor(viewport.x * Setting_1.EngineConfig.canvasWidth);
+        const viewportPixelY = Math.floor(viewport.y * Setting_1.EngineConfig.canvasHeight);
+        const viewportPixelWidth = Math.floor(viewport.z * Setting_1.EngineConfig.canvasWidth);
+        const viewportPixelHeight = Math.floor(viewport.w * Setting_1.EngineConfig.canvasHeight);
+        // 遍历视口内的像素
+        for (let y = viewportPixelY; y < viewportPixelY + viewportPixelHeight; y++) {
+            for (let x = viewportPixelX; x < viewportPixelX + viewportPixelWidth; x++) {
+                // 检查深度缓冲，如果该像素已有物体则跳过
+                const depth = this.depthBuffer[y * Setting_1.EngineConfig.canvasWidth + x];
+                if (depth < 0.999)
+                    continue; // 使用接近1的值避免精度问题
+                // 将屏幕坐标转换为标准化设备坐标(NDC)
+                const ndcX = (x / Setting_1.EngineConfig.canvasWidth) * 2 - 1;
+                const ndcY = 1 - (y / Setting_1.EngineConfig.canvasHeight) * 2; // 翻转Y轴，因为屏幕坐标Y向下为正
+                // 创建NDC空间中的点（远平面）
+                const ndcPos = new Vector4_1.Vector4(ndcX, ndcY, 1.0, 1.0);
+                // 将NDC坐标转换为世界空间方向
+                const worldDir = invViewProj.multiplyVector4(ndcPos);
+                const direction = new Vector3_1.Vector3(worldDir.x, worldDir.y, worldDir.z).normalize();
+                // 采样天空盒并绘制像素
+                const skyColor = Setting_1.RenderSettings.skybox.SampleCube(direction);
+                this.DrawPixel(x, y, skyColor);
+            }
         }
     }
     DrawPixel(x, y, color, countOverdraw = false, blendMode = RendererDefine_1.BlendMode.Opaque) {
@@ -21786,7 +21825,7 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Shader/Shader":50,"../Utils/Debug":51,"./BarycentricTriangleRasterizer":38,"./RendererDefine":40}],40:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Renderer":10,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Shader/Shader":51,"../Utils/Debug":53,"./BarycentricTriangleRasterizer":38,"./RendererDefine":40}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZTest = exports.CullMode = exports.RenderType = exports.BlendMode = void 0;
@@ -21834,6 +21873,79 @@ class TriangleRasterizer {
 exports.TriangleRasterizer = TriangleRasterizer;
 
 },{}],42:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CubeMap = void 0;
+const UObject_1 = require("../Core/UObject");
+class CubeMap extends UObject_1.UObject {
+    /**
+     * 构造立方体纹理
+     * @param positiveX 正X方向纹理
+     * @param negativeX 负X方向纹理
+     * @param positiveY 正Y方向纹理
+     * @param negativeY 负Y方向纹理
+     * @param positiveZ 正Z方向纹理
+     * @param negativeZ 负Z方向纹理
+     */
+    constructor(positiveX, negativeX, positiveY, negativeY, positiveZ, negativeZ) {
+        super();
+        this.POSITIVE_X = positiveX;
+        this.NEGATIVE_X = negativeX;
+        this.POSITIVE_Y = positiveY;
+        this.NEGATIVE_Y = negativeY;
+        this.POSITIVE_Z = positiveZ;
+        this.NEGATIVE_Z = negativeZ;
+    }
+    /**
+     * 根据方向向量采样立方体贴图
+     * @param direction 归一化的方向向量
+     * @returns 采样得到的颜色
+     */
+    SampleCube(direction) {
+        // 确保方向向量已归一化
+        const dir = direction.normalize();
+        const x = dir.x;
+        const y = dir.y;
+        const z = dir.z;
+        // 找到绝对值最大的分量，确定要采样的面
+        const absX = Math.abs(x);
+        const absY = Math.abs(y);
+        const absZ = Math.abs(z);
+        // 计算各面的UV坐标并采样
+        if (absX >= absY && absX >= absZ) {
+            // X方向为主方向（左右面）
+            const u = 0.5 - z / (2 * absX);
+            const v = 0.5 - y / (2 * absX);
+            return x > 0 ? this.POSITIVE_X.Sample(u, v) : this.NEGATIVE_X.Sample(1 - u, v);
+        }
+        else if (absY >= absX && absY >= absZ) {
+            // Y方向为主方向（上下底面）
+            const u = 0.5 + x / (2 * absY);
+            const v = 0.5 + z / (2 * absY);
+            return y > 0 ? this.POSITIVE_Y.Sample(u, v) : this.NEGATIVE_Y.Sample(1 - u, v);
+        }
+        else {
+            // Z方向为主方向（前后两面）
+            const u = 0.5 + x / (2 * absZ);
+            const v = 0.5 - y / (2 * absZ);
+            return z > 0 ? this.POSITIVE_Z.Sample(u, v) : this.NEGATIVE_Z.Sample(1 - u, v);
+        }
+    }
+    /**
+     * 销毁立方体贴图资源
+     */
+    onDestroy() {
+        UObject_1.UObject.Destroy(this.POSITIVE_X);
+        UObject_1.UObject.Destroy(this.NEGATIVE_X);
+        UObject_1.UObject.Destroy(this.POSITIVE_Y);
+        UObject_1.UObject.Destroy(this.NEGATIVE_Y);
+        UObject_1.UObject.Destroy(this.POSITIVE_Z);
+        UObject_1.UObject.Destroy(this.NEGATIVE_Z);
+    }
+}
+exports.CubeMap = CubeMap;
+
+},{"../Core/UObject":25}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Material = void 0;
@@ -21962,7 +22074,7 @@ class Material extends UObject_1.UObject {
 }
 exports.Material = Material;
 
-},{"../Core/UObject":25}],43:[function(require,module,exports){
+},{"../Core/UObject":25}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubMesh = exports.Mesh = void 0;
@@ -22013,7 +22125,7 @@ class SubMesh {
 }
 exports.SubMesh = SubMesh;
 
-},{"../Core/UObject":25,"../Math/Bounds":27}],44:[function(require,module,exports){
+},{"../Core/UObject":25,"../Math/Bounds":27}],45:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22219,7 +22331,7 @@ exports.Resources = Resources;
 Resources.fileCache = new Map();
 Resources.loadingPromises = new Map();
 
-},{"../Utils/ObjParser":52,"./Texture":45}],45:[function(require,module,exports){
+},{"../Utils/ObjParser":54,"./Texture":46}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
@@ -22895,7 +23007,7 @@ class Texture extends UObject_1.UObject {
 }
 exports.Texture = Texture;
 
-},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],46:[function(require,module,exports){
+},{"../Core/UObject":25,"../Math/Color":28,"../Math/Vector2":33}],47:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22908,22 +23020,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
-const BoxCollider_1 = require("../Component/BoxCollider");
 const Camera_1 = require("../Component/Camera");
 const CameraController_1 = require("../Component/TestComp/CameraController");
 const Light_1 = require("../Component/Light");
 const MeshRenderer_1 = require("../Component/MeshRenderer");
 const RayTest_1 = require("../Component/TestComp/RayTest");
-const RigidBody_1 = require("../Component/RigidBody");
 const GameObject_1 = require("../Core/GameObject");
 const Quaternion_1 = require("../Math/Quaternion");
 const Vector3_1 = require("../Math/Vector3");
-const Vector4_1 = require("../Math/Vector4");
 const Resources_1 = require("../Resources/Resources");
 const Texture_1 = require("../Resources/Texture");
 const LitShader_1 = require("../Shader/LitShader");
 const ObjRotate_1 = require("../Component/TestComp/ObjRotate");
 const ObjAutoRotate_1 = require("../Component/TestComp/ObjAutoRotate");
+const ToonShader_1 = require("../Shader/ToonShader");
+const CubeMap_1 = require("../Resources/CubeMap");
+const Setting_1 = require("../Core/Setting");
 exports.MainScene = {
     name: "MainScene",
     initfun: (scene) => __awaiter(void 0, void 0, void 0, function* () {
@@ -22944,6 +23056,16 @@ exports.MainScene = {
         if (light) {
             Light_1.Light.sunLight = light;
         }
+        // 天空盒
+        const POSITIVE_X = yield Resources_1.Resources.loadAsync("resources/skybox/POSITIVE_X.jpg");
+        const NEGATIVE_X = yield Resources_1.Resources.loadAsync("resources/skybox/NEGATIVE_X.jpg");
+        const POSITIVE_Y = yield Resources_1.Resources.loadAsync("resources/skybox/POSITIVE_Y.jpg");
+        const NEGATIVE_Y = yield Resources_1.Resources.loadAsync("resources/skybox/NEGATIVE_Y.jpg");
+        const POSITIVE_Z = yield Resources_1.Resources.loadAsync("resources/skybox/POSITIVE_Z.jpg");
+        const NEGATIVE_Z = yield Resources_1.Resources.loadAsync("resources/skybox/NEGATIVE_Z.jpg");
+        if (POSITIVE_X && NEGATIVE_X && POSITIVE_Y && NEGATIVE_Y && POSITIVE_Z && NEGATIVE_Z) {
+            Setting_1.RenderSettings.skybox = new CubeMap_1.CubeMap(POSITIVE_X, NEGATIVE_X, POSITIVE_Y, NEGATIVE_Y, POSITIVE_Z, NEGATIVE_Z);
+        }
         // AssetLoader.loadModel('resources/female02/female02.obj', 0.01).then((model) => {
         //     const obj = new GameObject("female02");
         //     const renderer = obj.addComponent(MeshRenderer);
@@ -22951,16 +23073,15 @@ exports.MainScene = {
         //     obj.addComponent(ObjRotate);
         //     scene.addGameObject(obj);
         // });
-        const panelObj = yield createObj({
-            name: "panel",
-            scale: Vector3_1.Vector3.ONE.multiplyScalar(1.5),
-            modelPath: 'resources/panel.obj',
-            texture: Texture_1.Texture.NoiseTexture(),
-            components: [BoxCollider_1.BoxCollider, RigidBody_1.Rigidbody]
-        });
-        const panelBody = panelObj.getComponent(RigidBody_1.Rigidbody);
-        if (panelBody)
-            panelBody.isKinematic = true;
+        // const panelObj = await createObj({
+        //     name: "panel",
+        //     scale: Vector3.ONE.multiplyScalar(1.5),
+        //     modelPath: 'resources/panel.obj',
+        //     texture: Texture.NoiseTexture(),
+        //     components: [BoxCollider, Rigidbody]
+        // });
+        // const panelBody = panelObj.getComponent(Rigidbody);
+        // if (panelBody) panelBody.isKinematic = true;
         // const cubeObj = await createObj({
         //     name: "cube",
         //     position: new Vector3(0, 2.5, 0),
@@ -22976,22 +23097,32 @@ exports.MainScene = {
             modelPath: 'resources/spheres.obj',
             texture: Texture_1.Texture.CheckerboardTexture(),
             //components: [Rigidbody, SphereCollider]
-            components: [ObjAutoRotate_1.ObjAutoRotate]
+            components: [ObjAutoRotate_1.ObjAutoRotate],
+            shader: ToonShader_1.ToonShader,
+            shaderProp: {
+                outlineThickness: 0.05,
+            }
         });
-        // Resources.loadAsync<Mesh>('resources/models/bunny2.obj').then((model) => {
-        //     const obj = new GameObject("bunny");
-        //     obj.transform.position = new Vector3(0, 0.5, 0);
-        //     obj.transform.scale = Vector3.ONE.multiplyScalar(10);
-        //     const renderer = obj.addComponent(MeshRenderer);
-        //     if (renderer) renderer.mesh = model;
-        //     obj.addComponent(ObjRotate);
+        // const bunnyObj = await createObj({
+        //     name: "bunny",
+        //     scale: Vector3.ONE.multiplyScalar(10),
+        //     modelPath: 'resources/models/bunny2.obj',
+        //     texture: Texture.CheckerboardTexture(),
+        //     shader: ToonShader,
+        //     shaderProp: {
+        //         outlineThickness: 0.005,
+        //     }
         // });
         const toukuiObj = yield createObj({
             name: "toukui",
             scale: Vector3_1.Vector3.ONE.multiplyScalar(0.1),
             modelPath: 'resources/toukui/Construction_Helmet.obj',
             texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-            components: [ObjRotate_1.ObjRotate]
+            components: [ObjRotate_1.ObjRotate],
+            shader: ToonShader_1.ToonShader,
+            shaderProp: {
+                outlineThickness: 0.5,
+            }
         });
         spheresObj.transform.setParent(toukuiObj.transform);
     })
@@ -23008,8 +23139,8 @@ function createObj(config) {
             if (renderer) {
                 renderer.mesh = model;
                 const mat = renderer.material;
-                mat.shader = config.shader || new LitShader_1.LitShader();
-                mat.setVector4('mainTextureST', new Vector4_1.Vector4(0, 0, 1, 1));
+                mat.shader = config.shader ? new config.shader() : new LitShader_1.LitShader();
+                mat.setProperties(config.shaderProp || {});
                 if (typeof config.texture === 'string') {
                     const t = yield Resources_1.Resources.loadAsync(config.texture);
                     if (t)
@@ -23034,7 +23165,7 @@ function createObj(config) {
     });
 }
 
-},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Math/Quaternion":30,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Resources":44,"../Resources/Texture":45,"../Shader/LitShader":49}],47:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Core/Setting":21,"../Math/Quaternion":30,"../Math/Vector3":34,"../Resources/CubeMap":42,"../Resources/Resources":45,"../Resources/Texture":46,"../Shader/LitShader":50,"../Shader/ToonShader":52}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -23141,7 +23272,7 @@ class Scene {
 }
 exports.Scene = Scene;
 
-},{"../Component/Renderer":10,"../Core/GameObject":19,"../Math/BVHTree":26,"../Math/TransformTools":32,"../Math/Vector2":33}],48:[function(require,module,exports){
+},{"../Component/Renderer":10,"../Core/GameObject":19,"../Math/BVHTree":26,"../Math/TransformTools":32,"../Math/Vector2":33}],49:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23201,7 +23332,7 @@ class SceneManager {
 }
 exports.SceneManager = SceneManager;
 
-},{"./Scene":47}],49:[function(require,module,exports){
+},{"./Scene":48}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LitShader = void 0;
@@ -23285,7 +23416,7 @@ class LitShader extends Shader_1.Shader {
 }
 exports.LitShader = LitShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":50}],50:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":51}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZTest = exports.CullMode = exports.Shader = void 0;
@@ -23322,7 +23453,121 @@ class Shader extends UObject_1.UObject {
 }
 exports.Shader = Shader;
 
-},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25,"../Renderer/RendererDefine":40}],51:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25,"../Renderer/RendererDefine":40}],52:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ToonShader = void 0;
+const Color_1 = require("../Math/Color");
+const TransformTools_1 = require("../Math/TransformTools");
+const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
+const RendererDefine_1 = require("../Renderer/RendererDefine");
+const Shader_1 = require("./Shader");
+class ToonShader extends Shader_1.Shader {
+    constructor() {
+        super(...arguments);
+        this.mainTexture = null;
+        this.mainTextureST = new Vector4_1.Vector4(0, 0, 1, 1);
+        // 卡通着色特有的参数
+        this.shadowThreshold = 0.3; // 阴影阈值
+        this.midtoneThreshold = 0.7; // 中间调阈值
+        this.highlightIntensity = 1.2; // 高光强度
+        this.outlineColor = new Color_1.Color(0, 0, 0, 1); // 轮廓颜色
+        this.outlineThickness = 0.05; // 轮廓厚度
+        this.passes = [
+            {
+                name: "Forward",
+                vert: this.vertexShader.bind(this),
+                frag: this.fragmentShader.bind(this),
+                blendMode: RendererDefine_1.BlendMode.Opaque,
+                cullMode: RendererDefine_1.CullMode.Back,
+                zTest: RendererDefine_1.ZTest.LessEqual,
+                zWrite: true,
+            },
+            {
+                name: "Outline",
+                vert: this.outlineVertexShader.bind(this),
+                frag: this.outlineFragmentShader.bind(this),
+                blendMode: RendererDefine_1.BlendMode.Opaque,
+                cullMode: RendererDefine_1.CullMode.Front,
+                zTest: RendererDefine_1.ZTest.LessEqual,
+                zWrite: true,
+            }
+        ];
+    }
+    vertexShader(inAttr) {
+        const normalOut = TransformTools_1.TransformTools.ModelToWorldNormal(inAttr.normal, this.transform);
+        const outAttr = {
+            uv: inAttr.uv,
+            normal: normalOut,
+            // 传递原始顶点用于轮廓计算
+            vertex: inAttr.vertex
+        };
+        return {
+            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(inAttr.vertex, 1)),
+            attrOut: outAttr,
+        };
+    }
+    // 轮廓线顶点着色器
+    outlineVertexShader(inAttr) {
+        // 沿法线方向外推顶点来创建轮廓
+        const normal = inAttr.normal;
+        const offsetVertex = inAttr.vertex.clone()
+            .add(normal.clone().multiplyScalar(this.outlineThickness));
+        return {
+            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(offsetVertex, 1)),
+            attrOut: {}
+        };
+    }
+    // 轮廓线片段着色器
+    outlineFragmentShader() {
+        return this.outlineColor;
+    }
+    fragmentShader(v2fAttr) {
+        if (!this.mainTexture) {
+            return Color_1.Color.MAGENTA;
+        }
+        const uv = v2fAttr.uv;
+        const normal = v2fAttr.normal;
+        // 采样纹理颜色
+        const surfaceColor = this.mainTexture.Sample(uv.u, uv.v);
+        // 确保法向量归一化
+        const normalizedNormal = normal.normalize();
+        // 计算法向量与光源方向的点积
+        const dotProduct = Vector3_1.Vector3.dot(normalizedNormal, this.lightDirection);
+        // 卡通着色的核心：将光照分为几个离散的层次
+        let lightIntensity = 0;
+        if (dotProduct > this.midtoneThreshold) {
+            // 高光区域
+            lightIntensity = this.highlightIntensity;
+        }
+        else if (dotProduct > this.shadowThreshold) {
+            // 中间调区域
+            lightIntensity = 0.7;
+        }
+        else {
+            // 阴影区域
+            lightIntensity = 0.3;
+        }
+        // 计算漫反射颜色（卡通风格通常不使用复杂的光照公式）
+        const diffR = surfaceColor.r * this.lightColor.r * this.lightIntensity * lightIntensity;
+        const diffG = surfaceColor.g * this.lightColor.g * this.lightIntensity * lightIntensity;
+        const diffB = surfaceColor.b * this.lightColor.b * this.lightIntensity * lightIntensity;
+        // 添加环境光
+        const totalR = this.ambientLight.r + diffR;
+        const totalG = this.ambientLight.g + diffG;
+        const totalB = this.ambientLight.b + diffB;
+        // 确保颜色值在0-1范围内
+        const clampedR = Math.min(1, Math.max(0, totalR));
+        const clampedG = Math.min(1, Math.max(0, totalG));
+        const clampedB = Math.min(1, Math.max(0, totalB));
+        // 返回最终颜色，保留原始Alpha
+        return new Color_1.Color(clampedR, clampedG, clampedB, surfaceColor.a);
+    }
+}
+exports.ToonShader = ToonShader;
+
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":51}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
@@ -23390,7 +23635,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],52:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -23656,7 +23901,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":43}],53:[function(require,module,exports){
+},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":44}],55:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23683,6 +23928,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     requestAnimationFrame(mainLoop);
 }));
 
-},{"./Core/Engine":18}]},{},[53])
+},{"./Core/Engine":18}]},{},[55])
 
 //# sourceMappingURL=bundle.js.map
