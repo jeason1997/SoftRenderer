@@ -8,7 +8,6 @@ import { Camera, CameraClearFlags } from "../Component/Camera";
 import { Engine } from "../Core/Engine";
 import { EngineConfig, RenderSettings } from "../Core/Setting";
 import { Mesh } from "../Resources/Mesh";
-import { Bounds } from "../Math/Bounds";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
@@ -504,6 +503,9 @@ export class RasterizationPipeline {
         // 绘制包围盒
         // this.DrawBounds();
 
+        // 绘制法线跟切线
+        // this.DrawFaceNormal();
+
         // 绘制深度纹理
         // this.DrawDepthBuffer();
 
@@ -520,13 +522,54 @@ export class RasterizationPipeline {
         });
     }
 
-    private DrawFaceNormal(mesh: Mesh, renderer: Renderer): void {
-        for (let i = 0; i < mesh.faceNormals.length; i++) {
-            const normal = mesh.faceNormals[i];
-            const center = mesh.faceCenters[i];
-            const start = TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
-            const end = TransformTools.ModelToScreenPos(Vector3.add(center, normal), renderer.transform, this.currentCamera).screen;
-            this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
+    private DrawFaceNormal(): void {
+        for (const renderer of this.currentRendererObjs) {
+            const mesh = renderer.mesh;
+            if (!mesh) return;
+
+            // 面法线
+            // for (let i = 0; i < mesh.faceNormals.length; i++) {
+            //     const normal = mesh.faceNormals[i];
+            //     const center = mesh.faceCenters[i];
+            //     const start = TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
+            //     const end = TransformTools.ModelToScreenPos(Vector3.add(center, Vector3.multiplyScalar(normal, 0.1)), renderer.transform, this.currentCamera).screen;
+            //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
+            // }
+
+            // 顶点法线、切线、副切线
+            for (let i = 0; i < mesh.vertices.length; i++) {
+                const vertex = mesh.vertices[i];
+                const normal = mesh.normals[i];
+                const tangent = mesh.tangents[i];
+
+                // 确保我们有必要的数据
+                if (!normal || !tangent) continue;
+                // 从切线向量提取w分量（用于计算副切线方向）
+                const tangentW = tangent.w;
+                // 从切线向量获取xyz分量作为切线方向
+                const tangentDir = new Vector3(tangent.x, tangent.y, tangent.z).normalize();
+                // 计算副切线 (Bitangent) = 法线 × 切线 × w分量
+                const bitangentDir = Vector3.cross(normal, tangentDir).multiplyScalar(tangentW).normalize();
+                // 将顶点位置转换到屏幕空间
+                const vertexScreenPos = TransformTools.ModelToScreenPos(vertex, renderer.transform, this.currentCamera).screen;
+                // 定义线的长度
+                const lineLength = 0.1;
+
+                // 1. 绘制法线 - 红色
+                const normalEnd = Vector3.add(vertex, Vector3.multiplyScalar(normal, lineLength));
+                const normalScreenEnd = TransformTools.ModelToScreenPos(normalEnd, renderer.transform, this.currentCamera).screen;
+                this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, normalScreenEnd.x, normalScreenEnd.y, Color.RED);
+
+                // 2. 绘制切线 - 绿色
+                const tangentEnd = Vector3.add(vertex, Vector3.multiplyScalar(tangentDir, lineLength));
+                const tangentScreenEnd = TransformTools.ModelToScreenPos(tangentEnd, renderer.transform, this.currentCamera).screen;
+                this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, tangentScreenEnd.x, tangentScreenEnd.y, Color.GREEN);
+
+                // 3. 绘制副切线 - 黄色
+                const bitangentEnd = Vector3.add(vertex, Vector3.multiplyScalar(bitangentDir, lineLength));
+                const bitangentScreenEnd = TransformTools.ModelToScreenPos(bitangentEnd, renderer.transform, this.currentCamera).screen;
+                this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, bitangentScreenEnd.x, bitangentScreenEnd.y, Color.YELLOW);
+            }
         }
     }
 

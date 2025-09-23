@@ -1,4 +1,5 @@
 import { Camera } from "../Component/Camera";
+import { Light, LightType } from "../Component/Light";
 import { EngineConfig } from "../Core/Setting";
 import { Transform } from "../Core/Transform";
 import { Quaternion } from "./Quaternion";
@@ -208,7 +209,7 @@ export class TransformTools {
         const vp = this.NdcToViewportPos(ndc, camera.viewPort);
         const screen = this.ViewportToScreenPos(vp);
         const depth = (ndc.z + 1) / 2;
-        return new Vector3(screen.x, screen.y, depth);  
+        return new Vector3(screen.x, screen.y, depth);
     }
 
     // 模型法线转为世界法线
@@ -225,6 +226,45 @@ export class TransformTools {
 
         // 归一化结果，确保法线保持单位长度
         return worldNormal.normalize();
+    }
+
+    /**
+     * 计算模型空间中从顶点指向光源的方向向量
+     * @param v 模型空间中的顶点坐标
+     * @returns 归一化的方向向量（模型空间）
+     */
+    public static ObjSpaceLightDir(v: Vector3, light: Light, transform: Transform): Vector3 {
+        let lightDir: Vector3;
+
+        if (light.type === LightType.Directional) {
+            // 方向光：直接将世界空间的光线方向转换到模型空间（方向向量用矩阵乘法，忽略平移）
+            lightDir = transform.worldToLocalMatrix.multiplyVector3(light.transform.forward);
+        } else {
+            // 点光源/聚光灯：计算顶点到光源的向量（模型空间）
+            // 1. 将世界空间的光源位置转换到模型空间
+            const lightPosObj = transform.worldToLocalMatrix.multiplyVector4(new Vector4(light.transform.worldPosition, 1));
+            // 2. 模型空间中，从顶点指向光源的向量 = 光源位置 - 顶点位置
+            lightDir = (new Vector3(lightPosObj)).subtract(v);
+        }
+
+        // 归一化并返回
+        return lightDir.normalize();
+    }
+
+    /**
+     * 计算模型空间中从顶点指向摄像机的方向向量
+     * @param v 模型空间中的顶点坐标
+     * @returns 归一化的方向向量（模型空间）
+     */
+    public static ObjSpaceViewDir(v: Vector3, camera: Camera, transform: Transform): Vector3 {
+        // 1. 将世界空间的摄像机位置转换到模型空间
+        const cameraPosObj = transform.worldToLocalMatrix.multiplyVector4(new Vector4(camera.transform.worldPosition, 1));
+
+        // 2. 模型空间中，从顶点指向摄像机的向量 = 摄像机位置 - 顶点位置
+        const viewDir = (new Vector3(cameraPosObj)).subtract(v);
+
+        // 归一化并返回
+        return viewDir.normalize();
     }
 
     public static ApplyScaleToVertex(vertex: Vector3, transform: Transform) {

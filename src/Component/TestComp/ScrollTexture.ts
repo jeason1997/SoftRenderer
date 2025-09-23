@@ -8,7 +8,7 @@ import { MeshRenderer } from "../MeshRenderer";
 @RequireComponent(MeshRenderer)
 export class ScrollTexture extends Component {
     public scrollSpeed: number = 0.2;
-    public textureST: Vector4 = new Vector4(0, 0, 2, 2);
+    public textureST: Vector4 = new Vector4(2, 2, 0, 0);
 
     private mat: Material | null = null;
 
@@ -19,8 +19,8 @@ export class ScrollTexture extends Component {
 
     public onUpdate(): void {
         if (this.mat) {
-            this.textureST.x += this.scrollSpeed * Time.deltaTime;
-            this.textureST.y += this.scrollSpeed * Time.deltaTime;
+            this.textureST.z += this.scrollSpeed * Time.deltaTime;
+            this.textureST.w += this.scrollSpeed * Time.deltaTime;
             this.mat.setVector4('mainTextureST', this.textureST);
         }
     }

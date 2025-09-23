@@ -34,8 +34,11 @@ export class Mesh extends UObject {
         return this.vertices.length !== 0
             && this.vertices.length === this.uv.length
             && this.vertices.length === this.normals.length
+            && this.vertices.length === this.tangents.length
+
             && this.triangles.length !== 0
             && this.triangles.length % 3 === 0
+            
             && this.faceNormals.length === this.faceCenters.length
             && this.faceNormals.length * 3 === this.triangles.length;
     }

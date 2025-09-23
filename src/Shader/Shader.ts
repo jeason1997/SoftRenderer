@@ -34,10 +34,11 @@ export abstract class Shader extends UObject {
     protected viewMatrix: Matrix4x4;
     protected projectionMatrix: Matrix4x4;
     protected mvpMatrix: Matrix4x4;
-    protected lightDirection: Vector3;
-    protected ambientLight: Color;
+    protected light: Light;
     protected lightColor: Color;
+    protected lightDirection: Vector3;
     protected lightIntensity: number;
+    protected ambientLight: Color;
 
     public passes: ShaderPass[] = [];
 
@@ -51,11 +52,11 @@ export abstract class Shader extends UObject {
         this.projectionMatrix = this.camera.getProjectionMatrix();
         this.mvpMatrix = this.projectionMatrix.multiply(this.viewMatrix).multiply(this.modelMatrix);
 
-        const light = Light.sunLight;
+        this.light = Light.sunLight;
         this.ambientLight = RenderSettings.ambientLight;
-        this.lightColor = light.color;
-        this.lightDirection = light.transform.forward.normalize();
-        this.lightIntensity = light.intensity;
+        this.lightColor = this.light.color;
+        this.lightDirection = this.light.transform.forward.normalize();
+        this.lightIntensity = this.light.intensity;
     }
 
     public onDestroy(): void {

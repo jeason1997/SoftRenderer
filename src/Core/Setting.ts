@@ -39,6 +39,6 @@ export class RenderSettings {
     public static fogDensity: number = 0.01;
     public static linearFogStart: number = 0;
     public static linearFogEnd: number = 300;
-    public static ambientLight: Color = Color.BLACK;
+    public static ambientLight: Color = new Color(0.2, 0.2, 0.2, 1);
     public static skybox: CubeMap;
 }

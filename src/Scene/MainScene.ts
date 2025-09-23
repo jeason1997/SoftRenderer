@@ -67,6 +67,12 @@ export const MainScene = {
             );
         }
 
+        // const testObj = await createObj({
+        //     name: "obj",
+        //     modelPath: 'resources/assets/meshes/suzanne_low.obj',
+        //     components: [ObjRotate, ScrollTexture],
+        // });
+
         // const female02Obj = await createObj({
         //     name: "female02",
         //     modelPath: 'resources/female02/female02.obj',
@@ -75,15 +81,20 @@ export const MainScene = {
         //     components: [ObjRotate],
         // });
 
-        const panelObj = await createObj({
-            name: "panel",
-            scale: Vector3.ONE.multiplyScalar(1.5),
-            modelPath: 'resources/panel.obj',
-            texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-            components: [BoxCollider, Rigidbody]
-        });
-        const panelBody = panelObj.getComponent(Rigidbody);
-        if (panelBody) panelBody.isKinematic = true;
+        // const panelObj = await createObj({
+        //     name: "panel",
+        //     scale: Vector3.ONE.multiplyScalar(1.5),
+        //     rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
+        //     modelPath: 'resources/panel.obj',
+        //     //components: [BoxCollider, Rigidbody]
+        //     components: [ObjRotate],
+        //     shaderProp: {
+        //         mainTexture: "resources/Brick_Diffuse.jpg",
+        //         normalTexture: "resources/Brick_Normal.jpg",
+        //     }
+        // });
+        // const panelBody = panelObj.getComponent(Rigidbody);
+        // if (panelBody) panelBody.isKinematic = true;
 
         // const cubeObj = await createObj({
         //     name: "cube",
@@ -99,10 +110,12 @@ export const MainScene = {
         //     name: "spheres",
         //     position: new Vector3(0, 1.5, 1.5),
         //     modelPath: 'resources/spheres.obj',
-        //     texture: Texture.CheckerboardTexture(),
         //     //components: [Rigidbody, SphereCollider]
-        //     components: [ObjAutoRotate],
-        //     shader: ToonShader,
+        //     components: [ObjRotate],
+        //     shaderProp: {
+        //         mainTexture: "resources/Brick_Diffuse.jpg",
+        //         normalTexture: "resources/Brick_Normal.jpg",
+        //     }
         // });
 
         // const bunnyObj = await createObj({
@@ -112,14 +125,16 @@ export const MainScene = {
         //     texture: Texture.CheckerboardTexture(),
         // });
 
-        // const toukuiObj = await createObj({
-        //     name: "toukui",
-        //     modelPath: 'resources/toukui/Construction_Helmet.obj',
-        //     modelScale: 0.1,
-        //     texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-        //     components: [ObjRotate],
-        //     shader: ToonShader,
-        // });
+        const toukuiObj = await createObj({
+            name: "toukui",
+            modelPath: 'resources/toukui/Construction_Helmet.obj',
+            modelScale: 0.1,
+            components: [ObjRotate],
+            shaderProp: {
+                mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+                // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
+            }
+        });
         // spheresObj.transform.setParent(toukuiObj.transform);
     }
 }
@@ -152,13 +167,17 @@ async function createObj(config: CreateObjConfig): Promise<GameObject> {
             renderer.mesh = model;
             const mat = renderer.material;
             mat.shader = config.shader ? new config.shader() : new LitShader();
-            mat.setProperties(config.shaderProp || {});
-            if (typeof config.texture === 'string') {
-                const t = await Resources.loadAsync<Texture>(config.texture);
-                if (t) mat.setTexture('mainTexture', t);
-            }
-            else if (config.texture) {
-                mat.setTexture('mainTexture', config.texture);
+            // 设置纹理
+            if (config.shaderProp) {
+                for (const prop of Object.entries(config.shaderProp)) {
+                    if (typeof prop[1] === 'string') {
+                        const t = await Resources.loadAsync<Texture>(prop[1]);
+                        if (t) mat.setTexture(prop[0], t);
+                        delete config.shaderProp[prop[0]];
+                    }
+                }
+                // 设置其他属性
+                mat.setProperties(config.shaderProp);
             }
         }
     }

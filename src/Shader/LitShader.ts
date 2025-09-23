@@ -11,7 +11,7 @@ export class LitShader extends Shader {
 
     public baseColor: Color = Color.WHITE;
     public mainTexture: Texture | null = null;
-    public mainTextureST: Vector4 = new Vector4(0, 0, 2, 2);
+    public mainTextureST: Vector4 = new Vector4(1, 1, 0, 0);
 
     public passes: ShaderPass[] = [
         {
@@ -45,8 +45,8 @@ export class LitShader extends Shader {
 
         // 采样基础颜色
         const surfaceColor = this.mainTexture.Sample(
-            uv.u * this.mainTextureST.z + this.mainTextureST.x,
-            uv.v * this.mainTextureST.w + this.mainTextureST.y
+            uv.u * this.mainTextureST.x + this.mainTextureST.z,
+            uv.v * this.mainTextureST.y + this.mainTextureST.w
         );
         surfaceColor.multiply(this.baseColor);
 
@@ -83,10 +83,10 @@ export class LitShader extends Shader {
         const diffG = surfaceColor.g * this.lightColor.g * this.lightIntensity * dotProduct;
         const diffB = surfaceColor.b * this.lightColor.b * this.lightIntensity * dotProduct;
 
-        // 合并所有光照贡献（环境光 + 漫反射 + 高光）
-        const totalR = this.ambientLight.r + diffR + specularR;
-        const totalG = this.ambientLight.g + diffG + specularG;
-        const totalB = this.ambientLight.b + diffB + specularB;
+        // 合并所有光照贡献（漫反射 + 高光）
+        const totalR = diffR + specularR;
+        const totalG = diffG + specularG;
+        const totalB = diffB + specularB;
 
         // 确保颜色值在0-1范围内
         const clampedR = Math.min(1, Math.max(0, totalR));

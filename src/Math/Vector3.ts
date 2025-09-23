@@ -211,6 +211,13 @@ export class Vector3 {
         return Math.acos(Vector3.dot(v1, v2) / (v1.magnitude * v2.magnitude));
     }
 
+    public static normalize(v: Vector3): Vector3 {
+        var length = v.magnitude;
+        if (length === 0)
+            return new Vector3();
+        return Vector3.multiplyScalar(v, 1 / length);
+    }
+
     /**
      * 返回两个向量中每对分量的较小值组成的新向量[1,2](@ref)
      * @param a 第一个向量

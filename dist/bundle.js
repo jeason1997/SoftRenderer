@@ -16573,7 +16573,7 @@ class BoxCollider extends Collider_1.Collider {
 }
 exports.BoxCollider = BoxCollider;
 
-},{"../Core/Engine":16,"../Math/Vector3":32,"./Collider":6,"./MeshRenderer":9}],5:[function(require,module,exports){
+},{"../Core/Engine":17,"../Math/Vector3":33,"./Collider":6,"./MeshRenderer":9}],5:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -16796,7 +16796,7 @@ let Camera = (() => {
 })();
 exports.Camera = Camera;
 
-},{"../Core/Decorators":15,"../Core/Setting":19,"../Core/Time":20,"../Math/Color":26,"../Math/Matrix4x4":27,"../Math/Vector4":33,"./Component":7}],6:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/Setting":20,"../Core/Time":21,"../Math/Color":27,"../Math/Matrix4x4":28,"../Math/Vector4":34,"./Component":7}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Collider = void 0;
@@ -16838,7 +16838,7 @@ class Collider extends Component_1.Component {
 }
 exports.Collider = Collider;
 
-},{"../Core/Engine":16,"../Math/Vector3":32,"./Component":7}],7:[function(require,module,exports){
+},{"../Core/Engine":17,"../Math/Vector3":33,"./Component":7}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Component = void 0;
@@ -16965,7 +16965,7 @@ class Component extends UObject_1.UObject {
 }
 exports.Component = Component;
 
-},{"../Core/Decorators":15,"../Core/UObject":23}],8:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/UObject":24}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Light = exports.ShadowType = exports.LightType = void 0;
@@ -16994,7 +16994,7 @@ class Light extends Component_1.Component {
 }
 exports.Light = Light;
 
-},{"../Math/Color":26,"./Component":7}],9:[function(require,module,exports){
+},{"../Math/Color":27,"./Component":7}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MeshRenderer = void 0;
@@ -17131,7 +17131,7 @@ let Renderer = (() => {
 })();
 exports.Renderer = Renderer;
 
-},{"../Core/Decorators":15,"../Math/Bounds":25,"../Resources/Material":41,"./Component":7}],11:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Math/Bounds":26,"../Resources/Material":42,"./Component":7}],11:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -17354,7 +17354,7 @@ let Rigidbody = (() => {
 })();
 exports.Rigidbody = Rigidbody;
 
-},{"../Core/Decorators":15,"../Core/Engine":16,"../Core/Time":20,"../Core/UObject":23,"../Math/Vector3":32,"./Collider":6,"./Component":7}],12:[function(require,module,exports){
+},{"../Core/Decorators":16,"../Core/Engine":17,"../Core/Time":21,"../Core/UObject":24,"../Math/Vector3":33,"./Collider":6,"./Component":7}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SphereCollider = void 0;
@@ -17389,7 +17389,7 @@ class SphereCollider extends Collider_1.Collider {
 }
 exports.SphereCollider = SphereCollider;
 
-},{"../Core/Engine":16,"./Collider":6}],13:[function(require,module,exports){
+},{"../Core/Engine":17,"./Collider":6}],13:[function(require,module,exports){
 "use strict";
 /*
  * 相机控制可以参考three.js的OrbitControls.js：https://github.com/mrdoob/three.js/blob/r108/examples/js/controls/OrbitControls.js#L390-L395
@@ -17546,7 +17546,112 @@ let CameraController = (() => {
 })();
 exports.CameraController = CameraController;
 
-},{"../../Core/Decorators":15,"../../Core/Engine":16,"../../Core/Input":18,"../../Core/Time":20,"../../Math/Quaternion":28,"../../Math/Vector3":32,"../Camera":5,"../Component":7}],14:[function(require,module,exports){
+},{"../../Core/Decorators":16,"../../Core/Engine":17,"../../Core/Input":19,"../../Core/Time":21,"../../Math/Quaternion":29,"../../Math/Vector3":33,"../Camera":5,"../Component":7}],14:[function(require,module,exports){
+"use strict";
+var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
+    function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
+    var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
+    var target = !descriptorIn && ctor ? contextIn["static"] ? ctor : ctor.prototype : null;
+    var descriptor = descriptorIn || (target ? Object.getOwnPropertyDescriptor(target, contextIn.name) : {});
+    var _, done = false;
+    for (var i = decorators.length - 1; i >= 0; i--) {
+        var context = {};
+        for (var p in contextIn) context[p] = p === "access" ? {} : contextIn[p];
+        for (var p in contextIn.access) context.access[p] = contextIn.access[p];
+        context.addInitializer = function (f) { if (done) throw new TypeError("Cannot add initializers after decoration has completed"); extraInitializers.push(accept(f || null)); };
+        var result = (0, decorators[i])(kind === "accessor" ? { get: descriptor.get, set: descriptor.set } : descriptor[key], context);
+        if (kind === "accessor") {
+            if (result === void 0) continue;
+            if (result === null || typeof result !== "object") throw new TypeError("Object expected");
+            if (_ = accept(result.get)) descriptor.get = _;
+            if (_ = accept(result.set)) descriptor.set = _;
+            if (_ = accept(result.init)) initializers.unshift(_);
+        }
+        else if (_ = accept(result)) {
+            if (kind === "field") initializers.unshift(_);
+            else descriptor[key] = _;
+        }
+    }
+    if (target) Object.defineProperty(target, contextIn.name, descriptor);
+    done = true;
+};
+var __runInitializers = (this && this.__runInitializers) || function (thisArg, initializers, value) {
+    var useValue = arguments.length > 2;
+    for (var i = 0; i < initializers.length; i++) {
+        value = useValue ? initializers[i].call(thisArg, value) : initializers[i].call(thisArg);
+    }
+    return useValue ? value : void 0;
+};
+var __setFunctionName = (this && this.__setFunctionName) || function (f, name, prefix) {
+    if (typeof name === "symbol") name = name.description ? "[".concat(name.description, "]") : "";
+    return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ObjRotate = void 0;
+const Decorators_1 = require("../../Core/Decorators");
+const Input_1 = require("../../Core/Input");
+const Quaternion_1 = require("../../Math/Quaternion");
+const Vector3_1 = require("../../Math/Vector3");
+const Debug_1 = require("../../Utils/Debug");
+const Component_1 = require("../Component");
+const RigidBody_1 = require("../RigidBody");
+let ObjRotate = (() => {
+    let _classDecorators = [(0, Decorators_1.DisallowComponent)(RigidBody_1.Rigidbody)];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = Component_1.Component;
+    var ObjRotate = _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.angleX = 0;
+            this.angleY = 0;
+        }
+        onStart() {
+            this.angleX = this.transform.rotation.eulerAngles.x;
+            this.angleY = this.transform.rotation.eulerAngles.y;
+        }
+        onUpdate() {
+            // // 键盘输入
+            // const horizontalInput = Input.GetAxis(InputAxis.Horizontal);
+            // const verticalInput = Input.GetAxis(InputAxis.Vertical);
+            // this.angleX += verticalInput;
+            // this.angleY += horizontalInput;
+            // this.transform.rotation = new Quaternion(new Vector3(this.angleX, this.angleY, 0));
+            // // 鼠标滚轮
+            // if (Input.mouseScrollDelta.y !== 0) {
+            //     // 缩放
+            //     const zoomFactor = Input.mouseScrollDelta.y > 0 ? 0.9 : 1.1;
+            //     const sacle = this.transform.scale;
+            //     sacle.multiply(zoomFactor);
+            //     this.transform.scale = sacle;
+            // }
+            if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad4))
+                this.angleY -= 1;
+            if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad6))
+                this.angleY += 1;
+            if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad8))
+                this.angleX -= 1;
+            if (Input_1.Input.GetKey(Input_1.Input.KeyCode.Numpad2))
+                this.angleX += 1;
+            this.transform.rotation = new Quaternion_1.Quaternion(new Vector3_1.Vector3(this.angleX, this.angleY, 0));
+            Debug_1.Debug.Log("X:" + Math.floor(this.angleX) + " Y:" + Math.floor(this.angleY));
+        }
+    };
+    __setFunctionName(_classThis, "ObjRotate");
+    (() => {
+        var _a;
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create((_a = _classSuper[Symbol.metadata]) !== null && _a !== void 0 ? _a : null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        ObjRotate = _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return ObjRotate = _classThis;
+})();
+exports.ObjRotate = ObjRotate;
+
+},{"../../Core/Decorators":16,"../../Core/Input":19,"../../Math/Quaternion":29,"../../Math/Vector3":33,"../../Utils/Debug":51,"../Component":7,"../RigidBody":11}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17585,7 +17690,7 @@ class RayTest extends Component_1.Component {
 }
 exports.RayTest = RayTest;
 
-},{"../../Core/Engine":16,"../../Core/Input":18,"../../Math/TransformTools":30,"../Camera":5,"../Component":7}],15:[function(require,module,exports){
+},{"../../Core/Engine":17,"../../Core/Input":19,"../../Math/TransformTools":31,"../Camera":5,"../Component":7}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DISALLOW_COMPONENTS_KEY = exports.DISALLOW_MULTIPLE_COMPONENT_KEY = exports.REQUIRED_COMPONENTS_KEY = void 0;
@@ -17625,7 +17730,7 @@ function DisallowMultipleComponent(target) {
     Reflect.defineMetadata(exports.DISALLOW_MULTIPLE_COMPONENT_KEY, true, target);
 }
 
-},{"reflect-metadata":3}],16:[function(require,module,exports){
+},{"reflect-metadata":3}],17:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -17713,7 +17818,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":34,"../Renderer/RasterizationPipeline":37,"../Scene/MainScene":45,"../Scene/SceneManager":47,"../Utils/Debug":50,"./Input":18,"./Setting":19,"./Time":20,"./TweenManager":22}],17:[function(require,module,exports){
+},{"../Physics/Physics":35,"../Renderer/RasterizationPipeline":38,"../Scene/MainScene":46,"../Scene/SceneManager":48,"../Utils/Debug":51,"./Input":19,"./Setting":20,"./Time":21,"./TweenManager":23}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -18009,7 +18114,7 @@ class GameObject extends UObject_1.UObject {
 }
 exports.GameObject = GameObject;
 
-},{"./Decorators":15,"./Engine":16,"./Transform":21,"./UObject":23}],18:[function(require,module,exports){
+},{"./Decorators":16,"./Engine":17,"./Transform":22,"./UObject":24}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TouchPhase = exports.InputAxis = exports.Input = void 0;
@@ -18227,7 +18332,7 @@ var TouchPhase;
     TouchPhase[TouchPhase["Canceled"] = 4] = "Canceled";
 })(TouchPhase || (exports.TouchPhase = TouchPhase = {}));
 
-},{"../Math/Vector2":31}],19:[function(require,module,exports){
+},{"../Math/Vector2":32}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RenderSettings = exports.PhysicsSettings = exports.TimeSettings = exports.EngineConfig = exports.Layers = exports.FogMode = void 0;
@@ -18269,9 +18374,9 @@ RenderSettings.fogMode = FogMode.Exp2;
 RenderSettings.fogDensity = 0.01;
 RenderSettings.linearFogStart = 0;
 RenderSettings.linearFogEnd = 300;
-RenderSettings.ambientLight = Color_1.Color.BLACK;
+RenderSettings.ambientLight = new Color_1.Color(0.2, 0.2, 0.2, 1);
 
-},{"../Math/Color":26,"../Math/Vector3":32}],20:[function(require,module,exports){
+},{"../Math/Color":27,"../Math/Vector3":33}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Time = void 0;
@@ -18386,7 +18491,7 @@ Time.fixedTimeRemainder = 0;
 /** 是否已初始化（确保仅启动一次计时） */
 Time.isInitialized = false;
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transform = void 0;
@@ -18613,7 +18718,7 @@ class Transform {
 }
 exports.Transform = Transform;
 
-},{"../Math/Matrix4x4":27,"../Math/Quaternion":28,"../Math/Vector3":32,"../Math/Vector4":33}],22:[function(require,module,exports){
+},{"../Math/Matrix4x4":28,"../Math/Quaternion":29,"../Math/Vector3":33,"../Math/Vector4":34}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TweenManager = void 0;
@@ -18644,7 +18749,7 @@ class TweenManager {
 exports.TweenManager = TweenManager;
 TweenManager.tweenGroup = new tween_js_1.Group();
 
-},{"@tweenjs/tween.js":1}],23:[function(require,module,exports){
+},{"@tweenjs/tween.js":1}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UObject = void 0;
@@ -18658,7 +18763,7 @@ class UObject {
 }
 exports.UObject = UObject;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BVHTree = void 0;
@@ -18838,7 +18943,7 @@ class BVHTree {
 }
 exports.BVHTree = BVHTree;
 
-},{"../Math/Vector3":32,"./Bounds":25}],25:[function(require,module,exports){
+},{"../Math/Vector3":33,"./Bounds":26}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bounds = void 0;
@@ -18985,7 +19090,7 @@ class Sphere {
     }
 }
 
-},{"./Vector3":32}],26:[function(require,module,exports){
+},{"./Vector3":33}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = void 0;
@@ -19016,31 +19121,31 @@ class Color {
         return new Color(this.r, this.g, this.b, this.a);
     }
     add(c) {
-        this.r = Math.min(1, this.r + c.r);
-        this.g = Math.min(1, this.g + c.g);
-        this.b = Math.min(1, this.b + c.b);
-        this.a = Math.min(1, this.a + c.a);
+        this.r = Color.clamp01(this.r + c.r);
+        this.g = Color.clamp01(this.g + c.g);
+        this.b = Color.clamp01(this.b + c.b);
+        this.a = Color.clamp01(this.a + c.a);
         return this;
     }
     subtract(c) {
-        this.r = Math.max(0, this.r - c.r);
-        this.g = Math.max(0, this.g - c.g);
-        this.b = Math.max(0, this.b - c.b);
-        this.a = Math.max(0, this.a - c.a);
+        this.r = Color.clamp01(this.r - c.r);
+        this.g = Color.clamp01(this.g - c.g);
+        this.b = Color.clamp01(this.b - c.b);
+        this.a = Color.clamp01(this.a - c.a);
         return this;
     }
     multiply(c) {
-        this.r = Math.min(1, this.r * c.r);
-        this.g = Math.min(1, this.g * c.g);
-        this.b = Math.min(1, this.b * c.b);
-        this.a = Math.min(1, this.a * c.a);
+        this.r = Color.clamp01(this.r * c.r);
+        this.g = Color.clamp01(this.g * c.g);
+        this.b = Color.clamp01(this.b * c.b);
+        this.a = Color.clamp01(this.a * c.a);
         return this;
     }
     multiplyScalar(scalar) {
-        this.r = Math.min(1, this.r * scalar);
-        this.g = Math.min(1, this.g * scalar);
-        this.b = Math.min(1, this.b * scalar);
-        this.a = Math.min(1, this.a * scalar);
+        this.r = Color.clamp01(this.r * scalar);
+        this.g = Color.clamp01(this.g * scalar);
+        this.b = Color.clamp01(this.b * scalar);
+        this.a = Color.clamp01(this.a * scalar);
         return this;
     }
     ToUint32() {
@@ -19050,16 +19155,16 @@ class Color {
         return new Color((uint32 & 0xFF) / 255, ((uint32 >> 8) & 0xFF) / 255, ((uint32 >> 16) & 0xFF) / 255, ((uint32 >> 24) & 0xFF) / 255);
     }
     static add(c1, c2) {
-        return new Color(Math.min(1, c1.r + c2.r), Math.min(1, c1.g + c2.g), Math.min(1, c1.b + c2.b), Math.min(1, c1.a + c2.a));
+        return new Color(Color.clamp01(c1.r + c2.r), Color.clamp01(c1.g + c2.g), Color.clamp01(c1.b + c2.b), Color.clamp01(c1.a + c2.a));
     }
     static subtract(c1, c2) {
-        return new Color(Math.max(0, c1.r - c2.r), Math.max(0, c1.g - c2.g), Math.max(0, c1.b - c2.b), Math.max(0, c1.a - c2.a));
+        return new Color(Color.clamp01(c1.r - c2.r), Color.clamp01(c1.g - c2.g), Color.clamp01(c1.b - c2.b), Color.clamp01(c1.a - c2.a));
     }
     static multiply(c1, c2) {
-        return new Color(Math.min(1, c1.r * c2.r), Math.min(1, c1.g * c2.g), Math.min(1, c1.b * c2.b), Math.min(1, c1.a * c2.a));
+        return new Color(Color.clamp01(c1.r * c2.r), Color.clamp01(c1.g * c2.g), Color.clamp01(c1.b * c2.b), Color.clamp01(c1.a * c2.a));
     }
     static multiplyScalar(c, scalar) {
-        return new Color(Math.min(1, c.r * scalar), Math.min(1, c.g * scalar), Math.min(1, c.b * scalar), Math.min(1, c.a * scalar));
+        return new Color(Color.clamp01(c.r * scalar), Color.clamp01(c.g * scalar), Color.clamp01(c.b * scalar), Color.clamp01(c.a * scalar));
     }
     static lerp(c1, c2, t) {
         t = Color.clamp01(t);
@@ -19119,7 +19224,7 @@ class Color {
 }
 exports.Color = Color;
 
-},{"../Renderer/RendererDefine":38}],27:[function(require,module,exports){
+},{"../Renderer/RendererDefine":39}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -19695,7 +19800,7 @@ class Matrix4x4 {
 }
 exports.Matrix4x4 = Matrix4x4;
 
-},{"./Quaternion":28,"./Vector3":32,"./Vector4":33}],28:[function(require,module,exports){
+},{"./Quaternion":29,"./Vector3":33,"./Vector4":34}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quaternion = void 0;
@@ -19857,7 +19962,7 @@ class Quaternion {
 }
 exports.Quaternion = Quaternion;
 
-},{"./Matrix4x4":27,"./Vector3":32}],29:[function(require,module,exports){
+},{"./Matrix4x4":28,"./Vector3":33}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ray = void 0;
@@ -19891,10 +19996,11 @@ class Ray {
 }
 exports.Ray = Ray;
 
-},{"./Vector3":32}],30:[function(require,module,exports){
+},{"./Vector3":33}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransformTools = void 0;
+const Light_1 = require("../Component/Light");
 const Setting_1 = require("../Core/Setting");
 const Ray_1 = require("./Ray");
 const Vector2_1 = require("./Vector2");
@@ -20066,6 +20172,40 @@ class TransformTools {
         // 归一化结果，确保法线保持单位长度
         return worldNormal.normalize();
     }
+    /**
+     * 计算模型空间中从顶点指向光源的方向向量
+     * @param v 模型空间中的顶点坐标
+     * @returns 归一化的方向向量（模型空间）
+     */
+    static ObjSpaceLightDir(v, light, transform) {
+        let lightDir;
+        if (light.type === Light_1.LightType.Directional) {
+            // 方向光：直接将世界空间的光线方向转换到模型空间（方向向量用矩阵乘法，忽略平移）
+            lightDir = transform.worldToLocalMatrix.multiplyVector3(light.transform.forward);
+        }
+        else {
+            // 点光源/聚光灯：计算顶点到光源的向量（模型空间）
+            // 1. 将世界空间的光源位置转换到模型空间
+            const lightPosObj = transform.worldToLocalMatrix.multiplyVector4(new Vector4_1.Vector4(light.transform.worldPosition, 1));
+            // 2. 模型空间中，从顶点指向光源的向量 = 光源位置 - 顶点位置
+            lightDir = (new Vector3_1.Vector3(lightPosObj)).subtract(v);
+        }
+        // 归一化并返回
+        return lightDir.normalize();
+    }
+    /**
+     * 计算模型空间中从顶点指向摄像机的方向向量
+     * @param v 模型空间中的顶点坐标
+     * @returns 归一化的方向向量（模型空间）
+     */
+    static ObjSpaceViewDir(v, camera, transform) {
+        // 1. 将世界空间的摄像机位置转换到模型空间
+        const cameraPosObj = transform.worldToLocalMatrix.multiplyVector4(new Vector4_1.Vector4(camera.transform.worldPosition, 1));
+        // 2. 模型空间中，从顶点指向摄像机的向量 = 摄像机位置 - 顶点位置
+        const viewDir = (new Vector3_1.Vector3(cameraPosObj)).subtract(v);
+        // 归一化并返回
+        return viewDir.normalize();
+    }
     static ApplyScaleToVertex(vertex, transform) {
         vertex.x *= transform.scale.x;
         vertex.y *= transform.scale.y;
@@ -20096,7 +20236,7 @@ class TransformTools {
 }
 exports.TransformTools = TransformTools;
 
-},{"../Core/Setting":19,"./Ray":29,"./Vector2":31,"./Vector3":32,"./Vector4":33}],31:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":20,"./Ray":30,"./Vector2":32,"./Vector3":33,"./Vector4":34}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector2 = void 0;
@@ -20244,7 +20384,7 @@ class Vector2 {
 }
 exports.Vector2 = Vector2;
 
-},{"./Vector3":32,"./Vector4":33}],32:[function(require,module,exports){
+},{"./Vector3":33,"./Vector4":34}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector3 = void 0;
@@ -20424,6 +20564,12 @@ class Vector3 {
     static angle(v1, v2) {
         return Math.acos(Vector3.dot(v1, v2) / (v1.magnitude * v2.magnitude));
     }
+    static normalize(v) {
+        var length = v.magnitude;
+        if (length === 0)
+            return new Vector3();
+        return Vector3.multiplyScalar(v, 1 / length);
+    }
     /**
      * 返回两个向量中每对分量的较小值组成的新向量[1,2](@ref)
      * @param a 第一个向量
@@ -20472,7 +20618,7 @@ class Vector3 {
 }
 exports.Vector3 = Vector3;
 
-},{"./Vector2":31,"./Vector4":33}],33:[function(require,module,exports){
+},{"./Vector2":32,"./Vector4":34}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vector4 = void 0;
@@ -20615,7 +20761,7 @@ class Vector4 {
 }
 exports.Vector4 = Vector4;
 
-},{"./Vector2":31,"./Vector3":32}],34:[function(require,module,exports){
+},{"./Vector2":32,"./Vector3":33}],35:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -20835,7 +20981,7 @@ class Physics {
 }
 exports.Physics = Physics;
 
-},{"../Component/BoxCollider":4,"../Component/SphereCollider":12,"../Core/Time":20,"../Math/Quaternion":28,"../Math/Vector3":32,"./RaycastHit":35,"cannon":2}],35:[function(require,module,exports){
+},{"../Component/BoxCollider":4,"../Component/SphereCollider":12,"../Core/Time":21,"../Math/Quaternion":29,"../Math/Vector3":33,"./RaycastHit":36,"cannon":2}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RaycastHit = void 0;
@@ -20923,7 +21069,7 @@ class RaycastHit {
 }
 exports.RaycastHit = RaycastHit;
 
-},{"../Math/Vector3":32}],36:[function(require,module,exports){
+},{"../Math/Vector3":33}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BarycentricTriangleRasterizer = void 0;
@@ -21112,7 +21258,7 @@ class BarycentricTriangleRasterizer extends TriangleRasterizer_1.TriangleRasteri
 }
 exports.BarycentricTriangleRasterizer = BarycentricTriangleRasterizer;
 
-},{"../Math/Color":26,"../Math/Matrix4x4":27,"../Math/Vector2":31,"../Math/Vector3":32,"../Math/Vector4":33,"./TriangleRasterizer":39}],37:[function(require,module,exports){
+},{"../Math/Color":27,"../Math/Matrix4x4":28,"../Math/Vector2":32,"../Math/Vector3":33,"../Math/Vector4":34,"./TriangleRasterizer":40}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RasterizationPipeline = void 0;
@@ -21537,6 +21683,8 @@ class RasterizationPipeline {
     DebugDraw() {
         // 绘制包围盒
         // this.DrawBounds();
+        // 绘制法线跟切线
+        // this.DrawFaceNormal();
         // 绘制深度纹理
         // this.DrawDepthBuffer();
         // 绘制Overdarw
@@ -21549,13 +21697,50 @@ class RasterizationPipeline {
             this.DrawLine(line.start.x, line.start.y, line.end.x, line.end.y, line.color);
         });
     }
-    DrawFaceNormal(mesh, renderer) {
-        for (let i = 0; i < mesh.faceNormals.length; i++) {
-            const normal = mesh.faceNormals[i];
-            const center = mesh.faceCenters[i];
-            const start = TransformTools_1.TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
-            const end = TransformTools_1.TransformTools.ModelToScreenPos(Vector3_1.Vector3.add(center, normal), renderer.transform, this.currentCamera).screen;
-            this.DrawLine(start.x, start.y, end.x, end.y, Color_1.Color.RED, Color_1.Color.GREEN);
+    DrawFaceNormal() {
+        for (const renderer of this.currentRendererObjs) {
+            const mesh = renderer.mesh;
+            if (!mesh)
+                return;
+            // 面法线
+            // for (let i = 0; i < mesh.faceNormals.length; i++) {
+            //     const normal = mesh.faceNormals[i];
+            //     const center = mesh.faceCenters[i];
+            //     const start = TransformTools.ModelToScreenPos(center, renderer.transform, this.currentCamera).screen;
+            //     const end = TransformTools.ModelToScreenPos(Vector3.add(center, Vector3.multiplyScalar(normal, 0.1)), renderer.transform, this.currentCamera).screen;
+            //     this.DrawLine(start.x, start.y, end.x, end.y, Color.RED, Color.GREEN);
+            // }
+            // 顶点法线、切线、副切线
+            for (let i = 0; i < mesh.vertices.length; i++) {
+                const vertex = mesh.vertices[i];
+                const normal = mesh.normals[i];
+                const tangent = mesh.tangents[i];
+                // 确保我们有必要的数据
+                if (!normal || !tangent)
+                    continue;
+                // 从切线向量提取w分量（用于计算副切线方向）
+                const tangentW = tangent.w;
+                // 从切线向量获取xyz分量作为切线方向
+                const tangentDir = new Vector3_1.Vector3(tangent.x, tangent.y, tangent.z).normalize();
+                // 计算副切线 (Bitangent) = 法线 × 切线 × w分量
+                const bitangentDir = Vector3_1.Vector3.cross(normal, tangentDir).multiplyScalar(tangentW).normalize();
+                // 将顶点位置转换到屏幕空间
+                const vertexScreenPos = TransformTools_1.TransformTools.ModelToScreenPos(vertex, renderer.transform, this.currentCamera).screen;
+                // 定义线的长度
+                const lineLength = 0.1;
+                // 1. 绘制法线 - 红色
+                const normalEnd = Vector3_1.Vector3.add(vertex, Vector3_1.Vector3.multiplyScalar(normal, lineLength));
+                const normalScreenEnd = TransformTools_1.TransformTools.ModelToScreenPos(normalEnd, renderer.transform, this.currentCamera).screen;
+                this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, normalScreenEnd.x, normalScreenEnd.y, Color_1.Color.RED);
+                // 2. 绘制切线 - 绿色
+                const tangentEnd = Vector3_1.Vector3.add(vertex, Vector3_1.Vector3.multiplyScalar(tangentDir, lineLength));
+                const tangentScreenEnd = TransformTools_1.TransformTools.ModelToScreenPos(tangentEnd, renderer.transform, this.currentCamera).screen;
+                this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, tangentScreenEnd.x, tangentScreenEnd.y, Color_1.Color.GREEN);
+                // 3. 绘制副切线 - 黄色
+                const bitangentEnd = Vector3_1.Vector3.add(vertex, Vector3_1.Vector3.multiplyScalar(bitangentDir, lineLength));
+                const bitangentScreenEnd = TransformTools_1.TransformTools.ModelToScreenPos(bitangentEnd, renderer.transform, this.currentCamera).screen;
+                this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, bitangentScreenEnd.x, bitangentScreenEnd.y, Color_1.Color.YELLOW);
+            }
         }
     }
     DrawDepthBuffer() {
@@ -21648,7 +21833,7 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":16,"../Core/Setting":19,"../Math/Color":26,"../Math/TransformTools":30,"../Math/Vector3":32,"../Math/Vector4":33,"../Shader/Shader":49,"../Utils/Debug":50,"./BarycentricTriangleRasterizer":36,"./RendererDefine":38}],38:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Shader/Shader":50,"../Utils/Debug":51,"./BarycentricTriangleRasterizer":37,"./RendererDefine":39}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZTest = exports.CullMode = exports.RenderType = exports.BlendMode = void 0;
@@ -21684,7 +21869,7 @@ var ZTest;
     ZTest[ZTest["Always"] = 7] = "Always";
 })(ZTest || (exports.ZTest = ZTest = {}));
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TriangleRasterizer = void 0;
@@ -21695,7 +21880,7 @@ class TriangleRasterizer {
 }
 exports.TriangleRasterizer = TriangleRasterizer;
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CubeMap = void 0;
@@ -21768,7 +21953,7 @@ class CubeMap extends UObject_1.UObject {
 }
 exports.CubeMap = CubeMap;
 
-},{"../Core/UObject":23}],41:[function(require,module,exports){
+},{"../Core/UObject":24}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Material = void 0;
@@ -21897,7 +22082,7 @@ class Material extends UObject_1.UObject {
 }
 exports.Material = Material;
 
-},{"../Core/UObject":23}],42:[function(require,module,exports){
+},{"../Core/UObject":24}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubMesh = exports.Mesh = void 0;
@@ -21923,6 +22108,7 @@ class Mesh extends UObject_1.UObject {
         return this.vertices.length !== 0
             && this.vertices.length === this.uv.length
             && this.vertices.length === this.normals.length
+            && this.vertices.length === this.tangents.length
             && this.triangles.length !== 0
             && this.triangles.length % 3 === 0
             && this.faceNormals.length === this.faceCenters.length
@@ -22084,7 +22270,7 @@ class SubMesh {
 }
 exports.SubMesh = SubMesh;
 
-},{"../Core/UObject":23,"../Math/Bounds":25,"../Math/Vector3":32,"../Math/Vector4":33}],43:[function(require,module,exports){
+},{"../Core/UObject":24,"../Math/Bounds":26,"../Math/Vector3":33,"../Math/Vector4":34}],44:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22290,7 +22476,7 @@ exports.Resources = Resources;
 Resources.fileCache = new Map();
 Resources.loadingPromises = new Map();
 
-},{"../Utils/ObjParser":51,"./Texture":44}],44:[function(require,module,exports){
+},{"../Utils/ObjParser":52,"./Texture":45}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
@@ -22966,7 +23152,7 @@ class Texture extends UObject_1.UObject {
 }
 exports.Texture = Texture;
 
-},{"../Core/UObject":23,"../Math/Color":26,"../Math/Vector2":31}],45:[function(require,module,exports){
+},{"../Core/UObject":24,"../Math/Color":27,"../Math/Vector2":32}],46:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -22979,18 +23165,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainScene = void 0;
-const BoxCollider_1 = require("../Component/BoxCollider");
 const Camera_1 = require("../Component/Camera");
 const CameraController_1 = require("../Component/TestComp/CameraController");
 const Light_1 = require("../Component/Light");
 const MeshRenderer_1 = require("../Component/MeshRenderer");
 const RayTest_1 = require("../Component/TestComp/RayTest");
-const RigidBody_1 = require("../Component/RigidBody");
 const GameObject_1 = require("../Core/GameObject");
 const Quaternion_1 = require("../Math/Quaternion");
 const Vector3_1 = require("../Math/Vector3");
 const Resources_1 = require("../Resources/Resources");
 const LitShader_1 = require("../Shader/LitShader");
+const ObjRotate_1 = require("../Component/TestComp/ObjRotate");
 const CubeMap_1 = require("../Resources/CubeMap");
 const Setting_1 = require("../Core/Setting");
 exports.MainScene = {
@@ -23023,6 +23208,11 @@ exports.MainScene = {
         if (POSITIVE_X && NEGATIVE_X && POSITIVE_Y && NEGATIVE_Y && POSITIVE_Z && NEGATIVE_Z) {
             Setting_1.RenderSettings.skybox = new CubeMap_1.CubeMap(POSITIVE_X, NEGATIVE_X, POSITIVE_Y, NEGATIVE_Y, POSITIVE_Z, NEGATIVE_Z);
         }
+        // const testObj = await createObj({
+        //     name: "obj",
+        //     modelPath: 'resources/assets/meshes/suzanne_low.obj',
+        //     components: [ObjRotate, ScrollTexture],
+        // });
         // const female02Obj = await createObj({
         //     name: "female02",
         //     modelPath: 'resources/female02/female02.obj',
@@ -23030,16 +23220,20 @@ exports.MainScene = {
         //     texture: Texture.CheckerboardTexture(),
         //     components: [ObjRotate],
         // });
-        const panelObj = yield createObj({
-            name: "panel",
-            scale: Vector3_1.Vector3.ONE.multiplyScalar(1.5),
-            modelPath: 'resources/panel.obj',
-            texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-            components: [BoxCollider_1.BoxCollider, RigidBody_1.Rigidbody]
-        });
-        const panelBody = panelObj.getComponent(RigidBody_1.Rigidbody);
-        if (panelBody)
-            panelBody.isKinematic = true;
+        // const panelObj = await createObj({
+        //     name: "panel",
+        //     scale: Vector3.ONE.multiplyScalar(1.5),
+        //     rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
+        //     modelPath: 'resources/panel.obj',
+        //     //components: [BoxCollider, Rigidbody]
+        //     components: [ObjRotate],
+        //     shaderProp: {
+        //         mainTexture: "resources/Brick_Diffuse.jpg",
+        //         normalTexture: "resources/Brick_Normal.jpg",
+        //     }
+        // });
+        // const panelBody = panelObj.getComponent(Rigidbody);
+        // if (panelBody) panelBody.isKinematic = true;
         // const cubeObj = await createObj({
         //     name: "cube",
         //     position: new Vector3(0, 2.5, 0),
@@ -23053,10 +23247,12 @@ exports.MainScene = {
         //     name: "spheres",
         //     position: new Vector3(0, 1.5, 1.5),
         //     modelPath: 'resources/spheres.obj',
-        //     texture: Texture.CheckerboardTexture(),
         //     //components: [Rigidbody, SphereCollider]
-        //     components: [ObjAutoRotate],
-        //     shader: ToonShader,
+        //     components: [ObjRotate],
+        //     shaderProp: {
+        //         mainTexture: "resources/Brick_Diffuse.jpg",
+        //         normalTexture: "resources/Brick_Normal.jpg",
+        //     }
         // });
         // const bunnyObj = await createObj({
         //     name: "bunny",
@@ -23064,14 +23260,16 @@ exports.MainScene = {
         //     modelScale: 10,
         //     texture: Texture.CheckerboardTexture(),
         // });
-        // const toukuiObj = await createObj({
-        //     name: "toukui",
-        //     modelPath: 'resources/toukui/Construction_Helmet.obj',
-        //     modelScale: 0.1,
-        //     texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-        //     components: [ObjRotate],
-        //     shader: ToonShader,
-        // });
+        const toukuiObj = yield createObj({
+            name: "toukui",
+            modelPath: 'resources/toukui/Construction_Helmet.obj',
+            modelScale: 0.1,
+            components: [ObjRotate_1.ObjRotate],
+            shaderProp: {
+                mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+                // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
+            }
+        });
         // spheresObj.transform.setParent(toukuiObj.transform);
     })
 };
@@ -23090,14 +23288,18 @@ function createObj(config) {
                 renderer.mesh = model;
                 const mat = renderer.material;
                 mat.shader = config.shader ? new config.shader() : new LitShader_1.LitShader();
-                mat.setProperties(config.shaderProp || {});
-                if (typeof config.texture === 'string') {
-                    const t = yield Resources_1.Resources.loadAsync(config.texture);
-                    if (t)
-                        mat.setTexture('mainTexture', t);
-                }
-                else if (config.texture) {
-                    mat.setTexture('mainTexture', config.texture);
+                // 设置纹理
+                if (config.shaderProp) {
+                    for (const prop of Object.entries(config.shaderProp)) {
+                        if (typeof prop[1] === 'string') {
+                            const t = yield Resources_1.Resources.loadAsync(prop[1]);
+                            if (t)
+                                mat.setTexture(prop[0], t);
+                            delete config.shaderProp[prop[0]];
+                        }
+                    }
+                    // 设置其他属性
+                    mat.setProperties(config.shaderProp);
                 }
             }
         }
@@ -23115,7 +23317,7 @@ function createObj(config) {
     });
 }
 
-},{"../Component/BoxCollider":4,"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/RigidBody":11,"../Component/TestComp/CameraController":13,"../Component/TestComp/RayTest":14,"../Core/GameObject":17,"../Core/Setting":19,"../Math/Quaternion":28,"../Math/Vector3":32,"../Resources/CubeMap":40,"../Resources/Resources":43,"../Shader/LitShader":48}],46:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjRotate":14,"../Component/TestComp/RayTest":15,"../Core/GameObject":18,"../Core/Setting":20,"../Math/Quaternion":29,"../Math/Vector3":33,"../Resources/CubeMap":41,"../Resources/Resources":44,"../Shader/LitShader":49}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -23222,7 +23424,7 @@ class Scene {
 }
 exports.Scene = Scene;
 
-},{"../Component/Renderer":10,"../Core/GameObject":17,"../Math/BVHTree":24,"../Math/TransformTools":30,"../Math/Vector2":31}],47:[function(require,module,exports){
+},{"../Component/Renderer":10,"../Core/GameObject":18,"../Math/BVHTree":25,"../Math/TransformTools":31,"../Math/Vector2":32}],48:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23282,7 +23484,7 @@ class SceneManager {
 }
 exports.SceneManager = SceneManager;
 
-},{"./Scene":46}],48:[function(require,module,exports){
+},{"./Scene":47}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LitShader = void 0;
@@ -23297,7 +23499,7 @@ class LitShader extends Shader_1.Shader {
         super(...arguments);
         this.baseColor = Color_1.Color.WHITE;
         this.mainTexture = null;
-        this.mainTextureST = new Vector4_1.Vector4(0, 0, 2, 2);
+        this.mainTextureST = new Vector4_1.Vector4(1, 1, 0, 0);
         this.passes = [
             {
                 name: "Forward",
@@ -23328,7 +23530,7 @@ class LitShader extends Shader_1.Shader {
         const uv = v2fAttr.uv;
         const normal = v2fAttr.normal;
         // 采样基础颜色
-        const surfaceColor = this.mainTexture.Sample(uv.u * this.mainTextureST.z + this.mainTextureST.x, uv.v * this.mainTextureST.w + this.mainTextureST.y);
+        const surfaceColor = this.mainTexture.Sample(uv.u * this.mainTextureST.x + this.mainTextureST.z, uv.v * this.mainTextureST.y + this.mainTextureST.w);
         surfaceColor.multiply(this.baseColor);
         // 高光系数，值越大高光越集中
         const shininess = 100;
@@ -23355,10 +23557,10 @@ class LitShader extends Shader_1.Shader {
         const diffR = surfaceColor.r * this.lightColor.r * this.lightIntensity * dotProduct;
         const diffG = surfaceColor.g * this.lightColor.g * this.lightIntensity * dotProduct;
         const diffB = surfaceColor.b * this.lightColor.b * this.lightIntensity * dotProduct;
-        // 合并所有光照贡献（环境光 + 漫反射 + 高光）
-        const totalR = this.ambientLight.r + diffR + specularR;
-        const totalG = this.ambientLight.g + diffG + specularG;
-        const totalB = this.ambientLight.b + diffB + specularB;
+        // 合并所有光照贡献（漫反射 + 高光）
+        const totalR = diffR + specularR;
+        const totalG = diffG + specularG;
+        const totalB = diffB + specularB;
         // 确保颜色值在0-1范围内
         const clampedR = Math.min(1, Math.max(0, totalR));
         const clampedG = Math.min(1, Math.max(0, totalG));
@@ -23369,7 +23571,7 @@ class LitShader extends Shader_1.Shader {
 }
 exports.LitShader = LitShader;
 
-},{"../Math/Color":26,"../Math/TransformTools":30,"../Math/Vector3":32,"../Math/Vector4":33,"../Renderer/RendererDefine":38,"./Shader":49}],49:[function(require,module,exports){
+},{"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Renderer/RendererDefine":39,"./Shader":50}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZTest = exports.CullMode = exports.Shader = void 0;
@@ -23394,11 +23596,11 @@ class Shader extends UObject_1.UObject {
         this.viewMatrix = this.camera.getViewMatrix();
         this.projectionMatrix = this.camera.getProjectionMatrix();
         this.mvpMatrix = this.projectionMatrix.multiply(this.viewMatrix).multiply(this.modelMatrix);
-        const light = Light_1.Light.sunLight;
+        this.light = Light_1.Light.sunLight;
         this.ambientLight = Setting_1.RenderSettings.ambientLight;
-        this.lightColor = light.color;
-        this.lightDirection = light.transform.forward.normalize();
-        this.lightIntensity = light.intensity;
+        this.lightColor = this.light.color;
+        this.lightDirection = this.light.transform.forward.normalize();
+        this.lightIntensity = this.light.intensity;
     }
     onDestroy() {
         throw new Error("Method not implemented.");
@@ -23406,7 +23608,7 @@ class Shader extends UObject_1.UObject {
 }
 exports.Shader = Shader;
 
-},{"../Component/Light":8,"../Core/Setting":19,"../Core/UObject":23,"../Renderer/RendererDefine":38}],50:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":20,"../Core/UObject":24,"../Renderer/RendererDefine":39}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
@@ -23474,7 +23676,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":16,"../Math/TransformTools":30}],51:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":17,"../Math/TransformTools":31}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -23636,7 +23838,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":25,"../Math/Vector2":31,"../Math/Vector3":32,"../Math/Vector4":33,"../Resources/Mesh":42}],52:[function(require,module,exports){
+},{"../Math/Bounds":26,"../Math/Vector2":32,"../Math/Vector3":33,"../Math/Vector4":34,"../Resources/Mesh":43}],53:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -23663,6 +23865,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     requestAnimationFrame(mainLoop);
 }));
 
-},{"./Core/Engine":16}]},{},[52])
+},{"./Core/Engine":17}]},{},[53])
 
 //# sourceMappingURL=bundle.js.map

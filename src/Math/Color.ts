@@ -35,34 +35,34 @@ export class Color {
     }
 
     public add(c: Color): Color {
-        this.r = Math.min(1, this.r + c.r);
-        this.g = Math.min(1, this.g + c.g);
-        this.b = Math.min(1, this.b + c.b);
-        this.a = Math.min(1, this.a + c.a);
+        this.r = Color.clamp01(this.r + c.r);
+        this.g = Color.clamp01(this.g + c.g);
+        this.b = Color.clamp01(this.b + c.b);
+        this.a = Color.clamp01(this.a + c.a);
         return this;
     }
 
     public subtract(c: Color): Color {
-        this.r = Math.max(0, this.r - c.r);
-        this.g = Math.max(0, this.g - c.g);
-        this.b = Math.max(0, this.b - c.b);
-        this.a = Math.max(0, this.a - c.a);
+        this.r = Color.clamp01(this.r - c.r);
+        this.g = Color.clamp01(this.g - c.g);
+        this.b = Color.clamp01(this.b - c.b);
+        this.a = Color.clamp01(this.a - c.a);
         return this;
     }
 
     public multiply(c: Color): Color {
-        this.r = Math.min(1, this.r * c.r);
-        this.g = Math.min(1, this.g * c.g);
-        this.b = Math.min(1, this.b * c.b);
-        this.a = Math.min(1, this.a * c.a);
+        this.r = Color.clamp01(this.r * c.r);
+        this.g = Color.clamp01(this.g * c.g);
+        this.b = Color.clamp01(this.b * c.b);
+        this.a = Color.clamp01(this.a * c.a);
         return this;
     }
 
     public multiplyScalar(scalar: number): Color {
-        this.r = Math.min(1, this.r * scalar);
-        this.g = Math.min(1, this.g * scalar);
-        this.b = Math.min(1, this.b * scalar);
-        this.a = Math.min(1, this.a * scalar);
+        this.r = Color.clamp01(this.r * scalar);
+        this.g = Color.clamp01(this.g * scalar);
+        this.b = Color.clamp01(this.b * scalar);
+        this.a = Color.clamp01(this.a * scalar);
         return this;
     }
 
@@ -81,37 +81,37 @@ export class Color {
 
     public static add(c1: Color, c2: Color): Color {
         return new Color(
-            Math.min(1, c1.r + c2.r),
-            Math.min(1, c1.g + c2.g),
-            Math.min(1, c1.b + c2.b),
-            Math.min(1, c1.a + c2.a)
+            Color.clamp01(c1.r + c2.r),
+            Color.clamp01(c1.g + c2.g),
+            Color.clamp01(c1.b + c2.b),
+            Color.clamp01(c1.a + c2.a)
         );
     }
 
     public static subtract(c1: Color, c2: Color): Color {
         return new Color(
-            Math.max(0, c1.r - c2.r),
-            Math.max(0, c1.g - c2.g),
-            Math.max(0, c1.b - c2.b),
-            Math.max(0, c1.a - c2.a)
+            Color.clamp01(c1.r - c2.r),
+            Color.clamp01(c1.g - c2.g),
+            Color.clamp01(c1.b - c2.b),
+            Color.clamp01(c1.a - c2.a)
         );
     }
 
     public static multiply(c1: Color, c2: Color): Color {
         return new Color(
-            Math.min(1, c1.r * c2.r),
-            Math.min(1, c1.g * c2.g),
-            Math.min(1, c1.b * c2.b),
-            Math.min(1, c1.a * c2.a)
+            Color.clamp01(c1.r * c2.r),
+            Color.clamp01(c1.g * c2.g),
+            Color.clamp01(c1.b * c2.b),
+            Color.clamp01(c1.a * c2.a)
         );
     }
 
     public static multiplyScalar(c: Color, scalar: number): Color {
         return new Color(
-            Math.min(1, c.r * scalar),
-            Math.min(1, c.g * scalar),
-            Math.min(1, c.b * scalar),
-            Math.min(1, c.a * scalar)
+            Color.clamp01(c.r * scalar),
+            Color.clamp01(c.g * scalar),
+            Color.clamp01(c.b * scalar),
+            Color.clamp01(c.a * scalar)
         );
     }
 
