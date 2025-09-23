@@ -389,16 +389,19 @@ export class RasterizationPipeline {
                     vertex: mesh.vertices[triangles[i]],
                     uv: mesh.uv[triangles[i]],
                     normal: mesh.normals[triangles[i]],
+                    tangent: mesh.tangents[triangles[i]],
                 });
                 const { vertexOut: v2, attrOut: v2Attr } = pass.vert({
                     vertex: mesh.vertices[triangles[i + 1]],
                     uv: mesh.uv[triangles[i + 1]],
                     normal: mesh.normals[triangles[i + 1]],
+                    tangent: mesh.tangents[triangles[i + 1]],
                 });
                 const { vertexOut: v3, attrOut: v3Attr } = pass.vert({
                     vertex: mesh.vertices[triangles[i + 2]],
                     uv: mesh.uv[triangles[i + 2]],
                     normal: mesh.normals[triangles[i + 2]],
+                    tangent: mesh.tangents[triangles[i + 2]],
                 });
 
                 // 渲染管线6.屏幕映射

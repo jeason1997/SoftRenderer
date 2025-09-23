@@ -25,6 +25,7 @@ import { Shader, VertexAttributes } from "../Shader/Shader";
 import { ToonShader } from "../Shader/ToonShader";
 import { CubeMap } from "../Resources/CubeMap";
 import { RenderSettings } from "../Core/Setting";
+import { ScrollTexture } from "../Component/TestComp/ScrollTexture";
 
 export const MainScene = {
     name: "MainScene",
@@ -66,23 +67,23 @@ export const MainScene = {
             );
         }
 
-        const female02Obj = await createObj({
-            name: "female02",
-            modelPath: 'resources/female02/female02.obj',
-            modelScale: 0.01,
-            texture: Texture.CheckerboardTexture(),
-            components: [ObjRotate],
-        });
-
-        // const panelObj = await createObj({
-        //     name: "panel",
-        //     scale: Vector3.ONE.multiplyScalar(1.5),
-        //     modelPath: 'resources/panel.obj',
-        //     texture: Texture.NoiseTexture(),
-        //     components: [BoxCollider, Rigidbody]
+        // const female02Obj = await createObj({
+        //     name: "female02",
+        //     modelPath: 'resources/female02/female02.obj',
+        //     modelScale: 0.01,
+        //     texture: Texture.CheckerboardTexture(),
+        //     components: [ObjRotate],
         // });
-        // const panelBody = panelObj.getComponent(Rigidbody);
-        // if (panelBody) panelBody.isKinematic = true;
+
+        const panelObj = await createObj({
+            name: "panel",
+            scale: Vector3.ONE.multiplyScalar(1.5),
+            modelPath: 'resources/panel.obj',
+            texture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+            components: [BoxCollider, Rigidbody]
+        });
+        const panelBody = panelObj.getComponent(Rigidbody);
+        if (panelBody) panelBody.isKinematic = true;
 
         // const cubeObj = await createObj({
         //     name: "cube",

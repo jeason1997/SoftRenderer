@@ -9,8 +9,9 @@ import { Shader, ShaderPass } from "./Shader";
 
 export class LitShader extends Shader {
 
+    public baseColor: Color = Color.WHITE;
     public mainTexture: Texture | null = null;
-    public mainTextureST: Vector4 = new Vector4(0, 0, 1, 1);
+    public mainTextureST: Vector4 = new Vector4(0, 0, 2, 2);
 
     public passes: ShaderPass[] = [
         {
@@ -42,7 +43,12 @@ export class LitShader extends Shader {
         const uv = v2fAttr.uv as Vector2;
         const normal = v2fAttr.normal as Vector3;
 
-        const surfaceColor = this.mainTexture.Sample(uv.u, uv.v);
+        // 采样基础颜色
+        const surfaceColor = this.mainTexture.Sample(
+            uv.u * this.mainTextureST.z + this.mainTextureST.x,
+            uv.v * this.mainTextureST.w + this.mainTextureST.y
+        );
+        surfaceColor.multiply(this.baseColor);
 
         // 高光系数，值越大高光越集中
         const shininess: number = 100
