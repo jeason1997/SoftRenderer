@@ -26,6 +26,9 @@ import { ToonShader } from "../Shader/ToonShader";
 import { CubeMap } from "../Resources/CubeMap";
 import { RenderSettings } from "../Core/Setting";
 import { ScrollTexture } from "../Component/TestComp/ScrollTexture";
+import { TextureCreator } from "../Resources/TextureCreator";
+import { MeshCreator } from "../Resources/MeshCreator";
+import { PBRShader } from "../Shader/PBRShader";
 
 export const MainScene = {
     name: "MainScene",
@@ -81,18 +84,19 @@ export const MainScene = {
         //     components: [ObjRotate],
         // });
 
-        // const panelObj = await createObj({
-        //     name: "panel",
-        //     scale: Vector3.ONE.multiplyScalar(1.5),
-        //     rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
-        //     modelPath: 'resources/panel.obj',
-        //     //components: [BoxCollider, Rigidbody]
-        //     components: [ObjRotate],
-        //     shaderProp: {
-        //         mainTexture: "resources/Brick_Diffuse.jpg",
-        //         normalTexture: "resources/Brick_Normal.jpg",
-        //     }
-        // });
+        const panelObj = await createObj({
+            name: "panel",
+            // scale: Vector3.ONE.multiplyScalar(1.5),
+            // rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
+            model: "resources/panel.obj",
+            //components: [BoxCollider, Rigidbody]
+            components: [ObjRotate],
+            shader: PBRShader,
+            shaderProp: {
+                mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
+                normalTexture: "resources/assets/textures/texture/ancientbrick_normal.jpg",
+            }
+        });
         // const panelBody = panelObj.getComponent(Rigidbody);
         // if (panelBody) panelBody.isKinematic = true;
 
@@ -108,13 +112,17 @@ export const MainScene = {
 
         // const spheresObj = await createObj({
         //     name: "spheres",
-        //     position: new Vector3(0, 1.5, 1.5),
-        //     modelPath: 'resources/spheres.obj',
+        //     // position: new Vector3(0, 1.5, 1.5),
+        //     model: MeshCreator.createCapsule(),
         //     //components: [Rigidbody, SphereCollider]
         //     components: [ObjRotate],
+        //     shader: PBRShader,
         //     shaderProp: {
-        //         mainTexture: "resources/Brick_Diffuse.jpg",
-        //         normalTexture: "resources/Brick_Normal.jpg",
+        //         // mainTexture: TextureCreator.CheckerboardTexture(),
+        //         // mainTexture: "resources/Brick_Diffuse.jpg",
+        //         // normalTexture: "resources/Brick_Normal.jpg",
+        //         // mainTexture: "resources/texture/Road_Diffuse.jpg",
+        //         // normalTexture: "resources/texture/Road_Normal.jpg",
         //     }
         // });
 
@@ -125,16 +133,16 @@ export const MainScene = {
         //     texture: Texture.CheckerboardTexture(),
         // });
 
-        const toukuiObj = await createObj({
-            name: "toukui",
-            modelPath: 'resources/toukui/Construction_Helmet.obj',
-            modelScale: 0.1,
-            components: [ObjRotate],
-            shaderProp: {
-                mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-                // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
-            }
-        });
+        // const toukuiObj = await createObj({
+        //     name: "toukui",
+        //     model: 'resources/toukui/Construction_Helmet.obj',
+        //     modelScale: 0.1,
+        //     components: [ObjRotate],
+        //     shaderProp: {
+        //         mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+        //         // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
+        //     }
+        // });
         // spheresObj.transform.setParent(toukuiObj.transform);
     }
 }
@@ -144,9 +152,8 @@ interface CreateObjConfig {
     position?: Vector3;
     rotation?: Quaternion;
     scale?: Vector3;
-    modelPath?: string;
+    model?: string | Mesh;
     modelScale?: number;
-    texture?: string | Texture;
     shader?: new (...args: any[]) => Shader;
     shaderProp?: VertexAttributes;
     components?: (new (gameObject: GameObject) => Component)[];
@@ -158,8 +165,8 @@ async function createObj(config: CreateObjConfig): Promise<GameObject> {
     obj.transform.rotation = config.rotation || Quaternion.identity;
     obj.transform.scale = config.scale || Vector3.ONE;
 
-    if (config.modelPath) {
-        const model = await Resources.loadAsync<Mesh>(config.modelPath);
+    if (config.model) {
+        const model = typeof config.model === 'string' ? await Resources.loadAsync<Mesh>(config.model) : config.model;
         if (config.modelScale) model?.scale(config.modelScale);
 
         const renderer = obj.addComponent(MeshRenderer);

@@ -504,7 +504,7 @@ export class RasterizationPipeline {
         // this.DrawBounds();
 
         // 绘制法线跟切线
-        // this.DrawFaceNormal();
+        // this.DrawNormal();
 
         // 绘制深度纹理
         // this.DrawDepthBuffer();
@@ -522,7 +522,7 @@ export class RasterizationPipeline {
         });
     }
 
-    private DrawFaceNormal(): void {
+    private DrawNormal(): void {
         for (const renderer of this.currentRendererObjs) {
             const mesh = renderer.mesh;
             if (!mesh) return;
