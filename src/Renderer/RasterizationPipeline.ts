@@ -13,6 +13,8 @@ import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
 import { CullMode, ZTest } from "../Shader/Shader";
 import { BlendMode } from "./RendererDefine";
+import { GameObject } from "../Core/GameObject";
+import { Gizmo } from "../Utils/Gizmo";
 
 enum DrawMode {
     Wireframe = 1,
@@ -297,7 +299,7 @@ export class RasterizationPipeline {
         // 3. 视口变换：将NDC坐标映射到屏幕坐标
         // 标准化设备坐标（NDC 空间） -> 屏幕空间
         for (let i = 0; i < vertices.length; i += 1) {
-            const out = TransformTools.ModelToScreenPos(vertices[i], transform, this.currentCamera);
+            const out = TransformTools.ModelToScreenPos(vertices[i], transform.localToWorldMatrix, this.currentCamera);
             outVertices[i] = new Vector3(out.screen.x, out.screen.y, out.depth);
         }
 
@@ -515,6 +517,9 @@ export class RasterizationPipeline {
         // 绘制物理调试信息
         // PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
 
+        // 绘制Gizmo
+        this.DrawGizmo(Engine.sceneManager.getActiveScene()?.getRootGameObject() || null);
+
         // 绘制调试线
         const lines = Debug.GetDebugLines();
         lines.forEach(line => {
@@ -522,10 +527,26 @@ export class RasterizationPipeline {
         });
     }
 
+    private DrawGizmo(obj: GameObject | null): void {
+        if (!obj) return;
+        const components = obj.getAllComponents();
+        for (const component of components) {
+            if (typeof (component as any).onDrawGizmos === 'function') {
+                Gizmo.matrix = component.transform.localToWorldMatrix;
+                (component as any).onDrawGizmos();
+            }
+        }
+        // 绘制子物体
+        for (const child of obj.transform.children) {
+            this.DrawGizmo(child.gameObject);
+        }
+    }
+
     private DrawNormal(): void {
         for (const renderer of this.currentRendererObjs) {
             const mesh = renderer.mesh;
             if (!mesh) return;
+            const modelMatrix = renderer.transform.localToWorldMatrix;
 
             // 面法线
             // for (let i = 0; i < mesh.faceNormals.length; i++) {
@@ -551,23 +572,23 @@ export class RasterizationPipeline {
                 // 计算副切线 (Bitangent) = 法线 × 切线 × w分量
                 const bitangentDir = Vector3.cross(normal, tangentDir).multiplyScalar(tangentW).normalize();
                 // 将顶点位置转换到屏幕空间
-                const vertexScreenPos = TransformTools.ModelToScreenPos(vertex, renderer.transform, this.currentCamera).screen;
+                const vertexScreenPos = TransformTools.ModelToScreenPos(vertex, modelMatrix, this.currentCamera).screen;
                 // 定义线的长度
                 const lineLength = 0.1;
 
                 // 1. 绘制法线 - 红色
                 const normalEnd = Vector3.add(vertex, Vector3.multiplyScalar(normal, lineLength));
-                const normalScreenEnd = TransformTools.ModelToScreenPos(normalEnd, renderer.transform, this.currentCamera).screen;
+                const normalScreenEnd = TransformTools.ModelToScreenPos(normalEnd, modelMatrix, this.currentCamera).screen;
                 this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, normalScreenEnd.x, normalScreenEnd.y, Color.RED);
 
                 // 2. 绘制切线 - 绿色
                 const tangentEnd = Vector3.add(vertex, Vector3.multiplyScalar(tangentDir, lineLength));
-                const tangentScreenEnd = TransformTools.ModelToScreenPos(tangentEnd, renderer.transform, this.currentCamera).screen;
+                const tangentScreenEnd = TransformTools.ModelToScreenPos(tangentEnd, modelMatrix, this.currentCamera).screen;
                 this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, tangentScreenEnd.x, tangentScreenEnd.y, Color.GREEN);
 
                 // 3. 绘制副切线 - 黄色
                 const bitangentEnd = Vector3.add(vertex, Vector3.multiplyScalar(bitangentDir, lineLength));
-                const bitangentScreenEnd = TransformTools.ModelToScreenPos(bitangentEnd, renderer.transform, this.currentCamera).screen;
+                const bitangentScreenEnd = TransformTools.ModelToScreenPos(bitangentEnd, modelMatrix, this.currentCamera).screen;
                 this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, bitangentScreenEnd.x, bitangentScreenEnd.y, Color.YELLOW);
             }
         }
@@ -611,6 +632,7 @@ export class RasterizationPipeline {
         for (const renderer of this.currentRendererObjs) {
             const mesh = renderer.mesh;
             if (!mesh) return;
+            const modelMatrix = renderer.transform.localToWorldMatrix;
 
             const transform = renderer.transform;
             const bounds = mesh.bounds;
@@ -620,7 +642,7 @@ export class RasterizationPipeline {
 
             // 将所有顶点转换到屏幕空间
             const screenVertices = bound.vertices.map(v =>
-                TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), transform, this.currentCamera).screen
+                TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), modelMatrix, this.currentCamera).screen
             );
 
             // 绘制所有边
@@ -635,7 +657,7 @@ export class RasterizationPipeline {
 
             // 绘制中心点
             const center = bound.center;
-            const screenCenter = TransformTools.ModelToScreenPos(center, transform, this.currentCamera).screen;
+            const screenCenter = TransformTools.ModelToScreenPos(center, modelMatrix, this.currentCamera).screen;
             if (screenCenter) {
                 // 绘制一个小十字作为中心点标记
                 const size = 5;

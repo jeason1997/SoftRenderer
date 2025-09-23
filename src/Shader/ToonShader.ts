@@ -41,7 +41,7 @@ export class ToonShader extends Shader {
     ];
 
     public vertexShader(inAttr: VertexAttributes): { vertexOut: Vector4; attrOut: VertexAttributes } {
-        const normalOut = TransformTools.ModelToWorldNormal(inAttr.normal as Vector3, this.transform);
+        const normalOut = TransformTools.ModelToWorldNormal(inAttr.normal as Vector3, this.modelMatrix);
         const outAttr: VertexAttributes = {
             uv: inAttr.uv,
             normal: normalOut,

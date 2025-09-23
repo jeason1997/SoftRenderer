@@ -440,9 +440,9 @@ export class MeshCreator {
     public static createCapsule(
         radius: number = 0.5,
         height: number = 1,
-        radialSegments: number = 32,
-        capSegments: number = 16,
-        heightSegments: number = 16
+        radialSegments: number = 8,
+        capSegments: number = 4,
+        heightSegments: number = 4
     ): Mesh {
         const mesh = new Mesh();
         const cylinderHeight = height;

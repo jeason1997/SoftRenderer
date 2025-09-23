@@ -1,4 +1,6 @@
 import { Color } from "../Math/Color";
+import { Vector3 } from "../Math/Vector3";
+import { Gizmo } from "../Utils/Gizmo";
 import { Component } from "./Component";
 
 export enum LightType {
@@ -19,4 +21,12 @@ export class Light extends Component {
     public color: Color = Color.WHITE;
     public intensity: number = 1;
     public shadowType: ShadowType = ShadowType.None;
+
+    public onDrawGizmos(): void {
+        Gizmo.DrawAxis(this.transform.position);
+        Gizmo.color = Color.WHITE;
+        Gizmo.DrawCube(this.transform.position, new Vector3(0.1, 0.1, 0.5));
+        Gizmo.color = Color.RED;
+        Gizmo.DrawCube(this.transform.position.add(new Vector3(0, 0, 0.3)), Vector3.ONE.multiplyScalar(0.1));
+    }
 }

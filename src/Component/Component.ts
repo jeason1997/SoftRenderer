@@ -54,6 +54,9 @@ export abstract class Component extends UObject {
     // 当组件被销毁时调用
     public onDestroy(): void { }
 
+    // 绘制调试信息
+    // public onDrawGizmos(): void { }
+
     /**
      * 检查通过@RequireComponent装饰器声明的依赖组件是否存在
      */

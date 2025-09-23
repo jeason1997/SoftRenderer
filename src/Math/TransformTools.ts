@@ -2,6 +2,7 @@ import { Camera } from "../Component/Camera";
 import { Light, LightType } from "../Component/Light";
 import { EngineConfig } from "../Core/Setting";
 import { Transform } from "../Core/Transform";
+import { Matrix4x4 } from "./Matrix4x4";
 import { Quaternion } from "./Quaternion";
 import { Ray } from "./Ray";
 import { Vector2 } from "./Vector2";
@@ -175,10 +176,9 @@ export class TransformTools {
     }
 
     // 模型坐标转为裁剪坐标
-    public static ModelToClipPos(vertex: Vector3, transform: Transform, camera: Camera): Vector4 {
+    public static ModelToClipPos(vertex: Vector3, modelMatrix: Matrix4x4, camera: Camera): Vector4 {
         // 对顶点应用 MVP 矩阵（Model→View→Projection 矩阵的组合），计算过程为：
         // 裁剪空间坐标 = projectionMatrix × viewMatrix × modelMatrix × 模型空间顶点
-        const modelMatrix = transform.localToWorldMatrix;
         const viewMatrix = camera.getViewMatrix();
         const projectionMatrix = camera.getProjectionMatrix();
         const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
@@ -195,8 +195,8 @@ export class TransformTools {
     }
 
     // 模型坐标转为屏幕坐标
-    public static ModelToScreenPos(vertex: Vector3, transform: Transform, camera: Camera): { screen: Vector2; depth: number } {
-        const clipPos = this.ModelToClipPos(vertex, transform, camera);
+    public static ModelToScreenPos(vertex: Vector3, modelMatrix: Matrix4x4, camera: Camera): { screen: Vector2; depth: number } {
+        const clipPos = this.ModelToClipPos(vertex, modelMatrix, camera);
         const ndc = this.ClipToNdcPos(clipPos);
         const vp = this.NdcToViewportPos(ndc, camera.viewPort);
         const screen = this.ViewportToScreenPos(vp);
@@ -213,9 +213,8 @@ export class TransformTools {
     }
 
     // 模型法线转为世界法线
-    public static ModelToWorldNormal(normal: Vector3, transform: Transform): Vector3 {
+    public static ModelToWorldNormal(normal: Vector3, modelMatrix: Matrix4x4): Vector3 {
         // 获取模型矩阵（局部到世界空间的变换矩阵）
-        const modelMatrix = transform.localToWorldMatrix;
 
         // 计算模型矩阵的逆转置矩阵
         // 逆转置矩阵可以确保法线在非均匀缩放时仍然保持与表面垂直
@@ -267,10 +266,10 @@ export class TransformTools {
         return viewDir.normalize();
     }
 
-    public static ApplyScaleToVertex(vertex: Vector3, transform: Transform) {
-        vertex.x *= transform.scale.x;
-        vertex.y *= transform.scale.y;
-        vertex.z *= transform.scale.z;
+    public static ApplyScaleToVertex(vertex: Vector3, scale: Vector3) {
+        vertex.x *= scale.x;
+        vertex.y *= scale.y;
+        vertex.z *= scale.z;
     }
 
     public static ApplyRotationToVertex(vertex: Vector3, quaternion: Quaternion) {
@@ -294,9 +293,9 @@ export class TransformTools {
         vertex.z = rz;
     }
 
-    public static ApplyTranslationToVertex(vertex: Vector3, transform: Transform) {
-        vertex.x += transform.position.x;
-        vertex.y += transform.position.y;
-        vertex.z += transform.position.z;
+    public static ApplyTranslationToVertex(vertex: Vector3, position: Vector3) {
+        vertex.x += position.x;
+        vertex.y += position.y;
+        vertex.z += position.z;
     }
 }
