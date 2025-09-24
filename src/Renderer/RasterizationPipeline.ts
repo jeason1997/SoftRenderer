@@ -11,7 +11,7 @@ import { Mesh } from "../Resources/Mesh";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
-import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest, ColorMask, applyColorMask, RenderType } from "./RendererDefine";
+import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest, ColorMask, applyColorMask, RenderType, applyStencilOperation } from "./RendererDefine";
 import { GameObject } from "../Core/GameObject";
 import { Gizmo } from "../Utils/Gizmo";
 
@@ -380,6 +380,7 @@ export class RasterizationPipeline {
             const zTest = renderState.zTest || ZTest.Less;
             const zWrite = pass.renderState?.zWrite ?? true;
             const blendState = pass.renderState?.blend?.state;
+            const stencil = pass.renderState?.stencil;
 
             let triangles = mesh.triangles;
 
@@ -453,20 +454,24 @@ export class RasterizationPipeline {
                         const currentBufferDepth = this.depthBuffer[index];
                         const currentBufferStencil = this.stencilBuffer[index];
 
-                        // 渲染管线9.模板测试
-                        // if (pass.renderState?.stencilState) {
-                        //     const stencilState = pass.renderState?.stencilState;
-                        //     const stencilValue = this.stencilBuffer[index];
-                        //     const stencilTestResult = stencilTest(stencilValue, stencilState.stencilRef, stencilState.stencilMask, stencilState.stencilTest);
-                        //     // 模板测试失败，跳过该片段
-                        //     if (!stencilTestResult) continue;
-                        //     // 执行模板操作（根据测试结果和深度测试结果）
-                        //     this.updateStencilBuffer(index, pass, depthTestResult);
-                        // }
-
-                        // 渲染管线10.早期深度测试
+                        // 渲染管线9.早期深度测试
                         const depthTestResult = depthTest(z, currentBufferDepth, zTest);
                         if (!depthTestResult) continue;
+
+                        // 渲染管线10.模板测试
+                        if (stencil) {
+                            const stencilTestResult = stencilTest(currentBufferStencil, stencil.ref, stencil.comparisonOperation, stencil.readMask);
+                            // 执行模板操作（根据测试结果和深度测试结果）
+                            let operation: StencilOp | undefined;
+                            if (stencilTestResult) { operation = depthTestResult ? stencil.passOperation : stencil.zFailOperation; }
+                            else { operation = stencil.failOperation; }
+                            // 应用操作更新模板值
+                            const newValue = applyStencilOperation(currentBufferStencil, stencil.ref, operation, stencil.writeMask);
+                            // 更新模板缓冲区
+                            this.stencilBuffer[index] = newValue;
+                            // 模板测试失败跳过像素
+                            if (!stencilTestResult) continue;
+                        }
 
                         // 渲染管线11.像素着色器
                         const pixelColor = pass.frag(fragment.attributes);
@@ -501,30 +506,6 @@ export class RasterizationPipeline {
     //#endregion
 
     //#region 工具函数
-
-    // private updateStencilBuffer(index: number, stencilState: StencilState, depthPassed: boolean): void {
-    //     // 根据模板测试和深度测试结果执行模板操作（如保持、递增、递减、替换等）
-    //     if (!depthPassed) return;
-    //     switch (stencilState.stencilOp) {
-    //         case StencilOp.Keep:
-    //             break;
-    //         case StencilOp.Zero:
-    //             this.stencilBuffer[index] = 0;
-    //             break;
-    //         case StencilOp.Replace:
-    //             this.stencilBuffer[index] = stencilState.stencilRef & stencilState.stencilMask;
-    //             break;
-    //         case StencilOp.IncrementAndClamp:
-    //             this.stencilBuffer[index] = Math.min(this.stencilBuffer[index] + 1, 255);
-    //             break;
-    //         case StencilOp.DecrementAndClamp:
-    //             this.stencilBuffer[index] = Math.max(this.stencilBuffer[index] - 1, 0);
-    //             break;
-    //         case StencilOp.Invert:
-    //             this.stencilBuffer[index] = ~this.stencilBuffer[index] & 0xFF;
-    //             break;
-    //     }
-    // }
 
     private DebugDraw(): void {
         // 绘制包围盒

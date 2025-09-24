@@ -21588,7 +21588,7 @@ class RasterizationPipeline {
         shader.init(renderer.transform, this.currentCamera);
         // 渲染所有通道
         shader.passes.forEach(pass => {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e;
             const renderType = shader.renderType;
             const renderState = pass.renderState || {};
             const colorMask = renderState.colorMask || RendererDefine_1.ColorMask.All;
@@ -21596,6 +21596,7 @@ class RasterizationPipeline {
             const zTest = renderState.zTest || RendererDefine_1.ZTest.Less;
             const zWrite = (_b = (_a = pass.renderState) === null || _a === void 0 ? void 0 : _a.zWrite) !== null && _b !== void 0 ? _b : true;
             const blendState = (_d = (_c = pass.renderState) === null || _c === void 0 ? void 0 : _c.blend) === null || _d === void 0 ? void 0 : _d.state;
+            const stencil = (_e = pass.renderState) === null || _e === void 0 ? void 0 : _e.stencil;
             let triangles = mesh.triangles;
             // 渲染管线3.背面剔除
             triangles = this.FaceCulling(triangles, mesh, renderer, cullMode);
@@ -21659,20 +21660,29 @@ class RasterizationPipeline {
                         const currentBufferColor = Color_1.Color.FromUint32(this.frameBuffer[index]);
                         const currentBufferDepth = this.depthBuffer[index];
                         const currentBufferStencil = this.stencilBuffer[index];
-                        // 渲染管线9.模板测试
-                        // if (pass.renderState?.stencilState) {
-                        //     const stencilState = pass.renderState?.stencilState;
-                        //     const stencilValue = this.stencilBuffer[index];
-                        //     const stencilTestResult = stencilTest(stencilValue, stencilState.stencilRef, stencilState.stencilMask, stencilState.stencilTest);
-                        //     // 模板测试失败，跳过该片段
-                        //     if (!stencilTestResult) continue;
-                        //     // 执行模板操作（根据测试结果和深度测试结果）
-                        //     this.updateStencilBuffer(index, pass, depthTestResult);
-                        // }
-                        // 渲染管线10.早期深度测试
+                        // 渲染管线9.早期深度测试
                         const depthTestResult = (0, RendererDefine_1.depthTest)(z, currentBufferDepth, zTest);
                         if (!depthTestResult)
                             continue;
+                        // 渲染管线10.模板测试
+                        if (stencil) {
+                            const stencilTestResult = (0, RendererDefine_1.stencilTest)(currentBufferStencil, stencil.ref, stencil.comparisonOperation, stencil.readMask);
+                            // 执行模板操作（根据测试结果和深度测试结果）
+                            let operation;
+                            if (stencilTestResult) {
+                                operation = depthTestResult ? stencil.passOperation : stencil.zFailOperation;
+                            }
+                            else {
+                                operation = stencil.failOperation;
+                            }
+                            // 应用操作更新模板值
+                            const newValue = (0, RendererDefine_1.applyStencilOperation)(currentBufferStencil, stencil.ref, operation, stencil.writeMask);
+                            // 更新模板缓冲区
+                            this.stencilBuffer[index] = newValue;
+                            // 模板测试失败跳过像素
+                            if (!stencilTestResult)
+                                continue;
+                        }
                         // 渲染管线11.像素着色器
                         const pixelColor = pass.frag(fragment.attributes);
                         // 像素被丢弃，可能是Alpha测试失败
@@ -21703,29 +21713,6 @@ class RasterizationPipeline {
     }
     //#endregion
     //#region 工具函数
-    // private updateStencilBuffer(index: number, stencilState: StencilState, depthPassed: boolean): void {
-    //     // 根据模板测试和深度测试结果执行模板操作（如保持、递增、递减、替换等）
-    //     if (!depthPassed) return;
-    //     switch (stencilState.stencilOp) {
-    //         case StencilOp.Keep:
-    //             break;
-    //         case StencilOp.Zero:
-    //             this.stencilBuffer[index] = 0;
-    //             break;
-    //         case StencilOp.Replace:
-    //             this.stencilBuffer[index] = stencilState.stencilRef & stencilState.stencilMask;
-    //             break;
-    //         case StencilOp.IncrementAndClamp:
-    //             this.stencilBuffer[index] = Math.min(this.stencilBuffer[index] + 1, 255);
-    //             break;
-    //         case StencilOp.DecrementAndClamp:
-    //             this.stencilBuffer[index] = Math.max(this.stencilBuffer[index] - 1, 0);
-    //             break;
-    //         case StencilOp.Invert:
-    //             this.stencilBuffer[index] = ~this.stencilBuffer[index] & 0xFF;
-    //             break;
-    //     }
-    // }
     DebugDraw() {
         // 绘制包围盒
         // this.DrawBounds();
@@ -21902,9 +21889,10 @@ exports.RasterizationPipeline = RasterizationPipeline;
 },{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Utils/Debug":51,"../Utils/Gizmo":52,"./BarycentricTriangleRasterizer":37,"./RendererDefine":39}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ZTest = exports.StencilOp = exports.StencilCompareFunction = exports.CullMode = exports.ColorMask = exports.RenderType = exports.BlendOp = exports.BlendFactor = void 0;
+exports.StencilPresets = exports.ZTest = exports.StencilOp = exports.StencilCompareFunction = exports.CullMode = exports.ColorMask = exports.RenderType = exports.BlendOp = exports.BlendFactor = void 0;
 exports.depthTest = depthTest;
 exports.stencilTest = stencilTest;
+exports.applyStencilOperation = applyStencilOperation;
 exports.applyColorMask = applyColorMask;
 var BlendFactor;
 (function (BlendFactor) {
@@ -21979,6 +21967,33 @@ var ZTest;
     ZTest[ZTest["NotEqual"] = 5] = "NotEqual";
     ZTest[ZTest["Always"] = 6] = "Always";
 })(ZTest || (exports.ZTest = ZTest = {}));
+// 模板测试常用配置预设
+exports.StencilPresets = {
+    // 只渲染前面的物体，遮挡后面的物体
+    frontOnly: {
+        comparisonOperation: StencilCompareFunction.Equal,
+        ref: 1,
+        passOperation: StencilOp.Keep,
+        failOperation: StencilOp.Zero,
+        zFailOperation: StencilOp.Keep
+    },
+    // 只渲染被标记物体的轮廓
+    outline: {
+        comparisonOperation: StencilCompareFunction.NotEqual,
+        ref: 1,
+        passOperation: StencilOp.Keep,
+        failOperation: StencilOp.Keep,
+        zFailOperation: StencilOp.Keep
+    },
+    // 累积渲染（如渲染透明物体）
+    accumulate: {
+        comparisonOperation: StencilCompareFunction.Always,
+        ref: 1,
+        passOperation: StencilOp.IncrSat,
+        failOperation: StencilOp.Keep,
+        zFailOperation: StencilOp.Keep
+    }
+};
 /**
  * 执行深度测试
  * @param z 当前片元的深度值
@@ -22007,28 +22022,85 @@ function depthTest(z, currentDepth, zTestFunc = ZTest.LEqual) {
             return z < currentDepth;
     }
 }
-function stencilTest(stencilValue, ref = 0, mask = 0xFF, func = StencilCompareFunction.Always) {
-    // 实现模板测试逻辑（如永远通过、从不通过、等于、不等于等）
+/**
+ * 执行带掩码的模板比较操作
+ * @param currentValue 当前模板值
+ * @param refValue 参考值
+ * @param func 比较函数
+ * @param readMask 读取掩码，用于过滤需要比较的位
+ * @returns 比较结果（是否通过）
+ */
+function stencilTest(currentValue, refValue = 0, func = StencilCompareFunction.Always, readMask = 0xFF) {
+    // 应用读取掩码，只保留需要比较的位
+    const maskedCurrent = currentValue & readMask;
+    const maskedRef = refValue & readMask;
     switch (func) {
         case StencilCompareFunction.Never:
             return false;
+        case StencilCompareFunction.Less:
+            return maskedCurrent < maskedRef;
+        case StencilCompareFunction.Equal:
+            return maskedCurrent === maskedRef;
+        case StencilCompareFunction.LEqual:
+            return maskedCurrent <= maskedRef;
+        case StencilCompareFunction.Greater:
+            return maskedCurrent > maskedRef;
+        case StencilCompareFunction.NotEqual:
+            return maskedCurrent !== maskedRef;
+        case StencilCompareFunction.GEqual:
+            return maskedCurrent >= maskedRef;
         case StencilCompareFunction.Always:
             return true;
-        case StencilCompareFunction.Less:
-            return stencilValue < (ref & mask);
-        case StencilCompareFunction.LEqual:
-            return stencilValue <= (ref & mask);
-        case StencilCompareFunction.Equal:
-            return stencilValue === (ref & mask);
-        case StencilCompareFunction.GEqual:
-            return stencilValue >= (ref & mask);
-        case StencilCompareFunction.Greater:
-            return stencilValue > (ref & mask);
-        case StencilCompareFunction.NotEqual:
-            return stencilValue !== (ref & mask);
         default:
             return false;
     }
+}
+/**
+ * 应用模板操作
+ * @param currentValue 当前模板值
+ * @param refValue 参考值
+ * @param op 要执行的操作
+ * @param writeMask 写入掩码
+ * @returns 新的模板值
+ */
+function applyStencilOperation(currentValue, refValue = 0, op = StencilOp.Keep, writeMask = 0xFF) {
+    let newValue = currentValue;
+    switch (op) {
+        case StencilOp.Keep:
+            // 保持当前值
+            newValue = currentValue;
+            break;
+        case StencilOp.Zero:
+            // 设置为0
+            newValue = 0;
+            break;
+        case StencilOp.Replace:
+            // 替换为参考值
+            newValue = refValue;
+            break;
+        case StencilOp.IncrSat:
+            // 递增并饱和（不超过255）
+            newValue = Math.min(currentValue + 1, 255);
+            break;
+        case StencilOp.DecrSat:
+            // 递减并饱和（不低于0）
+            newValue = Math.max(currentValue - 1, 0);
+            break;
+        case StencilOp.Invert:
+            // 反转当前值（仅低8位）
+            newValue = (~currentValue) & 0xFF;
+            break;
+        case StencilOp.IncrWrap:
+            // 递增并循环（超过255则回到0）
+            newValue = (currentValue + 1) % 256;
+            break;
+        case StencilOp.DecrWrap:
+            // 递减并循环（低于0则回到255）
+            newValue = (currentValue - 1 + 256) % 256;
+            break;
+    }
+    // 应用写入掩码：只修改掩码允许的位
+    return (newValue & writeMask) | (currentValue & ~writeMask);
 }
 function applyColorMask(color, bufferColor, mask) {
     color.r = (mask & ColorMask.Red) ? color.r : bufferColor.r;

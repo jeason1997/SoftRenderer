@@ -123,6 +123,36 @@ export enum ZTest {
     Always,	    // 不进行深度测试。绘制所有几何体，无论距离如何。
 }
 
+// 模板测试常用配置预设
+export const StencilPresets = {
+    // 只渲染前面的物体，遮挡后面的物体
+    frontOnly: {
+        comparisonOperation: StencilCompareFunction.Equal,
+        ref: 1,
+        passOperation: StencilOp.Keep,
+        failOperation: StencilOp.Zero,
+        zFailOperation: StencilOp.Keep
+    } as Partial<Stencil>,
+
+    // 只渲染被标记物体的轮廓
+    outline: {
+        comparisonOperation: StencilCompareFunction.NotEqual,
+        ref: 1,
+        passOperation: StencilOp.Keep,
+        failOperation: StencilOp.Keep,
+        zFailOperation: StencilOp.Keep
+    } as Partial<Stencil>,
+
+    // 累积渲染（如渲染透明物体）
+    accumulate: {
+        comparisonOperation: StencilCompareFunction.Always,
+        ref: 1,
+        passOperation: StencilOp.IncrSat,
+        failOperation: StencilOp.Keep,
+        zFailOperation: StencilOp.Keep
+    } as Partial<Stencil>
+};
+
 /**
  * 执行深度测试
  * @param z 当前片元的深度值
@@ -152,28 +182,99 @@ export function depthTest(z: number, currentDepth: number, zTestFunc: ZTest = ZT
     }
 }
 
-export function stencilTest(stencilValue: number, ref: number = 0, mask: number = 0xFF, func: StencilCompareFunction = StencilCompareFunction.Always): boolean {
-    // 实现模板测试逻辑（如永远通过、从不通过、等于、不等于等）
+/**
+ * 执行带掩码的模板比较操作
+ * @param currentValue 当前模板值
+ * @param refValue 参考值
+ * @param func 比较函数
+ * @param readMask 读取掩码，用于过滤需要比较的位
+ * @returns 比较结果（是否通过）
+ */
+export function stencilTest(
+    currentValue: number,
+    refValue: number = 0,
+    func: StencilCompareFunction = StencilCompareFunction.Always,
+    readMask: number = 0xFF
+): boolean {
+    // 应用读取掩码，只保留需要比较的位
+    const maskedCurrent = currentValue & readMask;
+    const maskedRef = refValue & readMask;
+
     switch (func) {
         case StencilCompareFunction.Never:
             return false;
+        case StencilCompareFunction.Less:
+            return maskedCurrent < maskedRef;
+        case StencilCompareFunction.Equal:
+            return maskedCurrent === maskedRef;
+        case StencilCompareFunction.LEqual:
+            return maskedCurrent <= maskedRef;
+        case StencilCompareFunction.Greater:
+            return maskedCurrent > maskedRef;
+        case StencilCompareFunction.NotEqual:
+            return maskedCurrent !== maskedRef;
+        case StencilCompareFunction.GEqual:
+            return maskedCurrent >= maskedRef;
         case StencilCompareFunction.Always:
             return true;
-        case StencilCompareFunction.Less:
-            return stencilValue < (ref & mask);
-        case StencilCompareFunction.LEqual:
-            return stencilValue <= (ref & mask);
-        case StencilCompareFunction.Equal:
-            return stencilValue === (ref & mask);
-        case StencilCompareFunction.GEqual:
-            return stencilValue >= (ref & mask);
-        case StencilCompareFunction.Greater:
-            return stencilValue > (ref & mask);
-        case StencilCompareFunction.NotEqual:
-            return stencilValue !== (ref & mask);
         default:
             return false;
     }
+}
+
+/**
+ * 应用模板操作
+ * @param currentValue 当前模板值
+ * @param refValue 参考值
+ * @param op 要执行的操作
+ * @param writeMask 写入掩码
+ * @returns 新的模板值
+ */
+export function applyStencilOperation(
+    currentValue: number,
+    refValue: number = 0,
+    op: StencilOp = StencilOp.Keep,
+    writeMask: number = 0xFF
+): number {
+    let newValue = currentValue;
+
+    switch (op) {
+        case StencilOp.Keep:
+            // 保持当前值
+            newValue = currentValue;
+            break;
+        case StencilOp.Zero:
+            // 设置为0
+            newValue = 0;
+            break;
+        case StencilOp.Replace:
+            // 替换为参考值
+            newValue = refValue;
+            break;
+        case StencilOp.IncrSat:
+            // 递增并饱和（不超过255）
+            newValue = Math.min(currentValue + 1, 255);
+            break;
+        case StencilOp.DecrSat:
+            // 递减并饱和（不低于0）
+            newValue = Math.max(currentValue - 1, 0);
+            break;
+        case StencilOp.Invert:
+            // 反转当前值（仅低8位）
+            newValue = (~currentValue) & 0xFF;
+            break;
+        case StencilOp.IncrWrap:
+            // 递增并循环（超过255则回到0）
+            newValue = (currentValue + 1) % 256;
+            break;
+        case StencilOp.DecrWrap:
+            // 递减并循环（低于0则回到255）
+            newValue = (currentValue - 1 + 256) % 256;
+            break;
+    }
+
+    // 应用写入掩码：只修改掩码允许的位
+    return (newValue & writeMask) | (currentValue & ~writeMask);
 }
 
 export function applyColorMask(color: Color, bufferColor: Color, mask: ColorMask) {
