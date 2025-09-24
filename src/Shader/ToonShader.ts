@@ -52,24 +52,6 @@ export class ToonShader extends Shader {
         };
     }
 
-    // 轮廓线顶点着色器
-    public outlineVertexShader(inAttr: VertexAttributes): { vertexOut: Vector4; attrOut: VertexAttributes } {
-        // 沿法线方向外推顶点来创建轮廓
-        const normal = inAttr.normal as Vector3;
-        const offsetVertex = (inAttr.vertex as Vector3).clone()
-            .add(normal.clone().multiplyScalar(this.outlineThickness));
-
-        return {
-            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4(offsetVertex, 1)),
-            attrOut: {}
-        };
-    }
-
-    // 轮廓线片段着色器
-    public outlineFragmentShader(): Color | null {
-        return this.outlineColor;
-    }
-
     public fragmentShader(v2fAttr: VertexAttributes): Color | null {
         if (!this.mainTexture) { return Color.MAGENTA; }
 
@@ -115,5 +97,23 @@ export class ToonShader extends Shader {
 
         // 返回最终颜色，保留原始Alpha
         return new Color(clampedR, clampedG, clampedB, surfaceColor.a);
+    }
+
+    // 轮廓线顶点着色器
+    public outlineVertexShader(inAttr: VertexAttributes): { vertexOut: Vector4; attrOut: VertexAttributes } {
+        // 沿法线方向外推顶点来创建轮廓
+        const normal = inAttr.normal as Vector3;
+        const offsetVertex = (inAttr.vertex as Vector3).clone()
+            .add(normal.clone().multiplyScalar(this.outlineThickness));
+
+        return {
+            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4(offsetVertex, 1)),
+            attrOut: {}
+        };
+    }
+
+    // 轮廓线片段着色器
+    public outlineFragmentShader(): Color | null {
+        return this.outlineColor;
     }
 }

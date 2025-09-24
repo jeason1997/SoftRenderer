@@ -126,31 +126,37 @@ export enum ZTest {
 // 模板测试常用配置预设
 export const StencilPresets = {
     // 只渲染前面的物体，遮挡后面的物体
-    frontOnly: {
-        comparisonOperation: StencilCompareFunction.Equal,
-        ref: 1,
-        passOperation: StencilOp.Keep,
-        failOperation: StencilOp.Zero,
-        zFailOperation: StencilOp.Keep
-    } as Partial<Stencil>,
+    frontOnly(ref: number): Partial<Stencil> {
+        return {
+            comparisonOperation: StencilCompareFunction.Equal,
+            ref: ref,
+            passOperation: StencilOp.Keep,
+            failOperation: StencilOp.Zero,
+            zFailOperation: StencilOp.Keep
+        }
+    },
 
     // 只渲染被标记物体的轮廓
-    outline: {
-        comparisonOperation: StencilCompareFunction.NotEqual,
-        ref: 1,
-        passOperation: StencilOp.Keep,
-        failOperation: StencilOp.Keep,
-        zFailOperation: StencilOp.Keep
-    } as Partial<Stencil>,
+    outline(ref: number): Partial<Stencil> {
+        return {
+            comparisonOperation: StencilCompareFunction.NotEqual,
+            ref: ref,
+            passOperation: StencilOp.Keep,
+            failOperation: StencilOp.Keep,
+            zFailOperation: StencilOp.Keep
+        }
+    },
 
     // 累积渲染（如渲染透明物体）
-    accumulate: {
-        comparisonOperation: StencilCompareFunction.Always,
-        ref: 1,
-        passOperation: StencilOp.IncrSat,
-        failOperation: StencilOp.Keep,
-        zFailOperation: StencilOp.Keep
-    } as Partial<Stencil>
+    accumulate(ref: number): Partial<Stencil> {
+        return {
+            comparisonOperation: StencilCompareFunction.Always,
+            ref: ref,
+            passOperation: StencilOp.IncrSat,
+            failOperation: StencilOp.Keep,
+            zFailOperation: StencilOp.Keep
+        }
+    },
 };
 
 /**

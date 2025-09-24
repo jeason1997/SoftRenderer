@@ -183,6 +183,7 @@
 20.bug，由于绘画天空盒时，是判断深度值来绘制的，会导致透明物体跟线框这种没写入深度值的被覆盖掉，想办法优化
 21.半透明绘制
 22.*本渲染器有个严重问题，虽然设计为右手坐标系，但目前发现是反的，用Gizom发现X轴反了
+23.shader增加 UsePass "Examples/ContainsNamedPass/EXAMPLENAMEDPASS"，功能，复用Pass
 
 //物理TODO:
 1.动态添加Collider时，怎么更新物理形状，目前这部分逻辑屏蔽

@@ -520,6 +520,9 @@ export class RasterizationPipeline {
         // 绘制Overdarw
         // this.DrawOverdraw();
 
+        // 绘制模板缓冲区
+        // this.DrawStencilBuffer();
+
         // 绘制物理调试信息
         // PhysicsDebugDraw.DrawPhysicsDebug(this.DrawLine.bind(this));
 
@@ -608,6 +611,17 @@ export class RasterizationPipeline {
                 // 创建灰度颜色对象
                 const depthColor = new Color(currentDepth, currentDepth, currentDepth);
                 this.DrawPixel(x, y, depthColor);
+            }
+        }
+    }
+
+    private DrawStencilBuffer(): void {
+        for (let x = 0; x < EngineConfig.canvasWidth; x++) {
+            for (let y = 0; y < EngineConfig.canvasHeight; y++) {
+                const index = y * EngineConfig.canvasWidth + x;
+                const stencilValue = this.stencilBuffer[index];
+                const stencilColor = new Color(stencilValue, stencilValue, stencilValue);
+                this.DrawPixel(x, y, stencilColor);
             }
         }
     }

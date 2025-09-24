@@ -32,6 +32,7 @@ import { PBRShader } from "../Shader/PBRShader";
 import { AlphaCutOffShader } from "../Shader/AlphaCutOffShader";
 import { BillBoard } from "../Component/TestComp/BillBoard";
 import { VertexAttributes } from "../Renderer/RendererDefine";
+import { StencilOutlineShader } from "../Shader/StencilOutlineShader";
 
 export const MainScene = {
     name: "MainScene",
@@ -169,21 +170,20 @@ export const MainScene = {
         //     }
         // });
 
-        // const spheresObj = await createObj({
-        //     name: "spheres",
-        //     position: new Vector3(0, 1.5, 1.5),
-        //     model: "resources/sphere.obj",
-        //     // components: [Rigidbody, SphereCollider]
-        //     components: [ObjAutoRotate],
-        //     shader: PBRShader,
-        //     shaderProp: {
-        //         // mainTexture: TextureCreator.CheckerboardTexture(),
-        //         mainTexture: "resources/texture/Brick_Diffuse.jpg",
-        //         normalTexture: "resources/texture/Brick_Normal.jpg",
-        //         // mainTexture: "resources/texture/Road_Diffuse.jpg",
-        //         // normalTexture: "resources/texture/Road_Normal.jpg",
-        //     }
-        // });
+        const spheresObj = await createObj({
+            name: "spheres",
+            position: new Vector3(0, 1.5, 1.5),
+            model: "resources/sphere.obj",
+            // components: [Rigidbody, SphereCollider]
+            components: [ObjAutoRotate],
+            shaderProp: {
+                mainTexture: TextureCreator.CheckerboardTexture(),
+                // mainTexture: "resources/texture/Brick_Diffuse.jpg",
+                // normalTexture: "resources/texture/Brick_Normal.jpg",
+                // mainTexture: "resources/texture/Road_Diffuse.jpg",
+                // normalTexture: "resources/texture/Road_Normal.jpg",
+            }
+        });
 
         // const bunnyObj = await createObj({
         //     name: "bunny",
@@ -197,6 +197,7 @@ export const MainScene = {
             model: 'resources/toukui/Construction_Helmet.obj',
             modelScale: 0.1,
             components: [ObjRotate],
+            shader: StencilOutlineShader,
             shaderProp: {
                 mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
                 // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
