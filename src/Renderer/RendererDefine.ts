@@ -23,7 +23,7 @@ export interface ShaderRenderState {
     stencil?: Stencil;               // 模板测试状态
 }
 
-export interface Blend{
+export interface Blend {
     state: boolean;         // 是否开启混合，默认值为 false
     op: BlendOp;            // 混合操作，默认值为 Add
     src: BlendFactor;
@@ -50,7 +50,7 @@ export interface Stencil {
     zFailOperation?: StencilOp;     // 当像素通过模板测试但未通过深度测试时，GPU 对模板缓冲区执行的操作。默认值为 Keep
 }
 
-export enum BlendFactor{
+export enum BlendFactor {
     One,            // 此输入的值是 one。该值用于使用源或目标的颜色的值。
     Zero,           // 此输入的值是 zero。该值用于删除源或目标值。
     SrcColor,       // GPU 将此输入的值乘以源颜色值。
@@ -174,4 +174,11 @@ export function stencilTest(stencilValue: number, ref: number = 0, mask: number 
         default:
             return false;
     }
+}
+
+export function applyColorMask(color: Color, bufferColor: Color, mask: ColorMask) {
+    color.r = (mask & ColorMask.Red) ? color.r : bufferColor.r;
+    color.g = (mask & ColorMask.Green) ? color.g : bufferColor.g;
+    color.b = (mask & ColorMask.Blue) ? color.b : bufferColor.b;
+    color.a = (mask & ColorMask.Alpha) ? color.a : bufferColor.a;
 }

@@ -11,7 +11,7 @@ import { Mesh } from "../Resources/Mesh";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
-import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest } from "./RendererDefine";
+import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest, ColorMask, applyColorMask, RenderType } from "./RendererDefine";
 import { GameObject } from "../Core/GameObject";
 import { Gizmo } from "../Utils/Gizmo";
 
@@ -373,10 +373,18 @@ export class RasterizationPipeline {
 
         // 渲染所有通道
         shader.passes.forEach(pass => {
+            const renderType = shader.renderType;
+            const renderState = pass.renderState || {};
+            const colorMask = renderState.colorMask || ColorMask.All;
+            const cullMode = renderState.cullMode || CullMode.Back;
+            const zTest = renderState.zTest || ZTest.Less;
+            const zWrite = pass.renderState?.zWrite ?? true;
+            const blendState = pass.renderState?.blend?.state;
+
             let triangles = mesh.triangles;
 
             // 渲染管线3.背面剔除
-            triangles = this.FaceCulling(triangles, mesh, renderer, pass.renderState?.cullMode || CullMode.Back);
+            triangles = this.FaceCulling(triangles, mesh, renderer, cullMode);
             // 渲染管线4.遮挡剔除
             this.OcclusionCulling();
 
@@ -439,7 +447,11 @@ export class RasterizationPipeline {
                             return;
                         }
 
+                        // 获取当前缓冲区里的值
                         const index = y * EngineConfig.canvasWidth + x;
+                        const currentBufferColor = Color.FromUint32(this.frameBuffer[index]);
+                        const currentBufferDepth = this.depthBuffer[index];
+                        const currentBufferStencil = this.stencilBuffer[index];
 
                         // 渲染管线9.模板测试
                         // if (pass.renderState?.stencilState) {
@@ -453,8 +465,7 @@ export class RasterizationPipeline {
                         // }
 
                         // 渲染管线10.早期深度测试
-                        const currentDepth = this.depthBuffer[index];
-                        const depthTestResult = depthTest(z, currentDepth, pass.renderState?.zTest);
+                        const depthTestResult = depthTest(z, currentBufferDepth, zTest);
                         if (!depthTestResult) continue;
 
                         // 渲染管线11.像素着色器
@@ -464,18 +475,22 @@ export class RasterizationPipeline {
 
                         // 渲染管线12.根据 zWrite 标志决定是否写入深度缓冲区
                         // 如果没设置zWrite，则默认允许写入，否则就判断zWrite值
-                        if ((pass.renderState?.zWrite ?? true)) {
+                        if (zWrite) {
                             this.depthBuffer[index] = z;
                         }
 
                         // 渲染管线13.颜色混合
-                        if (pass.renderState?.blend?.state) {
+                        if (blendState) {
                             // const existingColor = Color.FromUint32(this.frameBuffer[index]);
                             // const blendedColor = Color.blendColors(existingColor, color, blendMode);
                             // this.frameBuffer[index] = blendedColor.ToUint32();
                         }
 
                         // 渲染管线13.绘制像素到帧缓冲
+                        // 根据颜色掩码决定最终写入的分量（未启用的通道保留原有值）
+                        applyColorMask(pixelColor, currentBufferColor, colorMask);
+                        // 如果是不透明着色，alpha通道强行输出1
+                        if (renderType === RenderType.Opaque) pixelColor.a = 1;
                         this.DrawPixel(x, y, pixelColor, true);
                     }
                 }

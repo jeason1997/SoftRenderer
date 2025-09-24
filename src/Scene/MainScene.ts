@@ -101,9 +101,14 @@ export const MainScene = {
 
         // const groundObj = await createObj({
         //     name: "ground",
-        //     model: MeshCreator.createPanel(),
+        //     scale: Vector3.ONE.multiplyScalar(1.5),
+        //     rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
+        //     model: "resources/panel.obj",
+        //     // model: MeshCreator.createPanel(),
+        //     shader: AlphaCutOffShader,
         //     shaderProp: {
-        //         mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
+        //         // mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
+        //         mainTexture: "resources/texture/transparent_texture.png",
         //     }
         // });
         // const groundObj = panelObj.getComponent(Rigidbody);

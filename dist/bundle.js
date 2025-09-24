@@ -21588,10 +21588,17 @@ class RasterizationPipeline {
         shader.init(renderer.transform, this.currentCamera);
         // 渲染所有通道
         shader.passes.forEach(pass => {
-            var _a, _b, _c, _d, _e, _f;
+            var _a, _b, _c, _d;
+            const renderType = shader.renderType;
+            const renderState = pass.renderState || {};
+            const colorMask = renderState.colorMask || RendererDefine_1.ColorMask.All;
+            const cullMode = renderState.cullMode || RendererDefine_1.CullMode.Back;
+            const zTest = renderState.zTest || RendererDefine_1.ZTest.Less;
+            const zWrite = (_b = (_a = pass.renderState) === null || _a === void 0 ? void 0 : _a.zWrite) !== null && _b !== void 0 ? _b : true;
+            const blendState = (_d = (_c = pass.renderState) === null || _c === void 0 ? void 0 : _c.blend) === null || _d === void 0 ? void 0 : _d.state;
             let triangles = mesh.triangles;
             // 渲染管线3.背面剔除
-            triangles = this.FaceCulling(triangles, mesh, renderer, ((_a = pass.renderState) === null || _a === void 0 ? void 0 : _a.cullMode) || RendererDefine_1.CullMode.Back);
+            triangles = this.FaceCulling(triangles, mesh, renderer, cullMode);
             // 渲染管线4.遮挡剔除
             this.OcclusionCulling();
             for (let i = 0; i < triangles.length; i += 3) {
@@ -21647,7 +21654,11 @@ class RasterizationPipeline {
                             y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
                             return;
                         }
+                        // 获取当前缓冲区里的值
                         const index = y * Setting_1.EngineConfig.canvasWidth + x;
+                        const currentBufferColor = Color_1.Color.FromUint32(this.frameBuffer[index]);
+                        const currentBufferDepth = this.depthBuffer[index];
+                        const currentBufferStencil = this.stencilBuffer[index];
                         // 渲染管线9.模板测试
                         // if (pass.renderState?.stencilState) {
                         //     const stencilState = pass.renderState?.stencilState;
@@ -21659,8 +21670,7 @@ class RasterizationPipeline {
                         //     this.updateStencilBuffer(index, pass, depthTestResult);
                         // }
                         // 渲染管线10.早期深度测试
-                        const currentDepth = this.depthBuffer[index];
-                        const depthTestResult = (0, RendererDefine_1.depthTest)(z, currentDepth, (_b = pass.renderState) === null || _b === void 0 ? void 0 : _b.zTest);
+                        const depthTestResult = (0, RendererDefine_1.depthTest)(z, currentBufferDepth, zTest);
                         if (!depthTestResult)
                             continue;
                         // 渲染管线11.像素着色器
@@ -21670,16 +21680,21 @@ class RasterizationPipeline {
                             continue;
                         // 渲染管线12.根据 zWrite 标志决定是否写入深度缓冲区
                         // 如果没设置zWrite，则默认允许写入，否则就判断zWrite值
-                        if (((_d = (_c = pass.renderState) === null || _c === void 0 ? void 0 : _c.zWrite) !== null && _d !== void 0 ? _d : true)) {
+                        if (zWrite) {
                             this.depthBuffer[index] = z;
                         }
                         // 渲染管线13.颜色混合
-                        if ((_f = (_e = pass.renderState) === null || _e === void 0 ? void 0 : _e.blend) === null || _f === void 0 ? void 0 : _f.state) {
+                        if (blendState) {
                             // const existingColor = Color.FromUint32(this.frameBuffer[index]);
                             // const blendedColor = Color.blendColors(existingColor, color, blendMode);
                             // this.frameBuffer[index] = blendedColor.ToUint32();
                         }
                         // 渲染管线13.绘制像素到帧缓冲
+                        // 根据颜色掩码决定最终写入的分量（未启用的通道保留原有值）
+                        (0, RendererDefine_1.applyColorMask)(pixelColor, currentBufferColor, colorMask);
+                        // 如果是不透明着色，alpha通道强行输出1
+                        if (renderType === RendererDefine_1.RenderType.Opaque)
+                            pixelColor.a = 1;
                         this.DrawPixel(x, y, pixelColor, true);
                     }
                 }
@@ -21890,6 +21905,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZTest = exports.StencilOp = exports.StencilCompareFunction = exports.CullMode = exports.ColorMask = exports.RenderType = exports.BlendOp = exports.BlendFactor = void 0;
 exports.depthTest = depthTest;
 exports.stencilTest = stencilTest;
+exports.applyColorMask = applyColorMask;
 var BlendFactor;
 (function (BlendFactor) {
     BlendFactor[BlendFactor["One"] = 0] = "One";
@@ -22013,6 +22029,12 @@ function stencilTest(stencilValue, ref = 0, mask = 0xFF, func = StencilCompareFu
         default:
             return false;
     }
+}
+function applyColorMask(color, bufferColor, mask) {
+    color.r = (mask & ColorMask.Red) ? color.r : bufferColor.r;
+    color.g = (mask & ColorMask.Green) ? color.g : bufferColor.g;
+    color.b = (mask & ColorMask.Blue) ? color.b : bufferColor.b;
+    color.a = (mask & ColorMask.Alpha) ? color.a : bufferColor.a;
 }
 
 },{}],40:[function(require,module,exports){
@@ -23117,9 +23139,14 @@ exports.MainScene = {
         // });
         // const groundObj = await createObj({
         //     name: "ground",
-        //     model: MeshCreator.createPanel(),
+        //     scale: Vector3.ONE.multiplyScalar(1.5),
+        //     rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
+        //     model: "resources/panel.obj",
+        //     // model: MeshCreator.createPanel(),
+        //     shader: AlphaCutOffShader,
         //     shaderProp: {
-        //         mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
+        //         // mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
+        //         mainTexture: "resources/texture/transparent_texture.png",
         //     }
         // });
         // const groundObj = panelObj.getComponent(Rigidbody);
