@@ -15,7 +15,7 @@ export interface ShaderPass {
     // 顶点着色器：带默认实现
     vert: (input: VertexAttributes) => { vertexOut: Vector4; attrOut: VertexAttributes; };
     // 片段着色器：默认返回洋红色
-    frag: (input: VertexAttributes) => Color;
+    frag: (input: VertexAttributes) => Color | null;
     // 渲染状态
     blendMode: BlendMode;
     cullMode: CullMode;

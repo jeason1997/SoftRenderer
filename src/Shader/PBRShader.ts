@@ -66,7 +66,7 @@ export class PBRShader extends Shader {
         };
     }
 
-    public fragmentShader(input: VertexAttributes): Color {
+    public fragmentShader(input: VertexAttributes): Color | null {
         if (!this.mainTexture) { return Color.MAGENTA; }
 
         const uv = input.uv as Vector2;

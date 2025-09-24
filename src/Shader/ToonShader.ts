@@ -68,11 +68,11 @@ export class ToonShader extends Shader {
     }
 
     // 轮廓线片段着色器
-    public outlineFragmentShader(): Color {
+    public outlineFragmentShader(): Color | null {
         return this.outlineColor;
     }
 
-    public fragmentShader(v2fAttr: VertexAttributes): Color {
+    public fragmentShader(v2fAttr: VertexAttributes): Color | null {
         if (!this.mainTexture) { return Color.MAGENTA; }
 
         const uv = v2fAttr.uv as Vector2;

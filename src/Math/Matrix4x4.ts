@@ -281,8 +281,7 @@ export class Matrix4x4 {
     }
 
     public lookAt(target: Vector3): Matrix4x4 {
-        //TODO:
-        return this;
+        throw new Error("LookRotation not implemented");
     }
 
     //转换到摄影机看向的矩阵里

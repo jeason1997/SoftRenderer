@@ -37,7 +37,7 @@ export class LitShader extends Shader {
         };
     }
 
-    public fragmentShader(v2fAttr: VertexAttributes): Color {
+    public fragmentShader(v2fAttr: VertexAttributes): Color | null {
         const uv = v2fAttr.uv as Vector2;
         const normal = v2fAttr.normal as Vector3;
 

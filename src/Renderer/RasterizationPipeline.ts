@@ -12,7 +12,7 @@ import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
 import { CullMode, ZTest } from "../Shader/Shader";
-import { BlendMode } from "./RendererDefine";
+import { BlendMode, depthTest } from "./RendererDefine";
 import { GameObject } from "../Core/GameObject";
 import { Gizmo } from "../Utils/Gizmo";
 
@@ -44,21 +44,26 @@ export class RasterizationPipeline {
         const rootObject = Engine.sceneManager.getActiveScene()?.getRootGameObject();
         if (rootObject) {
             const cameras = Camera.cameras;
-            // depth越低越早渲染
+            // 相机depth越低越早渲染
             cameras.sort((a, b) => a.depth - b.depth);
             // 每个相机渲染一遍
             for (let i = 0, len = cameras.length; i < len; i++) {
                 this.currentCamera = cameras[i];
                 this.Clear(this.currentCamera);
                 this.currentRendererObjs = rootObject.getComponentsInChildren(MeshRenderer);
-                // 渲染管线1.排序场景物体，按照相机空间进行Z轴排序，先绘制近的
-                // 渲染管线2.视锥体剔除
+                // 渲染管线1.视锥体剔除
+                //TODO
+
+                // 渲染管线2.按照先不透明再天空盒再透明的顺序绘画
+                // 渲染不透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制近的，降低overdraw
                 for (const render of this.currentRendererObjs) {
                     this.DrawObject(render);
-                    Debug.Log(render.gameObject.name);
+                    // Debug.Log(render.gameObject.name);
                 }
                 // 绘制天空盒
                 this.DrawSkybox(this.currentCamera);
+                // 绘制透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制远的，颜色混合才能正确
+                //TOOD
             }
             // 调试信息
             this.DebugDraw();
@@ -448,17 +453,20 @@ export class RasterizationPipeline {
                         const currentDepth = this.depthBuffer[index];
 
                         // 渲染管线9.早期深度测试
-                        const depthTestResult = this.depthTest(z, currentDepth, pass.zTest);
-
+                        const depthTestResult = depthTest(z, currentDepth, pass.zTest);
                         if (depthTestResult) {
-                            // 渲染管线10.深度测试通过，根据 zWrite 标志决定是否写入深度缓冲区
-                            if (pass.zWrite) {
-                                this.depthBuffer[index] = z; // 更新深度缓冲区
-                            }
-                            // 渲染管线11.像素着色器
+                            // 渲染管线10.像素着色器
                             const pixelColor = pass.frag(fragment.attributes);
-                            // 渲染管线12.颜色混合并绘制像素到帧缓冲
-                            this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
+                            if (pixelColor) {
+                                // 渲染管线11.根据 zWrite 标志决定是否写入深度缓冲区
+                                if (pass.zWrite) {
+                                    this.depthBuffer[index] = z; // 更新深度缓冲区
+                                }
+                                // 渲染管线12.颜色混合并绘制像素到帧缓冲
+                                this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
+                            } else {
+                                // 像素被丢弃，可能是Alpha测试失败
+                            }
                         }
                     }
                 }
@@ -469,37 +477,6 @@ export class RasterizationPipeline {
     //#endregion
 
     //#region 工具函数
-
-    /**
-     * 执行深度测试
-     * @param z 当前片元的深度值
-     * @param currentDepth 深度缓冲区中对应位置的深度值
-     * @param zTestFunc 深度测试函数（ZTest 枚举值）
-     * @returns 是否通过深度测试
-     */
-    private depthTest(z: number, currentDepth: number, zTestFunc: ZTest): boolean {
-        switch (zTestFunc) {
-            case ZTest.Never:
-                return false; // 从不通过
-            case ZTest.Less:
-                return z < currentDepth; // 小于当前深度则通过（默认）
-            case ZTest.Equal:
-                return Math.abs(z - currentDepth) < 1e-6; // 等于当前深度则通过（需考虑浮点精度）
-            case ZTest.LessEqual:
-                return z <= currentDepth; // 小于或等于当前深度则通过
-            case ZTest.Greater:
-                return z > currentDepth; // 大于当前深度则通过
-            case ZTest.NotEqual:
-                return Math.abs(z - currentDepth) >= 1e-6; // 不等于当前深度则通过
-            case ZTest.GreaterEqual:
-                return z >= currentDepth; // 大于或等于当前深度则通过
-            case ZTest.Always:
-                return true; // 总是通过
-            default:
-                console.warn("Unknown ZTest function, using Less as default.");
-                return z < currentDepth;
-        }
-    }
 
     private DebugDraw(): void {
         // 绘制包围盒

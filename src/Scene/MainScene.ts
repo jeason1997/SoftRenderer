@@ -29,6 +29,8 @@ import { ScrollTexture } from "../Component/TestComp/ScrollTexture";
 import { TextureCreator } from "../Resources/TextureCreator";
 import { MeshCreator } from "../Resources/MeshCreator";
 import { PBRShader } from "../Shader/PBRShader";
+import { AlphaCutOffShader } from "../Shader/AlphaCutOffShader";
+import { BillBoard } from "../Component/TestComp/BillBoard";
 
 export const MainScene = {
     name: "MainScene",
@@ -77,16 +79,16 @@ export const MainScene = {
         //     components: [ObjRotate, ScrollTexture],
         // });
 
-        const leeObj = await createObj({
-            name: "lee",
-            model: 'resources/assets/meshes/lee.obj',
-            // shader: PBRShader,
-            shaderProp: {
-                mainTexture: "resources/assets/textures/texture/lee.jpg",
-                // normalTexture: "resources/assets/textures/texture/lee_normal.jpg",
-                // gloss: 1000
-            }
-        });
+        // const leeObj = await createObj({
+        //     name: "lee",
+        //     model: 'resources/assets/meshes/lee.obj',
+        //     // shader: PBRShader,
+        //     shaderProp: {
+        //         mainTexture: "resources/assets/textures/texture/lee.jpg",
+        //         // normalTexture: "resources/assets/textures/texture/lee_normal.jpg",
+        //         // gloss: 1000
+        //     }
+        // });
 
         // const female02Obj = await createObj({
         //     name: "female02",
@@ -96,22 +98,33 @@ export const MainScene = {
         //     components: [ObjRotate],
         // });
 
-        // const panelObj = await createObj({
-        //     name: "panel",
-        //     scale: Vector3.ONE.multiplyScalar(1.5),
-        //     // rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
-        //     model: "resources/panel.obj",
-        //     //components: [BoxCollider, Rigidbody]
-        //     components: [ObjRotate],
-        //     // shader: PBRShader,
+        // const groundObj = await createObj({
+        //     name: "ground",
+        //     model: MeshCreator.createPanel(),
         //     shaderProp: {
-        //         mainTexture: "resources/texture/test.jpg",
-        //         // mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
-        //         // normalTexture: "resources/assets/textures/texture/ancientbrick_normal.jpg",
+        //         mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
         //     }
         // });
-        // const panelBody = panelObj.getComponent(Rigidbody);
-        // if (panelBody) panelBody.isKinematic = true;
+        // const groundObj = panelObj.getComponent(Rigidbody);
+        // if (groundObj) groundObj.isKinematic = true;
+
+        // 随机生成20颗树，它们的位置在[-5, 5]的水平范围内随机分布
+        // for (let i = 0; i < 30; i++) {
+        //     const randomX = (Math.random() * 5) - 2.5;
+        //     const randomZ = (Math.random() * 5) - 2.5;
+        //     const randomH = 1 + (Math.random() * 0.4) - 0.2;
+        //     const panelObj = await createObj({
+        //         name: `tree_${i}`,
+        //         position: new Vector3(randomX, 0.5 * randomH, randomZ),
+        //         scale: Vector3.ONE.multiplyScalar(randomH),
+        //         model: MeshCreator.createQuad(),
+        //         components: [BillBoard],
+        //         shader: AlphaCutOffShader,
+        //         shaderProp: {
+        //             mainTexture: "resources/texture/tree.png",
+        //         }
+        //     });
+        // }
 
         // // 左
         // await createObj({
@@ -173,16 +186,16 @@ export const MainScene = {
         //     texture: Texture.CheckerboardTexture(),
         // });
 
-        // const toukuiObj = await createObj({
-        //     name: "toukui",
-        //     model: 'resources/toukui/Construction_Helmet.obj',
-        //     modelScale: 0.1,
-        //     components: [ObjRotate],
-        //     shaderProp: {
-        //         mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-        //         // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
-        //     }
-        // });
+        const toukuiObj = await createObj({
+            name: "toukui",
+            model: 'resources/toukui/Construction_Helmet.obj',
+            modelScale: 0.1,
+            components: [ObjRotate],
+            shaderProp: {
+                mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+                // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
+            }
+        });
         // spheresObj.transform.setParent(toukuiObj.transform);
     }
 }

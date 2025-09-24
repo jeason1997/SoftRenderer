@@ -17011,12 +17011,14 @@ exports.Light = Light;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MeshRenderer = void 0;
 const Renderer_1 = require("./Renderer");
-const Gizmo_1 = require("../Utils/Gizmo");
-const Vector3_1 = require("../Math/Vector3");
 class MeshRenderer extends Renderer_1.Renderer {
     constructor() {
         super(...arguments);
         this.mesh = null;
+        // public onDrawGizmos(): void {
+        //     Gizmo.matrix = this.transform.localToWorldMatrix;
+        //     Gizmo.DrawAxis(Vector3.ZERO, 0.1);
+        // }
     }
     render() {
     }
@@ -17025,14 +17027,10 @@ class MeshRenderer extends Renderer_1.Renderer {
         // 清理资源
         this.mesh = null;
     }
-    onDrawGizmos() {
-        Gizmo_1.Gizmo.matrix = this.transform.localToWorldMatrix;
-        Gizmo_1.Gizmo.DrawAxis(Vector3_1.Vector3.ZERO, 0.1);
-    }
 }
 exports.MeshRenderer = MeshRenderer;
 
-},{"../Math/Vector3":33,"../Utils/Gizmo":52,"./Renderer":10}],10:[function(require,module,exports){
+},{"./Renderer":10}],10:[function(require,module,exports){
 "use strict";
 var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
     function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
@@ -19490,8 +19488,7 @@ class Matrix4x4 {
         return this;
     }
     lookAt(target) {
-        //TODO:
-        return this;
+        throw new Error("LookRotation not implemented");
     }
     //转换到摄影机看向的矩阵里
     transformToLookAtSpace(eye, targetPoint, up = Vector3_1.Vector3.UP) {
@@ -19973,6 +19970,15 @@ class Quaternion {
         res.z = axis.z * sin;
         res.w = Math.cos(angle);
         return res;
+    }
+    /**
+     * 创建一个旋转，使物体朝向目标方向
+     * @param direction 目标方向向量（世界空间），需要归一化
+     * @param up 上方向向量（世界空间），默认为(0,1,0)
+     * @returns 旋转四元数
+     */
+    static LookRotation(direction, up = Vector3_1.Vector3.UP) {
+        throw new Error("LookRotation not implemented");
     }
     static get identity() {
         return new Quaternion(0, 0, 0, 1);
@@ -21309,21 +21315,25 @@ class RasterizationPipeline {
         const rootObject = (_a = Engine_1.Engine.sceneManager.getActiveScene()) === null || _a === void 0 ? void 0 : _a.getRootGameObject();
         if (rootObject) {
             const cameras = Camera_1.Camera.cameras;
-            // depth越低越早渲染
+            // 相机depth越低越早渲染
             cameras.sort((a, b) => a.depth - b.depth);
             // 每个相机渲染一遍
             for (let i = 0, len = cameras.length; i < len; i++) {
                 this.currentCamera = cameras[i];
                 this.Clear(this.currentCamera);
                 this.currentRendererObjs = rootObject.getComponentsInChildren(MeshRenderer_1.MeshRenderer);
-                // 渲染管线1.排序场景物体，按照相机空间进行Z轴排序，先绘制近的
-                // 渲染管线2.视锥体剔除
+                // 渲染管线1.视锥体剔除
+                //TODO
+                // 渲染管线2.按照先不透明再天空盒再透明的顺序绘画
+                // 渲染不透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制近的，降低overdraw
                 for (const render of this.currentRendererObjs) {
                     this.DrawObject(render);
-                    Debug_1.Debug.Log(render.gameObject.name);
+                    // Debug.Log(render.gameObject.name);
                 }
                 // 绘制天空盒
                 this.DrawSkybox(this.currentCamera);
+                // 绘制透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制远的，颜色混合才能正确
+                //TOOD
             }
             // 调试信息
             this.DebugDraw();
@@ -21649,16 +21659,21 @@ class RasterizationPipeline {
                         const index = y * Setting_1.EngineConfig.canvasWidth + x;
                         const currentDepth = this.depthBuffer[index];
                         // 渲染管线9.早期深度测试
-                        const depthTestResult = this.depthTest(z, currentDepth, pass.zTest);
+                        const depthTestResult = (0, RendererDefine_1.depthTest)(z, currentDepth, pass.zTest);
                         if (depthTestResult) {
-                            // 渲染管线10.深度测试通过，根据 zWrite 标志决定是否写入深度缓冲区
-                            if (pass.zWrite) {
-                                this.depthBuffer[index] = z; // 更新深度缓冲区
-                            }
-                            // 渲染管线11.像素着色器
+                            // 渲染管线10.像素着色器
                             const pixelColor = pass.frag(fragment.attributes);
-                            // 渲染管线12.颜色混合并绘制像素到帧缓冲
-                            this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
+                            if (pixelColor) {
+                                // 渲染管线11.根据 zWrite 标志决定是否写入深度缓冲区
+                                if (pass.zWrite) {
+                                    this.depthBuffer[index] = z; // 更新深度缓冲区
+                                }
+                                // 渲染管线12.颜色混合并绘制像素到帧缓冲
+                                this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
+                            }
+                            else {
+                                // 像素被丢弃，可能是Alpha测试失败
+                            }
                         }
                     }
                 }
@@ -21667,36 +21682,6 @@ class RasterizationPipeline {
     }
     //#endregion
     //#region 工具函数
-    /**
-     * 执行深度测试
-     * @param z 当前片元的深度值
-     * @param currentDepth 深度缓冲区中对应位置的深度值
-     * @param zTestFunc 深度测试函数（ZTest 枚举值）
-     * @returns 是否通过深度测试
-     */
-    depthTest(z, currentDepth, zTestFunc) {
-        switch (zTestFunc) {
-            case Shader_1.ZTest.Never:
-                return false; // 从不通过
-            case Shader_1.ZTest.Less:
-                return z < currentDepth; // 小于当前深度则通过（默认）
-            case Shader_1.ZTest.Equal:
-                return Math.abs(z - currentDepth) < 1e-6; // 等于当前深度则通过（需考虑浮点精度）
-            case Shader_1.ZTest.LessEqual:
-                return z <= currentDepth; // 小于或等于当前深度则通过
-            case Shader_1.ZTest.Greater:
-                return z > currentDepth; // 大于当前深度则通过
-            case Shader_1.ZTest.NotEqual:
-                return Math.abs(z - currentDepth) >= 1e-6; // 不等于当前深度则通过
-            case Shader_1.ZTest.GreaterEqual:
-                return z >= currentDepth; // 大于或等于当前深度则通过
-            case Shader_1.ZTest.Always:
-                return true; // 总是通过
-            default:
-                console.warn("Unknown ZTest function, using Less as default.");
-                return z < currentDepth;
-        }
-    }
     DebugDraw() {
         // 绘制包围盒
         // this.DrawBounds();
@@ -21874,6 +21859,7 @@ exports.RasterizationPipeline = RasterizationPipeline;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZTest = exports.CullMode = exports.RenderType = exports.BlendMode = void 0;
+exports.depthTest = depthTest;
 var BlendMode;
 (function (BlendMode) {
     BlendMode[BlendMode["Opaque"] = 0] = "Opaque";
@@ -21905,6 +21891,36 @@ var ZTest;
     ZTest[ZTest["GreaterEqual"] = 6] = "GreaterEqual";
     ZTest[ZTest["Always"] = 7] = "Always";
 })(ZTest || (exports.ZTest = ZTest = {}));
+/**
+ * 执行深度测试
+ * @param z 当前片元的深度值
+ * @param currentDepth 深度缓冲区中对应位置的深度值
+ * @param zTestFunc 深度测试函数（ZTest 枚举值）
+ * @returns 是否通过深度测试
+ */
+function depthTest(z, currentDepth, zTestFunc) {
+    switch (zTestFunc) {
+        case ZTest.Never:
+            return false; // 从不通过
+        case ZTest.Less:
+            return z < currentDepth; // 小于当前深度则通过（默认）
+        case ZTest.Equal:
+            return Math.abs(z - currentDepth) < 1e-6; // 等于当前深度则通过（需考虑浮点精度）
+        case ZTest.LessEqual:
+            return z <= currentDepth; // 小于或等于当前深度则通过
+        case ZTest.Greater:
+            return z > currentDepth; // 大于当前深度则通过
+        case ZTest.NotEqual:
+            return Math.abs(z - currentDepth) >= 1e-6; // 不等于当前深度则通过
+        case ZTest.GreaterEqual:
+            return z >= currentDepth; // 大于或等于当前深度则通过
+        case ZTest.Always:
+            return true; // 总是通过
+        default:
+            console.warn("Unknown ZTest function, using Less as default.");
+            return z < currentDepth;
+    }
+}
 
 },{}],40:[function(require,module,exports){
 "use strict";
@@ -22989,16 +23005,16 @@ exports.MainScene = {
         //     modelPath: 'resources/assets/meshes/suzanne_low.obj',
         //     components: [ObjRotate, ScrollTexture],
         // });
-        const leeObj = yield createObj({
-            name: "lee",
-            model: 'resources/assets/meshes/lee.obj',
-            // shader: PBRShader,
-            shaderProp: {
-                mainTexture: "resources/assets/textures/texture/lee.jpg",
-                // normalTexture: "resources/assets/textures/texture/lee_normal.jpg",
-                // gloss: 1000
-            }
-        });
+        // const leeObj = await createObj({
+        //     name: "lee",
+        //     model: 'resources/assets/meshes/lee.obj',
+        //     // shader: PBRShader,
+        //     shaderProp: {
+        //         mainTexture: "resources/assets/textures/texture/lee.jpg",
+        //         // normalTexture: "resources/assets/textures/texture/lee_normal.jpg",
+        //         // gloss: 1000
+        //     }
+        // });
         // const female02Obj = await createObj({
         //     name: "female02",
         //     modelPath: 'resources/female02/female02.obj',
@@ -23006,22 +23022,32 @@ exports.MainScene = {
         //     texture: Texture.CheckerboardTexture(),
         //     components: [ObjRotate],
         // });
-        // const panelObj = await createObj({
-        //     name: "panel",
-        //     scale: Vector3.ONE.multiplyScalar(1.5),
-        //     // rotation: Quaternion.angleAxis(-90, Vector3.RIGHT),
-        //     model: "resources/panel.obj",
-        //     //components: [BoxCollider, Rigidbody]
-        //     components: [ObjRotate],
-        //     // shader: PBRShader,
+        // const groundObj = await createObj({
+        //     name: "ground",
+        //     model: MeshCreator.createPanel(),
         //     shaderProp: {
-        //         mainTexture: "resources/texture/test.jpg",
-        //         // mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
-        //         // normalTexture: "resources/assets/textures/texture/ancientbrick_normal.jpg",
+        //         mainTexture: "resources/assets/textures/texture/ancientbrick_albedo.jpg",
         //     }
         // });
-        // const panelBody = panelObj.getComponent(Rigidbody);
-        // if (panelBody) panelBody.isKinematic = true;
+        // const groundObj = panelObj.getComponent(Rigidbody);
+        // if (groundObj) groundObj.isKinematic = true;
+        // 随机生成20颗树，它们的位置在[-5, 5]的水平范围内随机分布
+        // for (let i = 0; i < 30; i++) {
+        //     const randomX = (Math.random() * 5) - 2.5;
+        //     const randomZ = (Math.random() * 5) - 2.5;
+        //     const randomH = 1 + (Math.random() * 0.4) - 0.2;
+        //     const panelObj = await createObj({
+        //         name: `tree_${i}`,
+        //         position: new Vector3(randomX, 0.5 * randomH, randomZ),
+        //         scale: Vector3.ONE.multiplyScalar(randomH),
+        //         model: MeshCreator.createQuad(),
+        //         components: [BillBoard],
+        //         shader: AlphaCutOffShader,
+        //         shaderProp: {
+        //             mainTexture: "resources/texture/tree.png",
+        //         }
+        //     });
+        // }
         // // 左
         // await createObj({
         //     name: "cube",
@@ -23079,16 +23105,16 @@ exports.MainScene = {
         //     modelScale: 10,
         //     texture: Texture.CheckerboardTexture(),
         // });
-        // const toukuiObj = await createObj({
-        //     name: "toukui",
-        //     model: 'resources/toukui/Construction_Helmet.obj',
-        //     modelScale: 0.1,
-        //     components: [ObjRotate],
-        //     shaderProp: {
-        //         mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
-        //         // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
-        //     }
-        // });
+        const toukuiObj = yield createObj({
+            name: "toukui",
+            model: 'resources/toukui/Construction_Helmet.obj',
+            modelScale: 0.1,
+            components: [ObjRotate_1.ObjRotate],
+            shaderProp: {
+                mainTexture: "resources/toukui/Construction_Helmet_M_Helmet_BaseColor.png",
+                // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
+            }
+        });
         // spheresObj.transform.setParent(toukuiObj.transform);
     })
 };

@@ -176,6 +176,16 @@ export class Quaternion {
         return res;
     }
 
+    /**
+     * 创建一个旋转，使物体朝向目标方向
+     * @param direction 目标方向向量（世界空间），需要归一化
+     * @param up 上方向向量（世界空间），默认为(0,1,0)
+     * @returns 旋转四元数
+     */
+    public static LookRotation(direction: Vector3, up: Vector3 = Vector3.UP): Quaternion {
+        throw new Error("LookRotation not implemented");
+    }
+
     public static get identity(): Quaternion {
         return new Quaternion(0, 0, 0, 1);
     }

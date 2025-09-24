@@ -17,22 +17,22 @@ export class MeshCreator {
         const halfW = width / 2;
         const halfH = height / 2;
         mesh.vertices = [
-            new Vector3(-halfW, 0, halfH), // 左下 
-            new Vector3(halfW, 0, halfH),  // 右下
-            new Vector3(halfW, 0, -halfH), // 右上
-            new Vector3(-halfW, 0, -halfH) // 左上
+            new Vector3(-halfW, -halfH, 0), // 左下 
+            new Vector3(halfW, -halfH, 0),  // 右下
+            new Vector3(halfW, halfH, 0),   // 右上
+            new Vector3(-halfW, halfH, 0)   // 左上
         ];
 
         // UV坐标
         mesh.uv = [
-            new Vector2(0, 0),
-            new Vector2(1, 0),
+            new Vector2(0, 1),
             new Vector2(1, 1),
-            new Vector2(0, 1)
+            new Vector2(1, 0),
+            new Vector2(0, 0)
         ];
 
-        // 法线（朝上）
-        const normal = new Vector3(0, 1, 0);
+        // 法线（朝前）
+        const normal = new Vector3(0, 0, 1);
         mesh.normals = [normal.clone(), normal.clone(), normal.clone(), normal.clone()];
 
         // 三角形索引

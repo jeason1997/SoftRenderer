@@ -16,8 +16,8 @@ export class MeshRenderer extends Renderer {
         this.mesh = null;
     }
 
-    public onDrawGizmos(): void {
-        Gizmo.matrix = this.transform.localToWorldMatrix;
-        Gizmo.DrawAxis(Vector3.ZERO, 0.1);
-    }
+    // public onDrawGizmos(): void {
+    //     Gizmo.matrix = this.transform.localToWorldMatrix;
+    //     Gizmo.DrawAxis(Vector3.ZERO, 0.1);
+    // }
 }
