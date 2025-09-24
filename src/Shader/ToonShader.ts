@@ -3,7 +3,7 @@ import { TransformTools } from "../Math/TransformTools";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { BlendMode, CullMode, VertexAttributes, ZTest } from "../Renderer/RendererDefine";
+import { CullMode, VertexAttributes } from "../Renderer/RendererDefine";
 import { Texture } from "../Resources/Texture";
 import { Shader, ShaderPass } from "./Shader";
 
@@ -11,32 +11,30 @@ export class ToonShader extends Shader {
 
     public mainTexture: Texture | null = null;
     public mainTextureST: Vector4 = new Vector4(0, 0, 1, 1);
-    
+
     // 卡通着色特有的参数
     public shadowThreshold: number = 0.3;               // 阴影阈值
     public midtoneThreshold: number = 0.7;              // 中间调阈值
     public highlightIntensity: number = 1.2;            // 高光强度
     public outlineColor: Color = new Color(0, 0, 0, 1); // 轮廓颜色
     public outlineThickness: number = 0.05;             // 轮廓厚度
-    
+
     public passes: ShaderPass[] = [
         {
             name: "Forward",
             vert: this.vertexShader.bind(this),
             frag: this.fragmentShader.bind(this),
-            blendMode: BlendMode.Opaque,
-            cullMode: CullMode.Back,
-            zTest: ZTest.LessEqual,
-            zWrite: true,
+            renderState: {
+                cullMode: CullMode.Back,
+            }
         },
         {
             name: "Outline",
             vert: this.outlineVertexShader.bind(this),
             frag: this.outlineFragmentShader.bind(this),
-            blendMode: BlendMode.Opaque,
-            cullMode: CullMode.Front,
-            zTest: ZTest.LessEqual,
-            zWrite: true,
+            renderState: {
+                cullMode: CullMode.Front,
+            }
         }
     ];
 
@@ -60,7 +58,7 @@ export class ToonShader extends Shader {
         const normal = inAttr.normal as Vector3;
         const offsetVertex = (inAttr.vertex as Vector3).clone()
             .add(normal.clone().multiplyScalar(this.outlineThickness));
-        
+
         return {
             vertexOut: this.mvpMatrix.multiplyVector4(new Vector4(offsetVertex, 1)),
             attrOut: {}

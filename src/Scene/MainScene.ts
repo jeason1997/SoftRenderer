@@ -21,7 +21,7 @@ import { LitShader } from "../Shader/LitShader";
 import { Scene } from "./Scene";
 import { ObjRotate } from "../Component/TestComp/ObjRotate";
 import { ObjAutoRotate } from "../Component/TestComp/ObjAutoRotate";
-import { Shader, VertexAttributes } from "../Shader/Shader";
+import { Shader } from "../Shader/Shader";
 import { ToonShader } from "../Shader/ToonShader";
 import { CubeMap } from "../Resources/CubeMap";
 import { RenderSettings } from "../Core/Setting";
@@ -31,6 +31,7 @@ import { MeshCreator } from "../Resources/MeshCreator";
 import { PBRShader } from "../Shader/PBRShader";
 import { AlphaCutOffShader } from "../Shader/AlphaCutOffShader";
 import { BillBoard } from "../Component/TestComp/BillBoard";
+import { VertexAttributes } from "../Renderer/RendererDefine";
 
 export const MainScene = {
     name: "MainScene",

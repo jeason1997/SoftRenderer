@@ -19110,7 +19110,6 @@ class Sphere {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = void 0;
-const RendererDefine_1 = require("../Renderer/RendererDefine");
 class Color {
     // public static readonly WHITE = Object.freeze(new Color(1, 1, 1, 1)) as Readonly<Color>;
     static get WHITE() { return new Color(1, 1, 1, 1); }
@@ -19190,57 +19189,57 @@ class Color {
      * 颜色混合方法
      * 支持多种混合模式
      */
-    static blendColors(dest, src, mode) {
-        // 提取目标颜色分量 (ARGB格式)
-        const destA = dest.a;
-        const destR = dest.r;
-        const destG = dest.g;
-        const destB = dest.b;
-        // 提取源颜色分量 (ARGB格式)
-        const srcA = src.a;
-        const srcR = src.r;
-        const srcG = src.g;
-        const srcB = src.b;
-        let resultA, resultR, resultG, resultB;
-        switch (mode) {
-            case RendererDefine_1.BlendMode.AlphaBlend:
-                // Alpha 混合 (最常用的混合模式)
-                const alpha = srcA;
-                const invAlpha = 1 - alpha;
-                resultA = Math.min(1, destA + srcA - (destA * srcA));
-                resultR = srcR * alpha + destR * invAlpha;
-                resultG = srcG * alpha + destG * invAlpha;
-                resultB = srcB * alpha + destB * invAlpha;
-                break;
-            case RendererDefine_1.BlendMode.Additive:
-                // 加法混合 (颜色叠加)
-                resultA = Math.min(1, destA + srcA);
-                resultR = Math.min(1, destR + srcR);
-                resultG = Math.min(1, destG + srcG);
-                resultB = Math.min(1, destB + srcB);
-                break;
-            case RendererDefine_1.BlendMode.Multiply:
-                // 乘法混合 (颜色相乘)
-                resultA = Math.min(1, destA);
-                resultR = destR * srcR;
-                resultG = destG * srcG;
-                resultB = destB * srcB;
-                break;
-            case RendererDefine_1.BlendMode.Opaque:
-            default:
-                // 直接替换
-                return src.clone();
-        }
-        // 组合颜色分量
-        return new Color(resultR, resultG, resultB, resultA);
-    }
+    // public static blendColors(dest: Color, src: Color, mode: BlendOp): Color {
+    //     // 提取目标颜色分量 (ARGB格式)
+    //     const destA = dest.a;
+    //     const destR = dest.r;
+    //     const destG = dest.g;
+    //     const destB = dest.b;
+    //     // 提取源颜色分量 (ARGB格式)
+    //     const srcA = src.a;
+    //     const srcR = src.r;
+    //     const srcG = src.g;
+    //     const srcB = src.b;
+    //     let resultA, resultR, resultG, resultB;
+    //     switch (mode) {
+    //         case BlendOp.AlphaBlend:
+    //             // Alpha 混合 (最常用的混合模式)
+    //             const alpha = srcA;
+    //             const invAlpha = 1 - alpha;
+    //             resultA = Math.min(1, destA + srcA - (destA * srcA));
+    //             resultR = srcR * alpha + destR * invAlpha;
+    //             resultG = srcG * alpha + destG * invAlpha;
+    //             resultB = srcB * alpha + destB * invAlpha;
+    //             break;
+    //         case BlendOp.Additive:
+    //             // 加法混合 (颜色叠加)
+    //             resultA = Math.min(1, destA + srcA);
+    //             resultR = Math.min(1, destR + srcR);
+    //             resultG = Math.min(1, destG + srcG);
+    //             resultB = Math.min(1, destB + srcB);
+    //             break;
+    //         case BlendOp.Multiply:
+    //             // 乘法混合 (颜色相乘)
+    //             resultA = Math.min(1, destA);
+    //             resultR = destR * srcR;
+    //             resultG = destG * srcG;
+    //             resultB = destB * srcB;
+    //             break;
+    //         case BlendOp.Off:
+    //         default:
+    //             // 直接替换
+    //             return src.clone();
+    //     }
+    //     // 组合颜色分量
+    //     return new Color(resultR, resultG, resultB, resultA);
+    // }
     static clamp01(value) {
         return Math.max(0, Math.min(1, value));
     }
 }
 exports.Color = Color;
 
-},{"../Renderer/RendererDefine":39}],28:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Matrix4x4 = void 0;
@@ -21294,7 +21293,6 @@ const Setting_1 = require("../Core/Setting");
 const BarycentricTriangleRasterizer_1 = require("./BarycentricTriangleRasterizer");
 const TransformTools_1 = require("../Math/TransformTools");
 const Debug_1 = require("../Utils/Debug");
-const Shader_1 = require("../Shader/Shader");
 const RendererDefine_1 = require("./RendererDefine");
 const Gizmo_1 = require("../Utils/Gizmo");
 var DrawMode;
@@ -21308,6 +21306,7 @@ class RasterizationPipeline {
         this.drawMode = DrawMode.Shader;
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Float32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
+        this.stencilBuffer = new Uint8Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
         this.overdrawBuffer = new Uint32Array(Setting_1.EngineConfig.canvasWidth * Setting_1.EngineConfig.canvasHeight);
     }
     Render() {
@@ -21358,6 +21357,7 @@ class RasterizationPipeline {
         }
         if (clearFlags != Camera_1.CameraClearFlags.None) {
             this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
+            this.clearViewportRegion(this.stencilBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
         }
         this.clearViewportRegion(this.overdrawBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
     }
@@ -21421,7 +21421,7 @@ class RasterizationPipeline {
             }
         }
     }
-    DrawPixel(x, y, color, countOverdraw = false, blendMode = RendererDefine_1.BlendMode.Opaque) {
+    DrawPixel(x, y, color, countOverdraw = false) {
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -21432,16 +21432,7 @@ class RasterizationPipeline {
             return;
         }
         const index = y * Setting_1.EngineConfig.canvasWidth + x;
-        // 颜色混合处理
-        if (blendMode !== RendererDefine_1.BlendMode.Opaque) {
-            const existingColor = Color_1.Color.FromUint32(this.frameBuffer[index]);
-            const blendedColor = Color_1.Color.blendColors(existingColor, color, blendMode);
-            this.frameBuffer[index] = blendedColor.ToUint32();
-        }
-        else {
-            // 直接替换模式
-            this.frameBuffer[index] = color.ToUint32();
-        }
+        this.frameBuffer[index] = color.ToUint32();
         // Overdraw计数
         if (countOverdraw)
             this.overdrawBuffer[index]++;
@@ -21554,7 +21545,7 @@ class RasterizationPipeline {
     }
     // 背面剔除
     FaceCulling(triangles, mesh, renderer, cullMode) {
-        if (cullMode === Shader_1.CullMode.None)
+        if (cullMode === RendererDefine_1.CullMode.None)
             return triangles;
         const visibleTriangles = [];
         const faceNormals = mesh.faceNormals;
@@ -21574,7 +21565,7 @@ class RasterizationPipeline {
             // 3.计算这2个向量的夹角
             const dot = world_normal.dot(centerToCamera);
             // 4.判断夹角是否大于等于0°小于90°
-            if ((cullMode === Shader_1.CullMode.Back && dot > 0) || (cullMode === Shader_1.CullMode.Front && dot < 0)) {
+            if ((cullMode === RendererDefine_1.CullMode.Back && dot > 0) || (cullMode === RendererDefine_1.CullMode.Front && dot < 0)) {
                 visibleTriangles.push(triangles[i * 3 + 0], triangles[i * 3 + 1], triangles[i * 3 + 2]);
             }
         }
@@ -21597,9 +21588,10 @@ class RasterizationPipeline {
         shader.init(renderer.transform, this.currentCamera);
         // 渲染所有通道
         shader.passes.forEach(pass => {
+            var _a, _b, _c, _d, _e, _f;
             let triangles = mesh.triangles;
             // 渲染管线3.背面剔除
-            triangles = this.FaceCulling(triangles, mesh, renderer, pass.cullMode);
+            triangles = this.FaceCulling(triangles, mesh, renderer, ((_a = pass.renderState) === null || _a === void 0 ? void 0 : _a.cullMode) || RendererDefine_1.CullMode.Back);
             // 渲染管线4.遮挡剔除
             this.OcclusionCulling();
             for (let i = 0; i < triangles.length; i += 3) {
@@ -21655,26 +21647,40 @@ class RasterizationPipeline {
                             y < 0 || y >= Setting_1.EngineConfig.canvasHeight) {
                             return;
                         }
-                        // 计算深度缓冲区索引
                         const index = y * Setting_1.EngineConfig.canvasWidth + x;
+                        // 渲染管线9.模板测试
+                        // if (pass.renderState?.stencilState) {
+                        //     const stencilState = pass.renderState?.stencilState;
+                        //     const stencilValue = this.stencilBuffer[index];
+                        //     const stencilTestResult = stencilTest(stencilValue, stencilState.stencilRef, stencilState.stencilMask, stencilState.stencilTest);
+                        //     // 模板测试失败，跳过该片段
+                        //     if (!stencilTestResult) continue;
+                        //     // 执行模板操作（根据测试结果和深度测试结果）
+                        //     this.updateStencilBuffer(index, pass, depthTestResult);
+                        // }
+                        // 渲染管线10.早期深度测试
                         const currentDepth = this.depthBuffer[index];
-                        // 渲染管线9.早期深度测试
-                        const depthTestResult = (0, RendererDefine_1.depthTest)(z, currentDepth, pass.zTest);
-                        if (depthTestResult) {
-                            // 渲染管线10.像素着色器
-                            const pixelColor = pass.frag(fragment.attributes);
-                            if (pixelColor) {
-                                // 渲染管线11.根据 zWrite 标志决定是否写入深度缓冲区
-                                if (pass.zWrite) {
-                                    this.depthBuffer[index] = z; // 更新深度缓冲区
-                                }
-                                // 渲染管线12.颜色混合并绘制像素到帧缓冲
-                                this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
-                            }
-                            else {
-                                // 像素被丢弃，可能是Alpha测试失败
-                            }
+                        const depthTestResult = (0, RendererDefine_1.depthTest)(z, currentDepth, (_b = pass.renderState) === null || _b === void 0 ? void 0 : _b.zTest);
+                        if (!depthTestResult)
+                            continue;
+                        // 渲染管线11.像素着色器
+                        const pixelColor = pass.frag(fragment.attributes);
+                        // 像素被丢弃，可能是Alpha测试失败
+                        if (!pixelColor)
+                            continue;
+                        // 渲染管线12.根据 zWrite 标志决定是否写入深度缓冲区
+                        // 如果没设置zWrite，则默认允许写入，否则就判断zWrite值
+                        if (((_d = (_c = pass.renderState) === null || _c === void 0 ? void 0 : _c.zWrite) !== null && _d !== void 0 ? _d : true)) {
+                            this.depthBuffer[index] = z;
                         }
+                        // 渲染管线13.颜色混合
+                        if ((_f = (_e = pass.renderState) === null || _e === void 0 ? void 0 : _e.blend) === null || _f === void 0 ? void 0 : _f.state) {
+                            // const existingColor = Color.FromUint32(this.frameBuffer[index]);
+                            // const blendedColor = Color.blendColors(existingColor, color, blendMode);
+                            // this.frameBuffer[index] = blendedColor.ToUint32();
+                        }
+                        // 渲染管线13.绘制像素到帧缓冲
+                        this.DrawPixel(x, y, pixelColor, true);
                     }
                 }
             }
@@ -21682,6 +21688,29 @@ class RasterizationPipeline {
     }
     //#endregion
     //#region 工具函数
+    // private updateStencilBuffer(index: number, stencilState: StencilState, depthPassed: boolean): void {
+    //     // 根据模板测试和深度测试结果执行模板操作（如保持、递增、递减、替换等）
+    //     if (!depthPassed) return;
+    //     switch (stencilState.stencilOp) {
+    //         case StencilOp.Keep:
+    //             break;
+    //         case StencilOp.Zero:
+    //             this.stencilBuffer[index] = 0;
+    //             break;
+    //         case StencilOp.Replace:
+    //             this.stencilBuffer[index] = stencilState.stencilRef & stencilState.stencilMask;
+    //             break;
+    //         case StencilOp.IncrementAndClamp:
+    //             this.stencilBuffer[index] = Math.min(this.stencilBuffer[index] + 1, 255);
+    //             break;
+    //         case StencilOp.DecrementAndClamp:
+    //             this.stencilBuffer[index] = Math.max(this.stencilBuffer[index] - 1, 0);
+    //             break;
+    //         case StencilOp.Invert:
+    //             this.stencilBuffer[index] = ~this.stencilBuffer[index] & 0xFF;
+    //             break;
+    //     }
+    // }
     DebugDraw() {
         // 绘制包围盒
         // this.DrawBounds();
@@ -21855,41 +21884,84 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Shader/Shader":50,"../Utils/Debug":51,"../Utils/Gizmo":52,"./BarycentricTriangleRasterizer":37,"./RendererDefine":39}],39:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":17,"../Core/Setting":20,"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Utils/Debug":51,"../Utils/Gizmo":52,"./BarycentricTriangleRasterizer":37,"./RendererDefine":39}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ZTest = exports.CullMode = exports.RenderType = exports.BlendMode = void 0;
+exports.ZTest = exports.StencilOp = exports.StencilCompareFunction = exports.CullMode = exports.ColorMask = exports.RenderType = exports.BlendOp = exports.BlendFactor = void 0;
 exports.depthTest = depthTest;
-var BlendMode;
-(function (BlendMode) {
-    BlendMode[BlendMode["Opaque"] = 0] = "Opaque";
-    BlendMode[BlendMode["AlphaBlend"] = 1] = "AlphaBlend";
-    BlendMode[BlendMode["Additive"] = 2] = "Additive";
-    BlendMode[BlendMode["Multiply"] = 3] = "Multiply";
-})(BlendMode || (exports.BlendMode = BlendMode = {}));
+exports.stencilTest = stencilTest;
+var BlendFactor;
+(function (BlendFactor) {
+    BlendFactor[BlendFactor["One"] = 0] = "One";
+    BlendFactor[BlendFactor["Zero"] = 1] = "Zero";
+    BlendFactor[BlendFactor["SrcColor"] = 2] = "SrcColor";
+    BlendFactor[BlendFactor["SrcAlpha"] = 3] = "SrcAlpha";
+    BlendFactor[BlendFactor["DstColor"] = 4] = "DstColor";
+    BlendFactor[BlendFactor["DstAlpha"] = 5] = "DstAlpha";
+    BlendFactor[BlendFactor["OneMinusSrcColor"] = 6] = "OneMinusSrcColor";
+    BlendFactor[BlendFactor["OneMinusSrcAlpha"] = 7] = "OneMinusSrcAlpha";
+    BlendFactor[BlendFactor["OneMinusDstColor"] = 8] = "OneMinusDstColor";
+    BlendFactor[BlendFactor["OneMinusDstAlpha"] = 9] = "OneMinusDstAlpha";
+})(BlendFactor || (exports.BlendFactor = BlendFactor = {}));
+var BlendOp;
+(function (BlendOp) {
+    BlendOp[BlendOp["Add"] = 0] = "Add";
+    BlendOp[BlendOp["Sub"] = 1] = "Sub";
+    BlendOp[BlendOp["RevSub"] = 2] = "RevSub";
+    BlendOp[BlendOp["Min"] = 3] = "Min";
+    BlendOp[BlendOp["Max"] = 4] = "Max";
+})(BlendOp || (exports.BlendOp = BlendOp = {}));
 var RenderType;
 (function (RenderType) {
     RenderType[RenderType["Opaque"] = 0] = "Opaque";
     RenderType[RenderType["Transparent"] = 1] = "Transparent";
-    RenderType[RenderType["Additive"] = 2] = "Additive";
-    RenderType[RenderType["Multiply"] = 3] = "Multiply";
 })(RenderType || (exports.RenderType = RenderType = {}));
+var ColorMask;
+(function (ColorMask) {
+    ColorMask[ColorMask["None"] = 0] = "None";
+    ColorMask[ColorMask["Red"] = 1] = "Red";
+    ColorMask[ColorMask["Green"] = 2] = "Green";
+    ColorMask[ColorMask["Blue"] = 4] = "Blue";
+    ColorMask[ColorMask["Alpha"] = 8] = "Alpha";
+    ColorMask[ColorMask["All"] = 15] = "All";
+})(ColorMask || (exports.ColorMask = ColorMask = {}));
 var CullMode;
 (function (CullMode) {
     CullMode[CullMode["None"] = 0] = "None";
     CullMode[CullMode["Front"] = 1] = "Front";
     CullMode[CullMode["Back"] = 2] = "Back";
 })(CullMode || (exports.CullMode = CullMode = {}));
+var StencilCompareFunction;
+(function (StencilCompareFunction) {
+    StencilCompareFunction[StencilCompareFunction["Never"] = 1] = "Never";
+    StencilCompareFunction[StencilCompareFunction["Less"] = 2] = "Less";
+    StencilCompareFunction[StencilCompareFunction["Equal"] = 3] = "Equal";
+    StencilCompareFunction[StencilCompareFunction["LEqual"] = 4] = "LEqual";
+    StencilCompareFunction[StencilCompareFunction["Greater"] = 5] = "Greater";
+    StencilCompareFunction[StencilCompareFunction["NotEqual"] = 6] = "NotEqual";
+    StencilCompareFunction[StencilCompareFunction["GEqual"] = 7] = "GEqual";
+    StencilCompareFunction[StencilCompareFunction["Always"] = 8] = "Always";
+})(StencilCompareFunction || (exports.StencilCompareFunction = StencilCompareFunction = {}));
+var StencilOp;
+(function (StencilOp) {
+    StencilOp[StencilOp["Keep"] = 0] = "Keep";
+    StencilOp[StencilOp["Zero"] = 1] = "Zero";
+    StencilOp[StencilOp["Replace"] = 2] = "Replace";
+    StencilOp[StencilOp["IncrSat"] = 3] = "IncrSat";
+    StencilOp[StencilOp["DecrSat"] = 4] = "DecrSat";
+    StencilOp[StencilOp["Invert"] = 5] = "Invert";
+    StencilOp[StencilOp["IncrWrap"] = 7] = "IncrWrap";
+    StencilOp[StencilOp["DecrWrap"] = 8] = "DecrWrap";
+})(StencilOp || (exports.StencilOp = StencilOp = {}));
 var ZTest;
 (function (ZTest) {
-    ZTest[ZTest["Never"] = 0] = "Never";
-    ZTest[ZTest["Less"] = 1] = "Less";
+    ZTest[ZTest["Less"] = 0] = "Less";
+    ZTest[ZTest["LEqual"] = 1] = "LEqual";
     ZTest[ZTest["Equal"] = 2] = "Equal";
-    ZTest[ZTest["LessEqual"] = 3] = "LessEqual";
+    ZTest[ZTest["GEqual"] = 3] = "GEqual";
     ZTest[ZTest["Greater"] = 4] = "Greater";
     ZTest[ZTest["NotEqual"] = 5] = "NotEqual";
-    ZTest[ZTest["GreaterEqual"] = 6] = "GreaterEqual";
-    ZTest[ZTest["Always"] = 7] = "Always";
+    ZTest[ZTest["Always"] = 6] = "Always";
 })(ZTest || (exports.ZTest = ZTest = {}));
 /**
  * 执行深度测试
@@ -21898,27 +21970,48 @@ var ZTest;
  * @param zTestFunc 深度测试函数（ZTest 枚举值）
  * @returns 是否通过深度测试
  */
-function depthTest(z, currentDepth, zTestFunc) {
+function depthTest(z, currentDepth, zTestFunc = ZTest.LEqual) {
     switch (zTestFunc) {
-        case ZTest.Never:
-            return false; // 从不通过
         case ZTest.Less:
-            return z < currentDepth; // 小于当前深度则通过（默认）
+            return z < currentDepth; // 小于当前深度则通过
         case ZTest.Equal:
             return Math.abs(z - currentDepth) < 1e-6; // 等于当前深度则通过（需考虑浮点精度）
-        case ZTest.LessEqual:
+        case ZTest.LEqual:
             return z <= currentDepth; // 小于或等于当前深度则通过
         case ZTest.Greater:
             return z > currentDepth; // 大于当前深度则通过
         case ZTest.NotEqual:
             return Math.abs(z - currentDepth) >= 1e-6; // 不等于当前深度则通过
-        case ZTest.GreaterEqual:
+        case ZTest.GEqual:
             return z >= currentDepth; // 大于或等于当前深度则通过
         case ZTest.Always:
             return true; // 总是通过
         default:
             console.warn("Unknown ZTest function, using Less as default.");
             return z < currentDepth;
+    }
+}
+function stencilTest(stencilValue, ref = 0, mask = 0xFF, func = StencilCompareFunction.Always) {
+    // 实现模板测试逻辑（如永远通过、从不通过、等于、不等于等）
+    switch (func) {
+        case StencilCompareFunction.Never:
+            return false;
+        case StencilCompareFunction.Always:
+            return true;
+        case StencilCompareFunction.Less:
+            return stencilValue < (ref & mask);
+        case StencilCompareFunction.LEqual:
+            return stencilValue <= (ref & mask);
+        case StencilCompareFunction.Equal:
+            return stencilValue === (ref & mask);
+        case StencilCompareFunction.GEqual:
+            return stencilValue >= (ref & mask);
+        case StencilCompareFunction.Greater:
+            return stencilValue > (ref & mask);
+        case StencilCompareFunction.NotEqual:
+            return stencilValue !== (ref & mask);
+        default:
+            return false;
     }
 }
 
@@ -23337,7 +23430,6 @@ const Color_1 = require("../Math/Color");
 const TransformTools_1 = require("../Math/TransformTools");
 const Vector3_1 = require("../Math/Vector3");
 const Vector4_1 = require("../Math/Vector4");
-const RendererDefine_1 = require("../Renderer/RendererDefine");
 const Shader_1 = require("./Shader");
 class LitShader extends Shader_1.Shader {
     constructor() {
@@ -23350,10 +23442,6 @@ class LitShader extends Shader_1.Shader {
                 name: "Forward",
                 vert: this.vertexShader.bind(this),
                 frag: this.fragmentShader.bind(this),
-                blendMode: RendererDefine_1.BlendMode.Opaque,
-                cullMode: RendererDefine_1.CullMode.Back,
-                zTest: RendererDefine_1.ZTest.LessEqual,
-                zWrite: true,
             }
         ];
     }
@@ -23414,16 +23502,14 @@ class LitShader extends Shader_1.Shader {
 }
 exports.LitShader = LitShader;
 
-},{"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"../Renderer/RendererDefine":39,"./Shader":50}],50:[function(require,module,exports){
+},{"../Math/Color":27,"../Math/TransformTools":31,"../Math/Vector3":33,"../Math/Vector4":34,"./Shader":50}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ZTest = exports.CullMode = exports.Shader = void 0;
+exports.Shader = void 0;
 const Light_1 = require("../Component/Light");
 const Setting_1 = require("../Core/Setting");
 const UObject_1 = require("../Core/UObject");
 const RendererDefine_1 = require("../Renderer/RendererDefine");
-Object.defineProperty(exports, "CullMode", { enumerable: true, get: function () { return RendererDefine_1.CullMode; } });
-Object.defineProperty(exports, "ZTest", { enumerable: true, get: function () { return RendererDefine_1.ZTest; } });
 class Shader extends UObject_1.UObject {
     constructor() {
         super(...arguments);

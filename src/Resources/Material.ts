@@ -2,7 +2,8 @@ import { UObject } from "../Core/UObject";
 import { Color } from "../Math/Color";
 import { Matrix4x4 } from "../Math/Matrix4x4";
 import { Vector4 } from "../Math/Vector4";
-import { Shader, VertexAttributes } from "../Shader/Shader";
+import { VertexAttributes } from "../Renderer/RendererDefine";
+import { Shader } from "../Shader/Shader";
 import { Texture } from "./Texture";
 
 export class Material extends UObject {

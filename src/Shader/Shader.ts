@@ -7,7 +7,7 @@ import { Color } from "../Math/Color";
 import { Matrix4x4 } from "../Math/Matrix4x4";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { BlendMode, CullMode, RenderType, VertexAttributes, ZTest } from "../Renderer/RendererDefine";
+import { RenderType, ShaderRenderState, VertexAttributes } from "../Renderer/RendererDefine";
 
 // 着色器Pass接口
 export interface ShaderPass {
@@ -17,10 +17,7 @@ export interface ShaderPass {
     // 片段着色器：默认返回洋红色
     frag: (input: VertexAttributes) => Color | null;
     // 渲染状态
-    blendMode: BlendMode;
-    cullMode: CullMode;
-    zTest: ZTest;
-    zWrite: boolean;
+    renderState?: ShaderRenderState;
 }
 
 export abstract class Shader extends UObject {
@@ -63,5 +60,3 @@ export abstract class Shader extends UObject {
         throw new Error("Method not implemented.");
     }
 }
-
-export { VertexAttributes, CullMode, ZTest };

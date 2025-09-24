@@ -2,9 +2,7 @@ import { Shader } from "./Shader";
 import { Texture } from "../Resources/Texture";
 import { Vector4 } from "../Math/Vector4";
 import { ShaderPass } from "./Shader";
-import { BlendMode, VertexAttributes } from "../Renderer/RendererDefine";
-import { CullMode } from "./Shader";
-import { ZTest } from "./Shader";
+import { VertexAttributes } from "../Renderer/RendererDefine";
 import { Color } from "../Math/Color";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
@@ -19,10 +17,6 @@ export class AlphaCutOffShader extends Shader {
             name: "Forward",
             vert: this.vertexShader.bind(this),
             frag: this.fragmentShader.bind(this),
-            blendMode: BlendMode.Opaque,
-            cullMode: CullMode.Back,
-            zTest: ZTest.LessEqual,
-            zWrite: true,
         }
     ];
 

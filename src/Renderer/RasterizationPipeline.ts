@@ -11,8 +11,7 @@ import { Mesh } from "../Resources/Mesh";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
-import { CullMode, ZTest } from "../Shader/Shader";
-import { BlendMode, depthTest } from "./RendererDefine";
+import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest } from "./RendererDefine";
 import { GameObject } from "../Core/GameObject";
 import { Gizmo } from "../Utils/Gizmo";
 
@@ -28,6 +27,7 @@ export class RasterizationPipeline {
     // 缓冲区
     private frameBuffer: Uint32Array;
     private depthBuffer: Float32Array;
+    private stencilBuffer: Uint8Array;
     private overdrawBuffer: Uint32Array;
 
     // 上下文内容
@@ -37,6 +37,7 @@ export class RasterizationPipeline {
     constructor(frameBuffer: Uint32Array) {
         this.frameBuffer = frameBuffer;
         this.depthBuffer = new Float32Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
+        this.stencilBuffer = new Uint8Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
         this.overdrawBuffer = new Uint32Array(EngineConfig.canvasWidth * EngineConfig.canvasHeight);
     }
 
@@ -94,6 +95,7 @@ export class RasterizationPipeline {
 
         if (clearFlags != CameraClearFlags.None) {
             this.clearViewportRegion(this.depthBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 1);
+            this.clearViewportRegion(this.stencilBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
         }
 
         this.clearViewportRegion(this.overdrawBuffer, viewportPixelX, viewportPixelY, viewportPixelWidth, viewportPixelHeight, 0);
@@ -108,7 +110,7 @@ export class RasterizationPipeline {
      * @param height 区域高度 (像素)
      * @param value 要填充的值
      */
-    private clearViewportRegion(buffer: Uint32Array | Float32Array, x: number, y: number, width: number, height: number, value: number): void {
+    private clearViewportRegion(buffer: Uint32Array | Float32Array | Uint8Array, x: number, y: number, width: number, height: number, value: number): void {
         // 如果是满屏幕，则快速填充
         if (x == 0 && y == 0 && width == EngineConfig.canvasWidth && height == EngineConfig.canvasHeight) {
             buffer.fill(value);
@@ -166,7 +168,7 @@ export class RasterizationPipeline {
         }
     }
 
-    public DrawPixel(x: number, y: number, color: Color, countOverdraw: boolean = false, blendMode: BlendMode = BlendMode.Opaque) {
+    public DrawPixel(x: number, y: number, color: Color, countOverdraw: boolean = false) {
         // 绘制到屏幕上的像素应该是整数的
         // 优化: 使用位运算代替Math.floor，提升性能
         x = (x | 0);
@@ -179,18 +181,7 @@ export class RasterizationPipeline {
         }
 
         const index = y * EngineConfig.canvasWidth + x;
-
-        // 颜色混合处理
-        if (blendMode !== BlendMode.Opaque) {
-            const existingColor = Color.FromUint32(this.frameBuffer[index]);
-            const blendedColor = Color.blendColors(existingColor, color, blendMode);
-            this.frameBuffer[index] = blendedColor.ToUint32();
-        }
-        else {
-            // 直接替换模式
-            this.frameBuffer[index] = color.ToUint32();
-        }
-
+        this.frameBuffer[index] = color.ToUint32();
         // Overdraw计数
         if (countOverdraw) this.overdrawBuffer[index]++
     }
@@ -385,7 +376,7 @@ export class RasterizationPipeline {
             let triangles = mesh.triangles;
 
             // 渲染管线3.背面剔除
-            triangles = this.FaceCulling(triangles, mesh, renderer, pass.cullMode);
+            triangles = this.FaceCulling(triangles, mesh, renderer, pass.renderState?.cullMode || CullMode.Back);
             // 渲染管线4.遮挡剔除
             this.OcclusionCulling();
 
@@ -448,26 +439,44 @@ export class RasterizationPipeline {
                             return;
                         }
 
-                        // 计算深度缓冲区索引
                         const index = y * EngineConfig.canvasWidth + x;
-                        const currentDepth = this.depthBuffer[index];
 
-                        // 渲染管线9.早期深度测试
-                        const depthTestResult = depthTest(z, currentDepth, pass.zTest);
-                        if (depthTestResult) {
-                            // 渲染管线10.像素着色器
-                            const pixelColor = pass.frag(fragment.attributes);
-                            if (pixelColor) {
-                                // 渲染管线11.根据 zWrite 标志决定是否写入深度缓冲区
-                                if (pass.zWrite) {
-                                    this.depthBuffer[index] = z; // 更新深度缓冲区
-                                }
-                                // 渲染管线12.颜色混合并绘制像素到帧缓冲
-                                this.DrawPixel(x, y, pixelColor, true, pass.blendMode);
-                            } else {
-                                // 像素被丢弃，可能是Alpha测试失败
-                            }
+                        // 渲染管线9.模板测试
+                        // if (pass.renderState?.stencilState) {
+                        //     const stencilState = pass.renderState?.stencilState;
+                        //     const stencilValue = this.stencilBuffer[index];
+                        //     const stencilTestResult = stencilTest(stencilValue, stencilState.stencilRef, stencilState.stencilMask, stencilState.stencilTest);
+                        //     // 模板测试失败，跳过该片段
+                        //     if (!stencilTestResult) continue;
+                        //     // 执行模板操作（根据测试结果和深度测试结果）
+                        //     this.updateStencilBuffer(index, pass, depthTestResult);
+                        // }
+
+                        // 渲染管线10.早期深度测试
+                        const currentDepth = this.depthBuffer[index];
+                        const depthTestResult = depthTest(z, currentDepth, pass.renderState?.zTest);
+                        if (!depthTestResult) continue;
+
+                        // 渲染管线11.像素着色器
+                        const pixelColor = pass.frag(fragment.attributes);
+                        // 像素被丢弃，可能是Alpha测试失败
+                        if (!pixelColor) continue;
+
+                        // 渲染管线12.根据 zWrite 标志决定是否写入深度缓冲区
+                        // 如果没设置zWrite，则默认允许写入，否则就判断zWrite值
+                        if ((pass.renderState?.zWrite ?? true)) {
+                            this.depthBuffer[index] = z;
                         }
+
+                        // 渲染管线13.颜色混合
+                        if (pass.renderState?.blend?.state) {
+                            // const existingColor = Color.FromUint32(this.frameBuffer[index]);
+                            // const blendedColor = Color.blendColors(existingColor, color, blendMode);
+                            // this.frameBuffer[index] = blendedColor.ToUint32();
+                        }
+
+                        // 渲染管线13.绘制像素到帧缓冲
+                        this.DrawPixel(x, y, pixelColor, true);
                     }
                 }
             }
@@ -477,6 +486,30 @@ export class RasterizationPipeline {
     //#endregion
 
     //#region 工具函数
+
+    // private updateStencilBuffer(index: number, stencilState: StencilState, depthPassed: boolean): void {
+    //     // 根据模板测试和深度测试结果执行模板操作（如保持、递增、递减、替换等）
+    //     if (!depthPassed) return;
+    //     switch (stencilState.stencilOp) {
+    //         case StencilOp.Keep:
+    //             break;
+    //         case StencilOp.Zero:
+    //             this.stencilBuffer[index] = 0;
+    //             break;
+    //         case StencilOp.Replace:
+    //             this.stencilBuffer[index] = stencilState.stencilRef & stencilState.stencilMask;
+    //             break;
+    //         case StencilOp.IncrementAndClamp:
+    //             this.stencilBuffer[index] = Math.min(this.stencilBuffer[index] + 1, 255);
+    //             break;
+    //         case StencilOp.DecrementAndClamp:
+    //             this.stencilBuffer[index] = Math.max(this.stencilBuffer[index] - 1, 0);
+    //             break;
+    //         case StencilOp.Invert:
+    //             this.stencilBuffer[index] = ~this.stencilBuffer[index] & 0xFF;
+    //             break;
+    //     }
+    // }
 
     private DebugDraw(): void {
         // 绘制包围盒

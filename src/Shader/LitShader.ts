@@ -3,7 +3,7 @@ import { TransformTools } from "../Math/TransformTools";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { BlendMode, CullMode, VertexAttributes, ZTest } from "../Renderer/RendererDefine";
+import { VertexAttributes } from "../Renderer/RendererDefine";
 import { Texture } from "../Resources/Texture";
 import { Shader, ShaderPass } from "./Shader";
 
@@ -18,10 +18,6 @@ export class LitShader extends Shader {
             name: "Forward",
             vert: this.vertexShader.bind(this),
             frag: this.fragmentShader.bind(this),
-            blendMode: BlendMode.Opaque,
-            cullMode: CullMode.Back,
-            zTest: ZTest.LessEqual,
-            zWrite: true,
         }
     ];
 

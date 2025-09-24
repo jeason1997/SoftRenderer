@@ -1,4 +1,4 @@
-import { BlendMode } from "../Renderer/RendererDefine";
+import { BlendOp } from "../Renderer/RendererDefine";
 
 export class Color {
     // public static readonly WHITE = Object.freeze(new Color(1, 1, 1, 1)) as Readonly<Color>;
@@ -129,58 +129,58 @@ export class Color {
      * 颜色混合方法
      * 支持多种混合模式
      */
-    public static blendColors(dest: Color, src: Color, mode: BlendMode): Color {
-        // 提取目标颜色分量 (ARGB格式)
-        const destA = dest.a;
-        const destR = dest.r;
-        const destG = dest.g;
-        const destB = dest.b;
+    // public static blendColors(dest: Color, src: Color, mode: BlendOp): Color {
+    //     // 提取目标颜色分量 (ARGB格式)
+    //     const destA = dest.a;
+    //     const destR = dest.r;
+    //     const destG = dest.g;
+    //     const destB = dest.b;
 
-        // 提取源颜色分量 (ARGB格式)
-        const srcA = src.a;
-        const srcR = src.r;
-        const srcG = src.g;
-        const srcB = src.b;
+    //     // 提取源颜色分量 (ARGB格式)
+    //     const srcA = src.a;
+    //     const srcR = src.r;
+    //     const srcG = src.g;
+    //     const srcB = src.b;
 
-        let resultA, resultR, resultG, resultB;
+    //     let resultA, resultR, resultG, resultB;
 
-        switch (mode) {
-            case BlendMode.AlphaBlend:
-                // Alpha 混合 (最常用的混合模式)
-                const alpha = srcA;
-                const invAlpha = 1 - alpha;
+    //     switch (mode) {
+    //         case BlendOp.AlphaBlend:
+    //             // Alpha 混合 (最常用的混合模式)
+    //             const alpha = srcA;
+    //             const invAlpha = 1 - alpha;
 
-                resultA = Math.min(1, destA + srcA - (destA * srcA));
-                resultR = srcR * alpha + destR * invAlpha;
-                resultG = srcG * alpha + destG * invAlpha;
-                resultB = srcB * alpha + destB * invAlpha;
-                break;
+    //             resultA = Math.min(1, destA + srcA - (destA * srcA));
+    //             resultR = srcR * alpha + destR * invAlpha;
+    //             resultG = srcG * alpha + destG * invAlpha;
+    //             resultB = srcB * alpha + destB * invAlpha;
+    //             break;
 
-            case BlendMode.Additive:
-                // 加法混合 (颜色叠加)
-                resultA = Math.min(1, destA + srcA);
-                resultR = Math.min(1, destR + srcR);
-                resultG = Math.min(1, destG + srcG);
-                resultB = Math.min(1, destB + srcB);
-                break;
+    //         case BlendOp.Additive:
+    //             // 加法混合 (颜色叠加)
+    //             resultA = Math.min(1, destA + srcA);
+    //             resultR = Math.min(1, destR + srcR);
+    //             resultG = Math.min(1, destG + srcG);
+    //             resultB = Math.min(1, destB + srcB);
+    //             break;
 
-            case BlendMode.Multiply:
-                // 乘法混合 (颜色相乘)
-                resultA = Math.min(1, destA);
-                resultR = destR * srcR;
-                resultG = destG * srcG;
-                resultB = destB * srcB;
-                break;
+    //         case BlendOp.Multiply:
+    //             // 乘法混合 (颜色相乘)
+    //             resultA = Math.min(1, destA);
+    //             resultR = destR * srcR;
+    //             resultG = destG * srcG;
+    //             resultB = destB * srcB;
+    //             break;
 
-            case BlendMode.Opaque:
-            default:
-                // 直接替换
-                return src.clone();
-        }
+    //         case BlendOp.Off:
+    //         default:
+    //             // 直接替换
+    //             return src.clone();
+    //     }
 
-        // 组合颜色分量
-        return new Color(resultR, resultG, resultB, resultA);
-    }
+    //     // 组合颜色分量
+    //     return new Color(resultR, resultG, resultB, resultA);
+    // }
 
     private static clamp01(value: number): number {
         return Math.max(0, Math.min(1, value));

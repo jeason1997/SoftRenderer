@@ -122,6 +122,36 @@
 
 13.天空盒
 
+14.ColorMask
+    默认情况下，GPU 写入所有通道 (RGBA)。对于某些效果，您可能希望不修改某些通道；
+    例如，您可以禁用颜色渲染来渲染无色阴影。
+    另一个常见的用例是完全禁用颜色写入，以便您在一个缓冲区中填充数据而无需写入其他缓冲区；例如，您可能需要在不写入渲染目标的情况下填充模板缓冲区。
+
+15.模板测试
+    模板测试方程为：
+        (ref & readMask) comparisonFunction (stencilBufferValue & readMask)
+    可以使用 Stencil 命令执行两种不同的操作：配置模板测试，以及配置 GPU 写入模板缓冲区的内容。
+    可以在同一个命令中执行这两种操作，但最常见的用例是创建一个 Shader 对象，该对象会遮罩其他 Shader 对象无法绘制到的屏幕区域。
+    为此，需要将第一个 Shader 对象配置为始终通过模板测试并写入模板缓冲区，并将其他对象配置为执行模板测试而不写入模板缓冲区。
+    例如图片UI遮罩，遮罩Shader往缓冲区写入模板值，图片Shader根据模板值判断是否绘制像素。
+
+16.混合
+    混合等式为：
+        finalValue = sourceFactor * sourceValue operation destinationFactor * destinationValue
+        finalValue 是 GPU 写入目标缓冲区的值。
+        sourceFactor 在 Blend 命令中定义。
+        sourceValue 是片元着色器输出的值。
+        operation 是混合操作，默认是Add
+        destinationFactor 在 Blend 命令中定义。
+        destinationValue 是目标缓冲区中现有的值。
+    以下是最常见的混合类型的语法：
+        Blend SrcAlpha OneMinusSrcAlpha     // 传统透明度 Final = Src.rgb * Src.a + Dst.rgb * (1 - Src.a)
+        Blend One OneMinusSrcAlpha          // 预乘透明度 Final = Src.rgb * 1 + Dst.rgb * (1 - Src.a)
+        Blend One One                       // 加法 Final = Src.rgb * 1 + Dst.rgb * 1
+        Blend OneMinusDstColor One          // 软加法 Final = Src.rgb * (1 - Dst.rgb) + Dst.rgb * 1
+        Blend DstColor Zero                 // 乘法 Final = Src.rgb * Dst.rgb + Dst.rgb * 0
+        Blend DstColor SrcColor             // 2x 乘法 Final = Src.rgb * Dst.rgb + Dst.rgb * Src.rgb = 2 * Src.rgb * Dst.rgb
+
 
 
 齐次坐标中的w,w=1时表示点，w=0时表示向量
@@ -134,7 +164,6 @@
 
 //TODO:
 1.四元素的欧拉角有BUG，万向锁问题，暂时只能通过Quaternion.angleAxis来设置角度
-2.模板缓冲区
 3.PBR着色
 4.后处理
 5.Forward+路径，以及尝试延迟渲染
