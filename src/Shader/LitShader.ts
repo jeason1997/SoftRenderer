@@ -38,16 +38,14 @@ export class LitShader extends Shader {
     }
 
     public fragmentShader(v2fAttr: VertexAttributes): Color {
-        if (!this.mainTexture) { return Color.MAGENTA; }
-
         const uv = v2fAttr.uv as Vector2;
         const normal = v2fAttr.normal as Vector3;
 
         // 采样基础颜色
-        const surfaceColor = this.mainTexture.Sample(
+        const surfaceColor = this.mainTexture?.Sample(
             uv.u * this.mainTextureST.x + this.mainTextureST.z,
             uv.v * this.mainTextureST.y + this.mainTextureST.w
-        );
+        ) || Color.WHITE;
         surfaceColor.multiply(this.baseColor);
 
         // 高光系数，值越大高光越集中

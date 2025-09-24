@@ -532,8 +532,8 @@ export class RasterizationPipeline {
         const components = obj.getAllComponents();
         for (const component of components) {
             if (typeof (component as any).onDrawGizmos === 'function') {
-                Gizmo.matrix = component.transform.localToWorldMatrix;
                 (component as any).onDrawGizmos();
+                Gizmo.Reset();
             }
         }
         // 绘制子物体

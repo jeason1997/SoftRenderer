@@ -39,6 +39,6 @@ export class ObjRotate extends Component {
         if(Input.GetKey(Input.KeyCode.Numpad2)) this.angleX += 1;
         this.transform.rotation = new Quaternion(new Vector3(this.angleX, this.angleY, 0));
 
-        Debug.Log("X:" + Math.floor(this.angleX) + " Y:" + Math.floor(this.angleY));
+        Debug.Log(this.gameObject.name + " X:" + Math.floor(this.angleX) + " Y:" + Math.floor(this.angleY));
     }
 }

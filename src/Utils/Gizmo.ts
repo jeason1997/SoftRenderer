@@ -3,7 +3,6 @@ import { Vector3 } from '../Math/Vector3';
 import { Matrix4x4 } from '../Math/Matrix4x4';
 import { TransformTools } from '../Math/TransformTools';
 import { Camera } from '../Component/Camera';
-import { Debug } from './Debug';
 import { Engine } from '../Core/Engine';
 
 /**
@@ -43,6 +42,11 @@ export class Gizmo {
      */
     public static get matrix(): Matrix4x4 {
         return this._matrix;
+    }
+
+    public static Reset(): void {
+        this._color = Color.WHITE;
+        this._matrix = Matrix4x4.identity;
     }
 
     /**

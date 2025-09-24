@@ -23,10 +23,11 @@ export class Light extends Component {
     public shadowType: ShadowType = ShadowType.None;
 
     public onDrawGizmos(): void {
-        Gizmo.DrawAxis(this.transform.position);
+        Gizmo.matrix = this.transform.localToWorldMatrix;
+        Gizmo.DrawAxis(Vector3.ZERO, 0.1);
         Gizmo.color = Color.WHITE;
-        Gizmo.DrawCube(this.transform.position, new Vector3(0.1, 0.1, 0.5));
+        Gizmo.DrawCube(Vector3.ZERO, new Vector3(0.1, 0.1, 0.5));
         Gizmo.color = Color.RED;
-        Gizmo.DrawCube(this.transform.position.add(new Vector3(0, 0, 0.3)), Vector3.ONE.multiplyScalar(0.1));
+        Gizmo.DrawCube(new Vector3(0, 0, 0.3), Vector3.ONE.multiplyScalar(0.1));
     }
 }
