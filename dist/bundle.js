@@ -17006,7 +17006,7 @@ class Light extends Component_1.Component {
 }
 exports.Light = Light;
 
-},{"../Math/Color":28,"../Math/Vector3":34,"../Utils/Gizmo":55,"./Component":7}],9:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/Vector3":34,"../Utils/Gizmo":56,"./Component":7}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MeshRenderer = void 0;
@@ -17748,7 +17748,7 @@ let ObjRotate = (() => {
 })();
 exports.ObjRotate = ObjRotate;
 
-},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":54,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
+},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":55,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17915,7 +17915,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":48,"../Scene/SceneManager":50,"../Utils/Debug":54,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
+},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":48,"../Scene/SceneManager":50,"../Utils/Debug":55,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -21621,6 +21621,11 @@ class RasterizationPipeline {
     }
     //#endregion
     //#region 剔除裁剪
+    test() {
+        // 视锥体剔除
+        // Z轴排序
+        // 分成透明跟不透明
+    }
     // 视锥体剔除
     FrustumCulling() {
     }
@@ -21979,7 +21984,7 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Utils/Debug":54,"../Utils/Gizmo":55,"./BarycentricTriangleRasterizer":38,"./RendererDefine":40}],40:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Utils/Debug":55,"../Utils/Gizmo":56,"./BarycentricTriangleRasterizer":38,"./RendererDefine":40}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StencilPresets = exports.ZTest = exports.StencilOp = exports.StencilCompareFunction = exports.CullMode = exports.ColorMask = exports.RenderType = exports.BlendOp = exports.BlendFactor = void 0;
@@ -22815,7 +22820,7 @@ exports.Resources = Resources;
 Resources.fileCache = new Map();
 Resources.loadingPromises = new Map();
 
-},{"../Utils/ObjParser":56,"./Texture":46}],46:[function(require,module,exports){
+},{"../Utils/ObjParser":57,"./Texture":46}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
@@ -24015,11 +24020,10 @@ exports.Shader = Shader;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StencilOutlineShader = void 0;
 const Color_1 = require("../Math/Color");
-const TransformTools_1 = require("../Math/TransformTools");
-const Vector3_1 = require("../Math/Vector3");
 const Vector4_1 = require("../Math/Vector4");
 const RendererDefine_1 = require("../Renderer/RendererDefine");
 const Shader_1 = require("./Shader");
+const ToonShader_1 = require("./ToonShader");
 class StencilOutlineShader extends Shader_1.Shader {
     constructor() {
         super(...arguments);
@@ -24038,8 +24042,8 @@ class StencilOutlineShader extends Shader_1.Shader {
             // 第一遍：正常渲染物体并标记模板缓冲区
             {
                 name: "RenderObjectAndMarkStencil",
-                vert: this.vertexShader.bind(this),
-                frag: this.fragmentShader.bind(this),
+                vert: ToonShader_1.ToonShader.prototype.vertexShader.bind(this),
+                frag: ToonShader_1.ToonShader.prototype.fragmentShader.bind(this),
                 renderState: {
                     cullMode: RendererDefine_1.CullMode.Back,
                     // 模板测试配置：标记物体区域
@@ -24055,12 +24059,55 @@ class StencilOutlineShader extends Shader_1.Shader {
             // 第二遍：渲染外扩的模型作为描边，只在未被标记的区域绘制
             {
                 name: "RenderOutline",
-                vert: this.outlineVertexShader.bind(this),
-                frag: this.outlineFragmentShader.bind(this),
+                vert: ToonShader_1.ToonShader.prototype.outlineVertexShader.bind(this),
+                frag: ToonShader_1.ToonShader.prototype.outlineFragmentShader.bind(this),
                 renderState: {
                     cullMode: RendererDefine_1.CullMode.Back,
                     // 模板测试配置：只在非物体区域绘制描边
                     stencil: RendererDefine_1.StencilPresets.outline(this.outlineStencilRef),
+                }
+            }
+        ];
+    }
+}
+exports.StencilOutlineShader = StencilOutlineShader;
+
+},{"../Math/Color":28,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":52,"./ToonShader":54}],54:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ToonShader = void 0;
+const Color_1 = require("../Math/Color");
+const TransformTools_1 = require("../Math/TransformTools");
+const Vector3_1 = require("../Math/Vector3");
+const Vector4_1 = require("../Math/Vector4");
+const RendererDefine_1 = require("../Renderer/RendererDefine");
+const Shader_1 = require("./Shader");
+class ToonShader extends Shader_1.Shader {
+    constructor() {
+        super(...arguments);
+        this.mainTexture = null;
+        this.mainTextureST = new Vector4_1.Vector4(0, 0, 1, 1);
+        // 卡通着色特有的参数
+        this.shadowThreshold = 0.3; // 阴影阈值
+        this.midtoneThreshold = 0.7; // 中间调阈值
+        this.highlightIntensity = 1.2; // 高光强度
+        this.outlineColor = new Color_1.Color(0, 0, 0, 1); // 轮廓颜色
+        this.outlineThickness = 0.05; // 轮廓厚度
+        this.passes = [
+            {
+                name: "Forward",
+                vert: this.vertexShader.bind(this),
+                frag: this.fragmentShader.bind(this),
+                renderState: {
+                    cullMode: RendererDefine_1.CullMode.Back,
+                }
+            },
+            {
+                name: "Outline",
+                vert: this.outlineVertexShader.bind(this),
+                frag: this.outlineFragmentShader.bind(this),
+                renderState: {
+                    cullMode: RendererDefine_1.CullMode.Front,
                 }
             }
         ];
@@ -24070,6 +24117,8 @@ class StencilOutlineShader extends Shader_1.Shader {
         const outAttr = {
             uv: inAttr.uv,
             normal: normalOut,
+            // 传递原始顶点用于轮廓计算
+            vertex: inAttr.vertex
         };
         return {
             vertexOut: this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(inAttr.vertex, 1)),
@@ -24077,46 +24126,44 @@ class StencilOutlineShader extends Shader_1.Shader {
         };
     }
     fragmentShader(v2fAttr) {
-        var _a;
+        if (!this.mainTexture) {
+            return Color_1.Color.MAGENTA;
+        }
         const uv = v2fAttr.uv;
         const normal = v2fAttr.normal;
-        // 采样基础颜色
-        const surfaceColor = ((_a = this.mainTexture) === null || _a === void 0 ? void 0 : _a.Sample(uv.u * this.mainTextureST.x + this.mainTextureST.z, uv.v * this.mainTextureST.y + this.mainTextureST.w)) || Color_1.Color.WHITE;
-        surfaceColor.multiply(this.baseColor);
-        // 高光系数，值越大高光越集中
-        const shininess = 100;
+        // 采样纹理颜色
+        const surfaceColor = this.mainTexture.Sample(uv.u, uv.v);
         // 确保法向量归一化
         const normalizedNormal = normal.normalize();
-        // 计算漫反射（半兰伯特）部分
-        const dotProduct = Math.max(0, Vector3_1.Vector3.dot(normalizedNormal, this.lightDirection)) * 0.5 + 0.5;
-        // 计算高光（Phong）部分
-        // 1. 计算反射光方向 = 2*(法向量·光源方向)*法向量 - 光源方向
-        const reflectDir = normalizedNormal.clone()
-            .multiplyScalar(2 * Vector3_1.Vector3.dot(normalizedNormal, this.lightDirection))
-            .subtract(this.lightDirection)
-            .normalize();
-        // 2. 计算反射方向与视角方向的点积
-        const specDot = Math.max(0, Vector3_1.Vector3.dot(reflectDir, this.viewDir));
-        // 3. 计算高光因子（使用高光系数控制高光范围）
-        const specularFactor = Math.pow(specDot, shininess);
-        // 4. 计算高光颜色（通常使用光源颜色，可添加高光强度参数）
-        const specularIntensity = 0.5; // 高光强度
-        const specularR = this.lightColor.r * specularIntensity * specularFactor;
-        const specularG = this.lightColor.g * specularIntensity * specularFactor;
-        const specularB = this.lightColor.b * specularIntensity * specularFactor;
-        // 计算漫反射颜色
-        const diffR = surfaceColor.r * this.lightColor.r * this.lightIntensity * dotProduct;
-        const diffG = surfaceColor.g * this.lightColor.g * this.lightIntensity * dotProduct;
-        const diffB = surfaceColor.b * this.lightColor.b * this.lightIntensity * dotProduct;
-        // 合并所有光照贡献（漫反射 + 高光）
-        const totalR = diffR + specularR;
-        const totalG = diffG + specularG;
-        const totalB = diffB + specularB;
+        // 计算法向量与光源方向的点积
+        const dotProduct = Vector3_1.Vector3.dot(normalizedNormal, this.lightDirection);
+        // 卡通着色的核心：将光照分为几个离散的层次
+        let lightIntensity = 0;
+        if (dotProduct > this.midtoneThreshold) {
+            // 高光区域
+            lightIntensity = this.highlightIntensity;
+        }
+        else if (dotProduct > this.shadowThreshold) {
+            // 中间调区域
+            lightIntensity = 0.7;
+        }
+        else {
+            // 阴影区域
+            lightIntensity = 0.3;
+        }
+        // 计算漫反射颜色（卡通风格通常不使用复杂的光照公式）
+        const diffR = surfaceColor.r * this.lightColor.r * this.lightIntensity * lightIntensity;
+        const diffG = surfaceColor.g * this.lightColor.g * this.lightIntensity * lightIntensity;
+        const diffB = surfaceColor.b * this.lightColor.b * this.lightIntensity * lightIntensity;
+        // 添加环境光
+        const totalR = this.ambientLight.r + diffR;
+        const totalG = this.ambientLight.g + diffG;
+        const totalB = this.ambientLight.b + diffB;
         // 确保颜色值在0-1范围内
         const clampedR = Math.min(1, Math.max(0, totalR));
         const clampedG = Math.min(1, Math.max(0, totalG));
         const clampedB = Math.min(1, Math.max(0, totalB));
-        // 组合成32位颜色值（保留原始Alpha）
+        // 返回最终颜色，保留原始Alpha
         return new Color_1.Color(clampedR, clampedG, clampedB, surfaceColor.a);
     }
     // 轮廓线顶点着色器
@@ -24135,9 +24182,9 @@ class StencilOutlineShader extends Shader_1.Shader {
         return this.outlineColor;
     }
 }
-exports.StencilOutlineShader = StencilOutlineShader;
+exports.ToonShader = ToonShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":52}],54:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":52}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
@@ -24205,7 +24252,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],55:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Gizmo = void 0;
@@ -24319,7 +24366,7 @@ Gizmo._color = Color_1.Color.WHITE;
 // 当前矩阵变换
 Gizmo._matrix = Matrix4x4_1.Matrix4x4.identity;
 
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/TransformTools":32,"../Math/Vector3":34}],56:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":18,"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/TransformTools":32,"../Math/Vector3":34}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -24481,7 +24528,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":44}],57:[function(require,module,exports){
+},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":44}],58:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -24508,6 +24555,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     requestAnimationFrame(mainLoop);
 }));
 
-},{"./Core/Engine":18}]},{},[57])
+},{"./Core/Engine":18}]},{},[58])
 
 //# sourceMappingURL=bundle.js.map

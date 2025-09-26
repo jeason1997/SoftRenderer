@@ -306,6 +306,12 @@ export class RasterizationPipeline {
 
     //#region 剔除裁剪
 
+    public test() {
+        // 视锥体剔除
+        // Z轴排序
+        // 分成透明跟不透明
+    }
+
     // 视锥体剔除
     public FrustumCulling() {
 
