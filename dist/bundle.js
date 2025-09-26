@@ -24554,6 +24554,8 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     // 开始动画循环
     requestAnimationFrame(mainLoop);
 }));
+const supportsSIMD = typeof Float32x4 !== "undefined";
+console.log("SIMD 支持:", supportsSIMD);
 
 },{"./Core/Engine":18}]},{},[58])
 
