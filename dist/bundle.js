@@ -21411,7 +21411,7 @@ class RasterizationPipeline {
                     // Debug.Log(render.gameObject.name);
                 }
                 // 绘制天空盒
-                this.DrawSkybox(this.currentCamera);
+                // this.DrawSkybox(this.currentCamera);
                 // 绘制透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制远的，颜色混合才能正确
                 //TOOD
             }
@@ -21631,7 +21631,7 @@ class RasterizationPipeline {
     }
     // 背面剔除
     FaceCulling(triangles, mesh, renderer, cullMode) {
-        if (cullMode === RendererDefine_1.CullMode.None)
+        if (cullMode === RendererDefine_1.CullMode.Off)
             return triangles;
         const visibleTriangles = [];
         const faceNormals = mesh.faceNormals;
@@ -21674,15 +21674,15 @@ class RasterizationPipeline {
         shader.init(renderer.transform, this.currentCamera);
         // 渲染所有通道
         shader.passes.forEach(pass => {
-            var _a, _b, _c, _d, _e;
+            var _a, _b, _c, _d, _e, _f, _g, _h;
             const renderType = shader.renderType;
-            const renderState = pass.renderState || {};
-            const colorMask = renderState.colorMask || RendererDefine_1.ColorMask.All;
-            const cullMode = renderState.cullMode || RendererDefine_1.CullMode.Back;
-            const zTest = renderState.zTest || RendererDefine_1.ZTest.Less;
-            const zWrite = (_b = (_a = pass.renderState) === null || _a === void 0 ? void 0 : _a.zWrite) !== null && _b !== void 0 ? _b : true;
-            const blendState = (_d = (_c = pass.renderState) === null || _c === void 0 ? void 0 : _c.blend) === null || _d === void 0 ? void 0 : _d.state;
-            const stencil = (_e = pass.renderState) === null || _e === void 0 ? void 0 : _e.stencil;
+            const renderState = (_a = pass.renderState) !== null && _a !== void 0 ? _a : {};
+            const colorMask = (_b = renderState.colorMask) !== null && _b !== void 0 ? _b : RendererDefine_1.ColorMask.All;
+            const cullMode = (_c = renderState.cullMode) !== null && _c !== void 0 ? _c : RendererDefine_1.CullMode.Back;
+            const zTest = (_d = renderState.zTest) !== null && _d !== void 0 ? _d : RendererDefine_1.ZTest.Less;
+            const zWrite = (_f = (_e = pass.renderState) === null || _e === void 0 ? void 0 : _e.zWrite) !== null && _f !== void 0 ? _f : true;
+            const blend = (_g = pass.renderState) === null || _g === void 0 ? void 0 : _g.blend;
+            const stencil = (_h = pass.renderState) === null || _h === void 0 ? void 0 : _h.stencil;
             let triangles = mesh.triangles;
             // 渲染管线3.背面剔除
             triangles = this.FaceCulling(triangles, mesh, renderer, cullMode);
@@ -21770,7 +21770,7 @@ class RasterizationPipeline {
                                 continue;
                         }
                         // 渲染管线11.像素着色器
-                        const pixelColor = pass.frag(fragment.attributes);
+                        let pixelColor = pass.frag(fragment.attributes);
                         // 像素被丢弃，可能是Alpha测试失败
                         if (!pixelColor)
                             continue;
@@ -21780,10 +21780,9 @@ class RasterizationPipeline {
                             this.depthBuffer[index] = z;
                         }
                         // 渲染管线13.颜色混合
-                        if (blendState) {
-                            // const existingColor = Color.FromUint32(this.frameBuffer[index]);
-                            // const blendedColor = Color.blendColors(existingColor, color, blendMode);
-                            // this.frameBuffer[index] = blendedColor.ToUint32();
+                        if (blend) {
+                            const existingColor = Color_1.Color.FromUint32(this.frameBuffer[index]);
+                            pixelColor = (0, RendererDefine_1.blendColors)(pixelColor, existingColor, blend.src, blend.dst, blend.op);
                         }
                         // 渲染管线13.绘制像素到帧缓冲
                         // 根据颜色掩码决定最终写入的分量（未启用的通道保留原有值）
@@ -21992,6 +21991,8 @@ exports.depthTest = depthTest;
 exports.stencilTest = stencilTest;
 exports.applyStencilOperation = applyStencilOperation;
 exports.applyColorMask = applyColorMask;
+exports.blendColors = blendColors;
+const Color_1 = require("../Math/Color");
 var BlendFactor;
 (function (BlendFactor) {
     BlendFactor[BlendFactor["One"] = 0] = "One";
@@ -22029,7 +22030,7 @@ var ColorMask;
 })(ColorMask || (exports.ColorMask = ColorMask = {}));
 var CullMode;
 (function (CullMode) {
-    CullMode[CullMode["None"] = 0] = "None";
+    CullMode[CullMode["Off"] = 0] = "Off";
     CullMode[CullMode["Front"] = 1] = "Front";
     CullMode[CullMode["Back"] = 2] = "Back";
 })(CullMode || (exports.CullMode = CullMode = {}));
@@ -22212,8 +22213,72 @@ function applyColorMask(color, bufferColor, mask) {
     color.b = (mask & ColorMask.Blue) ? color.b : bufferColor.b;
     color.a = (mask & ColorMask.Alpha) ? color.a : bufferColor.a;
 }
+function blendColors(srcColor, dstColor, srcFactor, dstFactor, blendOp = BlendOp.Add) {
+    // finalValue = sourceFactor * sourceValue operation destinationFactor * destinationValue
+    // 最终颜色 = 源颜色 × 源因子 [混合操作] 目标颜色 × 目标因子
+    // 计算源因子和目标因子的具体值
+    const [srcRFactor, srcGFactor, srcBFactor, srcAFactor] = getBlendFactorValues(srcColor, dstColor, srcFactor);
+    const [dstRFactor, dstGFactor, dstBFactor, dstAFactor] = getBlendFactorValues(srcColor, dstColor, dstFactor);
+    // 计算混合后的每个通道值
+    let r = calculateBlendValue(srcColor.r, dstColor.r, srcRFactor, dstRFactor, blendOp);
+    let g = calculateBlendValue(srcColor.g, dstColor.g, srcGFactor, dstGFactor, blendOp);
+    let b = calculateBlendValue(srcColor.b, dstColor.b, srcBFactor, dstBFactor, blendOp);
+    let a = calculateBlendValue(srcColor.a, dstColor.a, srcAFactor, dstAFactor, blendOp);
+    // 确保颜色值在0-1范围内并返回新颜色
+    return new Color_1.Color(r, g, b, a);
+}
+/**
+ * 根据混合因子获取对应的计算值
+ */
+function getBlendFactorValues(src, dst, factor) {
+    switch (factor) {
+        case BlendFactor.One:
+            return [1, 1, 1, 1];
+        case BlendFactor.Zero:
+            return [0, 0, 0, 0];
+        case BlendFactor.SrcColor:
+            return [src.r, src.g, src.b, src.a];
+        case BlendFactor.SrcAlpha:
+            return [src.a, src.a, src.a, src.a];
+        case BlendFactor.DstColor:
+            return [dst.r, dst.g, dst.b, dst.a];
+        case BlendFactor.DstAlpha:
+            return [dst.a, dst.a, dst.a, dst.a];
+        case BlendFactor.OneMinusSrcColor:
+            return [1 - src.r, 1 - src.g, 1 - src.b, 1 - src.a];
+        case BlendFactor.OneMinusSrcAlpha:
+            return [1 - src.a, 1 - src.a, 1 - src.a, 1 - src.a];
+        case BlendFactor.OneMinusDstColor:
+            return [1 - dst.r, 1 - dst.g, 1 - dst.b, 1 - dst.a];
+        case BlendFactor.OneMinusDstAlpha:
+            return [1 - dst.a, 1 - dst.a, 1 - dst.a, 1 - dst.a];
+        default:
+            return [0, 0, 0, 0];
+    }
+}
+/**
+ * 根据混合操作计算单个通道的混合结果
+ */
+function calculateBlendValue(src, dst, srcFactor, dstFactor, op) {
+    const srcVal = src * srcFactor;
+    const dstVal = dst * dstFactor;
+    switch (op) {
+        case BlendOp.Add:
+            return srcVal + dstVal;
+        case BlendOp.Sub:
+            return srcVal - dstVal;
+        case BlendOp.RevSub:
+            return dstVal - srcVal;
+        case BlendOp.Min:
+            return Math.min(srcVal, dstVal);
+        case BlendOp.Max:
+            return Math.max(srcVal, dstVal);
+        default:
+            return srcVal;
+    }
+}
 
-},{}],41:[function(require,module,exports){
+},{"../Math/Color":28}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TriangleRasterizer = void 0;
@@ -23687,6 +23752,15 @@ exports.MainScene = {
             }
         });
         // spheresObj.transform.setParent(toukuiObj.transform);
+        // await createObj({
+        //     name: "cube",
+        //     position: new Vector3(-2, 0, 0),
+        //     model: "resources/cube.obj",
+        //     shader: TransparentShader,
+        //     shaderProp: {
+        //         mainTexture: "resources/texture/transparent_texture.png",
+        //     }
+        // });
     })
 };
 function createObj(config) {
@@ -24554,8 +24628,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     // 开始动画循环
     requestAnimationFrame(mainLoop);
 }));
-const supportsSIMD = typeof Float32x4 !== "undefined";
-console.log("SIMD 支持:", supportsSIMD);
 
 },{"./Core/Engine":18}]},{},[58])
 

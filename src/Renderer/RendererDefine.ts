@@ -24,8 +24,7 @@ export interface ShaderRenderState {
 }
 
 export interface Blend {
-    state: boolean;         // 是否开启混合，默认值为 false
-    op: BlendOp;            // 混合操作，默认值为 Add
+    op?: BlendOp;            // 混合操作，默认值为 Add
     src: BlendFactor;
     dst: BlendFactor;
     // Unity支持RGB跟A分开计算混合，这里简单实现暂时屏蔽
@@ -86,9 +85,9 @@ export enum ColorMask {
 }
 
 export enum CullMode {
-    None,
-    Front,
-    Back
+    Off = 0,
+    Front = 1,
+    Back = 2,
 }
 
 export enum StencilCompareFunction {
@@ -288,4 +287,75 @@ export function applyColorMask(color: Color, bufferColor: Color, mask: ColorMask
     color.g = (mask & ColorMask.Green) ? color.g : bufferColor.g;
     color.b = (mask & ColorMask.Blue) ? color.b : bufferColor.b;
     color.a = (mask & ColorMask.Alpha) ? color.a : bufferColor.a;
+}
+
+export function blendColors(srcColor: Color, dstColor: Color, srcFactor: BlendFactor, dstFactor: BlendFactor, blendOp: BlendOp = BlendOp.Add): Color {
+    // finalValue = sourceFactor * sourceValue operation destinationFactor * destinationValue
+    // 最终颜色 = 源颜色 × 源因子 [混合操作] 目标颜色 × 目标因子
+
+    // 计算源因子和目标因子的具体值
+    const [srcRFactor, srcGFactor, srcBFactor, srcAFactor] = getBlendFactorValues(srcColor, dstColor, srcFactor);
+    const [dstRFactor, dstGFactor, dstBFactor, dstAFactor] = getBlendFactorValues(srcColor, dstColor, dstFactor);
+
+    // 计算混合后的每个通道值
+    let r = calculateBlendValue(srcColor.r, dstColor.r, srcRFactor, dstRFactor, blendOp);
+    let g = calculateBlendValue(srcColor.g, dstColor.g, srcGFactor, dstGFactor, blendOp);
+    let b = calculateBlendValue(srcColor.b, dstColor.b, srcBFactor, dstBFactor, blendOp);
+    let a = calculateBlendValue(srcColor.a, dstColor.a, srcAFactor, dstAFactor, blendOp);
+
+    // 确保颜色值在0-1范围内并返回新颜色
+    return new Color(r, g, b, a);
+}
+
+/**
+ * 根据混合因子获取对应的计算值
+ */
+function getBlendFactorValues(src: Color, dst: Color, factor: BlendFactor): [number, number, number, number] {
+    switch (factor) {
+        case BlendFactor.One:
+            return [1, 1, 1, 1];
+        case BlendFactor.Zero:
+            return [0, 0, 0, 0];
+        case BlendFactor.SrcColor:
+            return [src.r, src.g, src.b, src.a];
+        case BlendFactor.SrcAlpha:
+            return [src.a, src.a, src.a, src.a];
+        case BlendFactor.DstColor:
+            return [dst.r, dst.g, dst.b, dst.a];
+        case BlendFactor.DstAlpha:
+            return [dst.a, dst.a, dst.a, dst.a];
+        case BlendFactor.OneMinusSrcColor:
+            return [1 - src.r, 1 - src.g, 1 - src.b, 1 - src.a];
+        case BlendFactor.OneMinusSrcAlpha:
+            return [1 - src.a, 1 - src.a, 1 - src.a, 1 - src.a];
+        case BlendFactor.OneMinusDstColor:
+            return [1 - dst.r, 1 - dst.g, 1 - dst.b, 1 - dst.a];
+        case BlendFactor.OneMinusDstAlpha:
+            return [1 - dst.a, 1 - dst.a, 1 - dst.a, 1 - dst.a];
+        default:
+            return [0, 0, 0, 0];
+    }
+}
+
+/**
+ * 根据混合操作计算单个通道的混合结果
+ */
+function calculateBlendValue(src: number, dst: number, srcFactor: number, dstFactor: number, op: BlendOp): number {
+    const srcVal = src * srcFactor;
+    const dstVal = dst * dstFactor;
+
+    switch (op) {
+        case BlendOp.Add:
+            return srcVal + dstVal;
+        case BlendOp.Sub:
+            return srcVal - dstVal;
+        case BlendOp.RevSub:
+            return dstVal - srcVal;
+        case BlendOp.Min:
+            return Math.min(srcVal, dstVal);
+        case BlendOp.Max:
+            return Math.max(srcVal, dstVal);
+        default:
+            return srcVal;
+    }
 }

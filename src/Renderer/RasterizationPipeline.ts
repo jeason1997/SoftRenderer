@@ -11,7 +11,7 @@ import { Mesh } from "../Resources/Mesh";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
-import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest, ColorMask, applyColorMask, RenderType, applyStencilOperation } from "./RendererDefine";
+import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest, ColorMask, applyColorMask, RenderType, applyStencilOperation, blendColors } from "./RendererDefine";
 import { GameObject } from "../Core/GameObject";
 import { Gizmo } from "../Utils/Gizmo";
 
@@ -62,7 +62,7 @@ export class RasterizationPipeline {
                     // Debug.Log(render.gameObject.name);
                 }
                 // 绘制天空盒
-                this.DrawSkybox(this.currentCamera);
+                // this.DrawSkybox(this.currentCamera);
                 // 绘制透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制远的，颜色混合才能正确
                 //TOOD
             }
@@ -319,7 +319,7 @@ export class RasterizationPipeline {
 
     // 背面剔除
     public FaceCulling(triangles: number[], mesh: Mesh, renderer: Renderer, cullMode: CullMode) {
-        if (cullMode === CullMode.None) return triangles;
+        if (cullMode === CullMode.Off) return triangles;
 
         const visibleTriangles: number[] = [];
         const faceNormals = mesh.faceNormals;
@@ -380,12 +380,12 @@ export class RasterizationPipeline {
         // 渲染所有通道
         shader.passes.forEach(pass => {
             const renderType = shader.renderType;
-            const renderState = pass.renderState || {};
-            const colorMask = renderState.colorMask || ColorMask.All;
-            const cullMode = renderState.cullMode || CullMode.Back;
-            const zTest = renderState.zTest || ZTest.Less;
+            const renderState = pass.renderState ?? {};
+            const colorMask = renderState.colorMask ?? ColorMask.All;
+            const cullMode = renderState.cullMode ?? CullMode.Back;
+            const zTest = renderState.zTest ?? ZTest.Less;
             const zWrite = pass.renderState?.zWrite ?? true;
-            const blendState = pass.renderState?.blend?.state;
+            const blend = pass.renderState?.blend;
             const stencil = pass.renderState?.stencil;
 
             let triangles = mesh.triangles;
@@ -480,7 +480,7 @@ export class RasterizationPipeline {
                         }
 
                         // 渲染管线11.像素着色器
-                        const pixelColor = pass.frag(fragment.attributes);
+                        let pixelColor = pass.frag(fragment.attributes);
                         // 像素被丢弃，可能是Alpha测试失败
                         if (!pixelColor) continue;
 
@@ -491,10 +491,9 @@ export class RasterizationPipeline {
                         }
 
                         // 渲染管线13.颜色混合
-                        if (blendState) {
-                            // const existingColor = Color.FromUint32(this.frameBuffer[index]);
-                            // const blendedColor = Color.blendColors(existingColor, color, blendMode);
-                            // this.frameBuffer[index] = blendedColor.ToUint32();
+                        if (blend) {
+                            const existingColor = Color.FromUint32(this.frameBuffer[index]);
+                            pixelColor = blendColors(pixelColor, existingColor, blend.src, blend.dst, blend.op);
                         }
 
                         // 渲染管线13.绘制像素到帧缓冲

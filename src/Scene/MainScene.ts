@@ -33,6 +33,7 @@ import { AlphaCutOffShader } from "../Shader/AlphaCutOffShader";
 import { BillBoard } from "../Component/TestComp/BillBoard";
 import { VertexAttributes } from "../Renderer/RendererDefine";
 import { StencilOutlineShader } from "../Shader/StencilOutlineShader";
+import { TransparentShader } from "../Shader/TransparentShader";
 
 export const MainScene = {
     name: "MainScene",
@@ -204,6 +205,16 @@ export const MainScene = {
             }
         });
         // spheresObj.transform.setParent(toukuiObj.transform);
+
+        // await createObj({
+        //     name: "cube",
+        //     position: new Vector3(-2, 0, 0),
+        //     model: "resources/cube.obj",
+        //     shader: TransparentShader,
+        //     shaderProp: {
+        //         mainTexture: "resources/texture/transparent_texture.png",
+        //     }
+        // });
     }
 }
 
