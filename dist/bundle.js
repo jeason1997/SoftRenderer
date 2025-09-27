@@ -17006,7 +17006,7 @@ class Light extends Component_1.Component {
 }
 exports.Light = Light;
 
-},{"../Math/Color":28,"../Math/Vector3":34,"../Utils/Gizmo":56,"./Component":7}],9:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/Vector3":34,"../Utils/Gizmo":57,"./Component":7}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MeshRenderer = void 0;
@@ -17748,7 +17748,7 @@ let ObjRotate = (() => {
 })();
 exports.ObjRotate = ObjRotate;
 
-},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":55,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
+},{"../../Core/Decorators":17,"../../Core/Input":20,"../../Math/Quaternion":30,"../../Math/Vector3":34,"../../Utils/Debug":56,"../Component":7,"../RigidBody":11}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RayTest = void 0;
@@ -17915,7 +17915,7 @@ exports.Engine = Engine;
 Engine.sceneManager = new SceneManager_1.SceneManager();
 Engine.physics = new Physics_1.Physics();
 
-},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":48,"../Scene/SceneManager":50,"../Utils/Debug":55,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
+},{"../Physics/Physics":36,"../Renderer/RasterizationPipeline":39,"../Scene/MainScene":48,"../Scene/SceneManager":50,"../Utils/Debug":56,"./Input":20,"./Setting":21,"./Time":22,"./TweenManager":24}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
@@ -21983,7 +21983,7 @@ class RasterizationPipeline {
 }
 exports.RasterizationPipeline = RasterizationPipeline;
 
-},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Utils/Debug":55,"../Utils/Gizmo":56,"./BarycentricTriangleRasterizer":38,"./RendererDefine":40}],40:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/MeshRenderer":9,"../Core/Engine":18,"../Core/Setting":21,"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Utils/Debug":56,"../Utils/Gizmo":57,"./BarycentricTriangleRasterizer":38,"./RendererDefine":40}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StencilPresets = exports.ZTest = exports.StencilOp = exports.StencilCompareFunction = exports.CullMode = exports.ColorMask = exports.RenderType = exports.BlendOp = exports.BlendFactor = void 0;
@@ -22885,7 +22885,7 @@ exports.Resources = Resources;
 Resources.fileCache = new Map();
 Resources.loadingPromises = new Map();
 
-},{"../Utils/ObjParser":57,"./Texture":46}],46:[function(require,module,exports){
+},{"../Utils/ObjParser":58,"./Texture":46}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Texture = exports.TextureFormat = exports.TextureWrapMode = exports.FilterMode = void 0;
@@ -23600,6 +23600,7 @@ const CubeMap_1 = require("../Resources/CubeMap");
 const Setting_1 = require("../Core/Setting");
 const TextureCreator_1 = require("../Resources/TextureCreator");
 const StencilOutlineShader_1 = require("../Shader/StencilOutlineShader");
+const ScreenDoorShader_1 = require("../Shader/ScreenDoorShader");
 exports.MainScene = {
     name: "MainScene",
     initfun: (scene) => __awaiter(void 0, void 0, void 0, function* () {
@@ -23726,6 +23727,7 @@ exports.MainScene = {
             model: "resources/sphere.obj",
             // components: [Rigidbody, SphereCollider]
             components: [ObjAutoRotate_1.ObjAutoRotate],
+            shader: ScreenDoorShader_1.ScreenDoorShader,
             shaderProp: {
                 mainTexture: TextureCreator_1.TextureCreator.CheckerboardTexture(),
                 // mainTexture: "resources/texture/Brick_Diffuse.jpg",
@@ -23807,7 +23809,7 @@ function createObj(config) {
     });
 }
 
-},{"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Core/Setting":21,"../Math/Quaternion":30,"../Math/Vector3":34,"../Resources/CubeMap":42,"../Resources/Resources":45,"../Resources/TextureCreator":47,"../Shader/LitShader":51,"../Shader/StencilOutlineShader":53}],49:[function(require,module,exports){
+},{"../Component/Camera":5,"../Component/Light":8,"../Component/MeshRenderer":9,"../Component/TestComp/CameraController":13,"../Component/TestComp/ObjAutoRotate":14,"../Component/TestComp/ObjRotate":15,"../Component/TestComp/RayTest":16,"../Core/GameObject":19,"../Core/Setting":21,"../Math/Quaternion":30,"../Math/Vector3":34,"../Resources/CubeMap":42,"../Resources/Resources":45,"../Resources/TextureCreator":47,"../Shader/LitShader":51,"../Shader/ScreenDoorShader":52,"../Shader/StencilOutlineShader":54}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -24054,7 +24056,61 @@ class LitShader extends Shader_1.Shader {
 }
 exports.LitShader = LitShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":52}],52:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":53}],52:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ScreenDoorShader = void 0;
+const Shader_1 = require("./Shader");
+const Vector4_1 = require("../Math/Vector4");
+const Color_1 = require("../Math/Color");
+const Vector2_1 = require("../Math/Vector2");
+class ScreenDoorShader extends Shader_1.Shader {
+    constructor() {
+        super(...arguments);
+        this.baseColor = Color_1.Color.WHITE;
+        this.mainTexture = null;
+        this.mainTextureST = new Vector4_1.Vector4(1, 1, 0, 0);
+        this.screenDoorDensity = 64;
+        this.passes = [
+            {
+                name: "Forward",
+                vert: this.vertexShader.bind(this),
+                frag: this.fragmentShader.bind(this),
+            }
+        ];
+    }
+    vertexShader(inAttr) {
+        const clipPos = this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(inAttr.vertex, 1));
+        const ndxX = clipPos.x / clipPos.w; // NDC X: [-1, 1]
+        const ndxY = clipPos.y / clipPos.w; // NDC Y: [-1, 1]
+        const screenX = (ndxX + 1.0) * 0.5; // [0, 1)
+        const screenY = (1.0 - ndxY) * 0.5; // [0, 1)（Y轴翻转）
+        return {
+            vertexOut: clipPos,
+            attrOut: {
+                uv: inAttr.uv,
+                screenPos: new Vector2_1.Vector2(screenX, screenY)
+            },
+        };
+    }
+    fragmentShader(v2fAttr) {
+        const screenPos = v2fAttr.screenPos;
+        // 判断是否被棋盘纱窗过滤掉
+        const gridX = screenPos.x * this.screenDoorDensity;
+        const gridY = screenPos.y * this.screenDoorDensity;
+        const shouldDiscard = ((gridX % 2) < 1.0) === ((gridY % 2) < 1.0);
+        if (shouldDiscard)
+            return null;
+        if (!this.mainTexture)
+            return Color_1.Color.MAGENTA;
+        const uv = v2fAttr.uv;
+        const sampledColor = this.mainTexture.Sample(uv.u * this.mainTextureST.x + this.mainTextureST.z, uv.v * this.mainTextureST.y + this.mainTextureST.w);
+        return Color_1.Color.multiply(sampledColor, this.baseColor);
+    }
+}
+exports.ScreenDoorShader = ScreenDoorShader;
+
+},{"../Math/Color":28,"../Math/Vector2":33,"../Math/Vector4":35,"./Shader":53}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Shader = void 0;
@@ -24089,7 +24145,7 @@ class Shader extends UObject_1.UObject {
 }
 exports.Shader = Shader;
 
-},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25,"../Renderer/RendererDefine":40}],53:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25,"../Renderer/RendererDefine":40}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StencilOutlineShader = void 0;
@@ -24146,7 +24202,7 @@ class StencilOutlineShader extends Shader_1.Shader {
 }
 exports.StencilOutlineShader = StencilOutlineShader;
 
-},{"../Math/Color":28,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":52,"./ToonShader":54}],54:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":53,"./ToonShader":55}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ToonShader = void 0;
@@ -24258,7 +24314,7 @@ class ToonShader extends Shader_1.Shader {
 }
 exports.ToonShader = ToonShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":52}],55:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":53}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;
@@ -24326,7 +24382,7 @@ Debug.logColors = {
     [LogType.Error]: 'red'
 };
 
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],56:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":18,"../Math/TransformTools":32}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Gizmo = void 0;
@@ -24440,7 +24496,7 @@ Gizmo._color = Color_1.Color.WHITE;
 // 当前矩阵变换
 Gizmo._matrix = Matrix4x4_1.Matrix4x4.identity;
 
-},{"../Component/Camera":5,"../Core/Engine":18,"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/TransformTools":32,"../Math/Vector3":34}],57:[function(require,module,exports){
+},{"../Component/Camera":5,"../Core/Engine":18,"../Math/Color":28,"../Math/Matrix4x4":29,"../Math/TransformTools":32,"../Math/Vector3":34}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OBJParser = void 0;
@@ -24602,7 +24658,7 @@ class OBJParser {
 }
 exports.OBJParser = OBJParser;
 
-},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":44}],58:[function(require,module,exports){
+},{"../Math/Bounds":27,"../Math/Vector2":33,"../Math/Vector3":34,"../Math/Vector4":35,"../Resources/Mesh":44}],59:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -24629,6 +24685,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     requestAnimationFrame(mainLoop);
 }));
 
-},{"./Core/Engine":18}]},{},[58])
+},{"./Core/Engine":18}]},{},[59])
 
 //# sourceMappingURL=bundle.js.map

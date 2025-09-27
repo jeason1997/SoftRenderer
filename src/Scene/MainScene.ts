@@ -34,6 +34,7 @@ import { BillBoard } from "../Component/TestComp/BillBoard";
 import { VertexAttributes } from "../Renderer/RendererDefine";
 import { StencilOutlineShader } from "../Shader/StencilOutlineShader";
 import { TransparentShader } from "../Shader/TransparentShader";
+import { ScreenDoorShader } from "../Shader/ScreenDoorShader";
 
 export const MainScene = {
     name: "MainScene",
@@ -177,6 +178,7 @@ export const MainScene = {
             model: "resources/sphere.obj",
             // components: [Rigidbody, SphereCollider]
             components: [ObjAutoRotate],
+            shader: ScreenDoorShader,
             shaderProp: {
                 mainTexture: TextureCreator.CheckerboardTexture(),
                 // mainTexture: "resources/texture/Brick_Diffuse.jpg",
