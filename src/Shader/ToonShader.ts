@@ -1,16 +1,11 @@
 import { Color } from "../Math/Color";
-import { TransformTools } from "../Math/TransformTools";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { CullMode, VertexAttributes } from "../Renderer/RendererDefine";
-import { Texture } from "../Resources/Texture";
-import { Shader, ShaderPass } from "./Shader";
+import { CullMode, ShaderPass, VertexAttributes } from "../Renderer/RendererDefine";
+import { Shader } from "./Shader";
 
 export class ToonShader extends Shader {
-
-    public mainTexture: Texture | null = null;
-    public mainTextureST: Vector4 = new Vector4(0, 0, 1, 1);
 
     // 卡通着色特有的参数
     public shadowThreshold: number = 0.3;               // 阴影阈值
@@ -37,20 +32,6 @@ export class ToonShader extends Shader {
             }
         }
     ];
-
-    public vertexShader(inAttr: VertexAttributes): { vertexOut: Vector4; attrOut: VertexAttributes } {
-        const normalOut = TransformTools.ModelToWorldNormal(inAttr.normal as Vector3, this.modelMatrix);
-        const outAttr: VertexAttributes = {
-            uv: inAttr.uv,
-            normal: normalOut,
-            // 传递原始顶点用于轮廓计算
-            vertex: inAttr.vertex
-        };
-        return {
-            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4(inAttr.vertex as Vector3, 1)),
-            attrOut: outAttr,
-        };
-    }
 
     public fragmentShader(v2fAttr: VertexAttributes): Color | null {
         if (!this.mainTexture) { return Color.MAGENTA; }

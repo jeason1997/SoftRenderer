@@ -15,6 +15,7 @@ export class Transform {
 
     // 缓存矩阵以提高性能
     private _selfMatrix: Matrix4x4 | null = null;
+    private _localToWorldNormalMatrix: Matrix4x4 | null = null;
     private _localToWorldMatrix: Matrix4x4 | null = null;
     private _worldToLocalMatrix: Matrix4x4 | null = null;
 
@@ -44,6 +45,7 @@ export class Transform {
         this._selfMatrix = null;
         this._localToWorldMatrix = null;
         this._worldToLocalMatrix = null;
+        this._localToWorldNormalMatrix = null;
 
         // 通知所有组件变换发生了变化
         const components = this.gameObject.getAllComponents();
@@ -67,6 +69,13 @@ export class Transform {
             this._isDirty = false;
         }
         return this._selfMatrix.clone();
+    }
+
+    public get localToWorldNormalMatrix(): Matrix4x4 {
+        if (this._localToWorldNormalMatrix === null || this._isDirty) {
+            this._localToWorldNormalMatrix = this.localToWorldMatrix.invert().transpose();
+        }
+        return this._localToWorldNormalMatrix.clone();
     }
 
     public get localToWorldMatrix(): Matrix4x4 {

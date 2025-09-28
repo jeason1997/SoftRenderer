@@ -11,7 +11,7 @@ import { Mesh } from "../Resources/Mesh";
 import { BarycentricTriangleRasterizer } from "./BarycentricTriangleRasterizer"
 import { TransformTools } from "../Math/TransformTools";
 import { Debug } from "../Utils/Debug";
-import { BlendOp, CullMode, depthTest, StencilOp, Stencil, stencilTest, StencilCompareFunction, ZTest, ColorMask, applyColorMask, RenderType, applyStencilOperation, blendColors } from "./RendererDefine";
+import { CullMode, depthTest, StencilOp, stencilTest, ZTest, ColorMask, applyColorMask, RenderType, applyStencilOperation, blendColors } from "./RendererDefine";
 import { GameObject } from "../Core/GameObject";
 import { Gizmo } from "../Utils/Gizmo";
 
@@ -52,7 +52,7 @@ export class RasterizationPipeline {
                 this.currentCamera = cameras[i];
                 this.Clear(this.currentCamera);
                 this.currentRendererObjs = rootObject.getComponentsInChildren(MeshRenderer);
-                // 渲染管线1.视锥体剔除
+                // 渲染管线1.视锥体剔除并对场景物体进行排序
                 //TODO
 
                 // 渲染管线2.按照先不透明再天空盒再透明的顺序绘画
@@ -62,7 +62,7 @@ export class RasterizationPipeline {
                     // Debug.Log(render.gameObject.name);
                 }
                 // 绘制天空盒
-                // this.DrawSkybox(this.currentCamera);
+                if (this.drawMode == DrawMode.Shader) this.DrawSkybox(this.currentCamera);
                 // 绘制透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制远的，颜色混合才能正确
                 //TOOD
             }
@@ -321,6 +321,39 @@ export class RasterizationPipeline {
     public FaceCulling(triangles: number[], mesh: Mesh, renderer: Renderer, cullMode: CullMode) {
         if (cullMode === CullMode.Off) return triangles;
 
+        // A.屏幕空间三角形顶点顺序法
+        // 这里只是做个示范，实际上这一步骤可以放到顶点着色器之后，就可以少顶点变换计算（但缺点就是多了很多顶点着色器计算，不过在GPU中这都不算什么）
+        // const visibleTriangles: number[] = [];
+        // const modelMatrix = renderer.transform.localToWorldMatrix;
+        // const viewMatrix = this.currentCamera.getViewMatrix();
+        // const projectionMatrix = this.currentCamera.getProjectionMatrix();
+        // const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        // for (let i = 0; i < triangles.length; i += 3) {
+        //     const v1 = mesh.vertices[triangles[i + 0]];
+        //     const v2 = mesh.vertices[triangles[i + 1]];
+        //     const v3 = mesh.vertices[triangles[i + 2]];
+        //     // 转换到裁剪空间
+        //     const p1 = mvpMatrix.multiplyVector4(new Vector4(v1, 1));
+        //     const p2 = mvpMatrix.multiplyVector4(new Vector4(v2, 1));
+        //     const p3 = mvpMatrix.multiplyVector4(new Vector4(v3, 1));
+        //     // 检查 w 分量有效性
+        //     if (p1.w === 0 || p2.w === 0 || p3.w === 0) {
+        //         continue;
+        //     }
+        //     // 裁剪空间转 NDC（透视除法）
+        //     const p1NDC = { x: p1.x / p1.w, y: p1.y / p1.w };
+        //     const p2NDC = { x: p2.x / p2.w, y: p2.y / p2.w };
+        //     const p3NDC = { x: p3.x / p3.w, y: p3.y / p3.w };
+        //     // 计算叉积判断环绕顺序（假设逆时针为正面）
+        //     const cross = (p2NDC.x - p1NDC.x) * (p3NDC.y - p1NDC.y) -
+        //         (p2NDC.y - p1NDC.y) * (p3NDC.x - p1NDC.x);
+        //     // 保留正面三角形（cross < 0 表示逆时针）
+        //     if (cross < 0) {
+        //         visibleTriangles.push(triangles[i + 0], triangles[i + 1], triangles[i + 2]);
+        //     }
+        // }
+
+        // B.观察空间法向量与视线方向的点积判断法
         const visibleTriangles: number[] = [];
         const faceNormals = mesh.faceNormals;
         const faceCenters = mesh.faceCenters;
@@ -329,13 +362,13 @@ export class RasterizationPipeline {
         // 获取模型矩阵（模型本地空间到世界空间的变换矩阵）
         const modelMatrix = renderer.transform.localToWorldMatrix;
         // 计算法线矩阵：模型矩阵的逆矩阵的转置
-        const normalMatrix = modelMatrix.clone().invert().transpose();
+        const normalMatrix = renderer.transform.localToWorldNormalMatrix;
 
         for (let i = 0; i < faceNormals.length; i++) {
             // 要把Vec3转为齐次坐标点，即w=1
             const world_center = new Vector3(modelMatrix.multiplyVector4(new Vector4(faceCenters[i], 1)));
             // 要把Vec3转为齐次坐向量，即w=0
-            const world_normal = new Vector3(normalMatrix.multiplyVector4(new Vector4(faceNormals[i], 0)));
+            const world_normal = normalMatrix.multiplyVector3(faceNormals[i]);
 
             // 2.获取面的中心到摄像机的向量
             const centerToCamera = Vector3.subtract(cameraPosition, world_center);
@@ -345,11 +378,8 @@ export class RasterizationPipeline {
 
             // 4.判断夹角是否大于等于0°小于90°
             if ((cullMode === CullMode.Back && dot > 0) || (cullMode === CullMode.Front && dot < 0)) {
-                visibleTriangles.push(
-                    triangles[i * 3 + 0],
-                    triangles[i * 3 + 1],
-                    triangles[i * 3 + 2]
-                );
+                const triIndex = i * 3;
+                visibleTriangles.push(triangles[triIndex], triangles[triIndex + 1], triangles[triIndex + 2]);
             }
         }
 
@@ -396,7 +426,7 @@ export class RasterizationPipeline {
             this.OcclusionCulling();
 
             for (let i = 0; i < triangles.length; i += 3) {
-                // 渲染管线5.顶点着色器
+                // 渲染管线5.顶点着色器(MVP变换)
                 const { vertexOut: v1, attrOut: v1Attr } = pass.vert({
                     vertex: mesh.vertices[triangles[i]],
                     uv: mesh.uv[triangles[i]],

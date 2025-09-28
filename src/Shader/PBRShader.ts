@@ -4,9 +4,9 @@ import { TransformTools } from "../Math/TransformTools";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 import { Vector4 } from "../Math/Vector4";
-import { VertexAttributes } from "../Renderer/RendererDefine";
+import { ShaderPass, VertexAttributes } from "../Renderer/RendererDefine";
 import { Texture } from "../Resources/Texture";
-import { Shader, ShaderPass } from "./Shader";
+import { Shader } from "./Shader";
 
 function saturate(v: number) {
     return Math.max(0, Math.min(1, v));
@@ -14,14 +14,10 @@ function saturate(v: number) {
 
 export class PBRShader extends Shader {
 
-    public baseColor: Color = Color.WHITE;
+    public normalTexture: Texture | null = null;
     public specularColor: Color = Color.WHITE;
     public gloss: number = 50;
     public bumpScale: number = 1;
-
-    public mainTexture: Texture | null = null;
-    public normalTexture: Texture | null = null;
-    public mainTextureST: Vector4 = new Vector4(1, 1, 0, 0);
 
     public passes: ShaderPass[] = [
         {

@@ -1,17 +1,11 @@
 import { Shader } from "./Shader";
-import { Texture } from "../Resources/Texture";
 import { Vector4 } from "../Math/Vector4";
-import { ShaderPass } from "./Shader";
-import { VertexAttributes } from "../Renderer/RendererDefine";
+import { ShaderPass, VertexAttributes } from "../Renderer/RendererDefine";
 import { Color } from "../Math/Color";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
 
 export class ScreenDoorShader extends Shader {
-
-    public baseColor: Color = Color.WHITE;
-    public mainTexture: Texture | null = null;
-    public mainTextureST: Vector4 = new Vector4(1, 1, 0, 0);
 
     public screenDoorDensity: number = 64;
 
@@ -41,6 +35,8 @@ export class ScreenDoorShader extends Shader {
 
     public fragmentShader(v2fAttr: VertexAttributes): Color | null {
         const screenPos = v2fAttr.screenPos as Vector2;
+
+        //TODO:实际上现在这样做效果其实不是很好，纱窗方格是固定尺寸的，应该根据物体的Z轴的距离调整尺寸，否则会看远处的物体很小，但方格依旧保持很大，看着不好看
 
         // 判断是否被棋盘纱窗过滤掉
         const gridX = screenPos.x * this.screenDoorDensity;

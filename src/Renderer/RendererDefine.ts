@@ -14,6 +14,17 @@ export interface VertexAttributes {
     [key: string]: AttributeType;
 }
 
+// 着色器Pass接口
+export interface ShaderPass {
+    name?: string;
+    // 顶点着色器：带默认实现
+    vert: (input: VertexAttributes) => { vertexOut: Vector4; attrOut: VertexAttributes; };
+    // 片段着色器：默认返回洋红色
+    frag: (input: VertexAttributes) => Color | null;
+    // 渲染状态
+    renderState?: ShaderRenderState;
+}
+
 export interface ShaderRenderState {
     colorMask?: ColorMask;           // 颜色写入通道掩码，默认值为 All
     cullMode?: CullMode;             // 剔除模式，默认值 Back

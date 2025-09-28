@@ -1,17 +1,10 @@
 import { Color } from "../Math/Color";
-import { TransformTools } from "../Math/TransformTools";
 import { Vector2 } from "../Math/Vector2";
 import { Vector3 } from "../Math/Vector3";
-import { Vector4 } from "../Math/Vector4";
-import { VertexAttributes } from "../Renderer/RendererDefine";
-import { Texture } from "../Resources/Texture";
-import { Shader, ShaderPass } from "./Shader";
+import { ShaderPass, VertexAttributes } from "../Renderer/RendererDefine";
+import { Shader } from "./Shader";
 
 export class LitShader extends Shader {
-
-    public baseColor: Color = Color.WHITE;
-    public mainTexture: Texture | null = null;
-    public mainTextureST: Vector4 = new Vector4(1, 1, 0, 0);
 
     public passes: ShaderPass[] = [
         {
@@ -20,18 +13,6 @@ export class LitShader extends Shader {
             frag: this.fragmentShader.bind(this),
         }
     ];
-
-    public vertexShader(inAttr: VertexAttributes): { vertexOut: Vector4; attrOut: VertexAttributes } {
-        const normalOut = TransformTools.ModelToWorldNormal(inAttr.normal as Vector3, this.modelMatrix);
-        const outAttr: VertexAttributes = {
-            uv: inAttr.uv,
-            normal: normalOut,
-        };
-        return {
-            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4(inAttr.vertex as Vector3, 1)),
-            attrOut: outAttr,
-        };
-    }
 
     public fragmentShader(v2fAttr: VertexAttributes): Color | null {
         const uv = v2fAttr.uv as Vector2;

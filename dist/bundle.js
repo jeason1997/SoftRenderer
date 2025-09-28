@@ -18601,6 +18601,7 @@ class Transform {
         this._parent = null;
         // 缓存矩阵以提高性能
         this._selfMatrix = null;
+        this._localToWorldNormalMatrix = null;
         this._localToWorldMatrix = null;
         this._worldToLocalMatrix = null;
         // 脏标记，用于跟踪变换是否已更改
@@ -18625,6 +18626,7 @@ class Transform {
         this._selfMatrix = null;
         this._localToWorldMatrix = null;
         this._worldToLocalMatrix = null;
+        this._localToWorldNormalMatrix = null;
         // 通知所有组件变换发生了变化
         const components = this.gameObject.getAllComponents();
         for (const component of components) {
@@ -18645,6 +18647,12 @@ class Transform {
             this._isDirty = false;
         }
         return this._selfMatrix.clone();
+    }
+    get localToWorldNormalMatrix() {
+        if (this._localToWorldNormalMatrix === null || this._isDirty) {
+            this._localToWorldNormalMatrix = this.localToWorldMatrix.invert().transpose();
+        }
+        return this._localToWorldNormalMatrix.clone();
     }
     get localToWorldMatrix() {
         if (this._localToWorldMatrix === null || this._isDirty) {
@@ -21197,10 +21205,10 @@ class BarycentricTriangleRasterizer extends TriangleRasterizer_1.TriangleRasteri
         // 计算子三角形 PBC 的面积（的两倍，有符号）
         const areaPBC = (v1.x - x) * (v2.y - y) - (v2.x - x) * (v1.y - y);
         const alpha = areaPBC / areaABC;
-        // 计算子三角形 PCA 的面积（的两倍，有签名）
+        // 计算子三角形 PCA 的面积（的两倍，有符号）
         const areaPCA = (v2.x - x) * (v0.y - y) - (v0.x - x) * (v2.y - y);
         const beta = areaPCA / areaABC;
-        // 计算子三角形 PAB 的面积（的两倍，有签名）
+        // 计算子三角形 PAB 的面积（的两倍，有符号）
         const areaPAB = (v0.x - x) * (v1.y - y) - (v1.x - x) * (v0.y - y);
         const gamma = areaPAB / areaABC;
         // 或者 gamma = 1 - alpha - beta;
@@ -21402,7 +21410,7 @@ class RasterizationPipeline {
                 this.currentCamera = cameras[i];
                 this.Clear(this.currentCamera);
                 this.currentRendererObjs = rootObject.getComponentsInChildren(MeshRenderer_1.MeshRenderer);
-                // 渲染管线1.视锥体剔除
+                // 渲染管线1.视锥体剔除并对场景物体进行排序
                 //TODO
                 // 渲染管线2.按照先不透明再天空盒再透明的顺序绘画
                 // 渲染不透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制近的，降低overdraw
@@ -21411,7 +21419,8 @@ class RasterizationPipeline {
                     // Debug.Log(render.gameObject.name);
                 }
                 // 绘制天空盒
-                // this.DrawSkybox(this.currentCamera);
+                if (this.drawMode == DrawMode.Shader)
+                    this.DrawSkybox(this.currentCamera);
                 // 绘制透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制远的，颜色混合才能正确
                 //TOOD
             }
@@ -21633,6 +21642,38 @@ class RasterizationPipeline {
     FaceCulling(triangles, mesh, renderer, cullMode) {
         if (cullMode === RendererDefine_1.CullMode.Off)
             return triangles;
+        // A.屏幕空间三角形顶点顺序法
+        // 这里只是做个示范，实际上这一步骤可以放到顶点着色器之后，就可以少顶点变换计算（但缺点就是多了很多顶点着色器计算，不过在GPU中这都不算什么）
+        // const visibleTriangles: number[] = [];
+        // const modelMatrix = renderer.transform.localToWorldMatrix;
+        // const viewMatrix = this.currentCamera.getViewMatrix();
+        // const projectionMatrix = this.currentCamera.getProjectionMatrix();
+        // const mvpMatrix = projectionMatrix.multiply(viewMatrix).multiply(modelMatrix);
+        // for (let i = 0; i < triangles.length; i += 3) {
+        //     const v1 = mesh.vertices[triangles[i + 0]];
+        //     const v2 = mesh.vertices[triangles[i + 1]];
+        //     const v3 = mesh.vertices[triangles[i + 2]];
+        //     // 转换到裁剪空间
+        //     const p1 = mvpMatrix.multiplyVector4(new Vector4(v1, 1));
+        //     const p2 = mvpMatrix.multiplyVector4(new Vector4(v2, 1));
+        //     const p3 = mvpMatrix.multiplyVector4(new Vector4(v3, 1));
+        //     // 检查 w 分量有效性
+        //     if (p1.w === 0 || p2.w === 0 || p3.w === 0) {
+        //         continue;
+        //     }
+        //     // 裁剪空间转 NDC（透视除法）
+        //     const p1NDC = { x: p1.x / p1.w, y: p1.y / p1.w };
+        //     const p2NDC = { x: p2.x / p2.w, y: p2.y / p2.w };
+        //     const p3NDC = { x: p3.x / p3.w, y: p3.y / p3.w };
+        //     // 计算叉积判断环绕顺序（假设逆时针为正面）
+        //     const cross = (p2NDC.x - p1NDC.x) * (p3NDC.y - p1NDC.y) -
+        //         (p2NDC.y - p1NDC.y) * (p3NDC.x - p1NDC.x);
+        //     // 保留正面三角形（cross < 0 表示逆时针）
+        //     if (cross < 0) {
+        //         visibleTriangles.push(triangles[i + 0], triangles[i + 1], triangles[i + 2]);
+        //     }
+        // }
+        // B.观察空间法向量与视线方向的点积判断法
         const visibleTriangles = [];
         const faceNormals = mesh.faceNormals;
         const faceCenters = mesh.faceCenters;
@@ -21640,19 +21681,20 @@ class RasterizationPipeline {
         // 获取模型矩阵（模型本地空间到世界空间的变换矩阵）
         const modelMatrix = renderer.transform.localToWorldMatrix;
         // 计算法线矩阵：模型矩阵的逆矩阵的转置
-        const normalMatrix = modelMatrix.clone().invert().transpose();
+        const normalMatrix = renderer.transform.localToWorldNormalMatrix;
         for (let i = 0; i < faceNormals.length; i++) {
             // 要把Vec3转为齐次坐标点，即w=1
             const world_center = new Vector3_1.Vector3(modelMatrix.multiplyVector4(new Vector4_1.Vector4(faceCenters[i], 1)));
             // 要把Vec3转为齐次坐向量，即w=0
-            const world_normal = new Vector3_1.Vector3(normalMatrix.multiplyVector4(new Vector4_1.Vector4(faceNormals[i], 0)));
+            const world_normal = normalMatrix.multiplyVector3(faceNormals[i]);
             // 2.获取面的中心到摄像机的向量
             const centerToCamera = Vector3_1.Vector3.subtract(cameraPosition, world_center);
             // 3.计算这2个向量的夹角
             const dot = world_normal.dot(centerToCamera);
             // 4.判断夹角是否大于等于0°小于90°
             if ((cullMode === RendererDefine_1.CullMode.Back && dot > 0) || (cullMode === RendererDefine_1.CullMode.Front && dot < 0)) {
-                visibleTriangles.push(triangles[i * 3 + 0], triangles[i * 3 + 1], triangles[i * 3 + 2]);
+                const triIndex = i * 3;
+                visibleTriangles.push(triangles[triIndex], triangles[triIndex + 1], triangles[triIndex + 2]);
             }
         }
         return visibleTriangles;
@@ -21689,7 +21731,7 @@ class RasterizationPipeline {
             // 渲染管线4.遮挡剔除
             this.OcclusionCulling();
             for (let i = 0; i < triangles.length; i += 3) {
-                // 渲染管线5.顶点着色器
+                // 渲染管线5.顶点着色器(MVP变换)
                 const { vertexOut: v1, attrOut: v1Attr } = pass.vert({
                     vertex: mesh.vertices[triangles[i]],
                     uv: mesh.uv[triangles[i]],
@@ -23738,9 +23780,11 @@ exports.MainScene = {
         });
         // const bunnyObj = await createObj({
         //     name: "bunny",
-        //     modelPath: 'resources/models/bunny2.obj',
+        //     model: 'resources/models/bunny2.obj',
         //     modelScale: 10,
-        //     texture: Texture.CheckerboardTexture(),
+        //     shaderProp: {
+        //         mainTexture: TextureCreator.CheckerboardTexture(),
+        //     }
         // });
         const toukuiObj = yield createObj({
             name: "toukui",
@@ -23753,7 +23797,7 @@ exports.MainScene = {
                 // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
             }
         });
-        // spheresObj.transform.setParent(toukuiObj.transform);
+        spheresObj.transform.setParent(toukuiObj.transform);
         // await createObj({
         //     name: "cube",
         //     position: new Vector3(-2, 0, 0),
@@ -23981,16 +24025,11 @@ exports.SceneManager = SceneManager;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LitShader = void 0;
 const Color_1 = require("../Math/Color");
-const TransformTools_1 = require("../Math/TransformTools");
 const Vector3_1 = require("../Math/Vector3");
-const Vector4_1 = require("../Math/Vector4");
 const Shader_1 = require("./Shader");
 class LitShader extends Shader_1.Shader {
     constructor() {
         super(...arguments);
-        this.baseColor = Color_1.Color.WHITE;
-        this.mainTexture = null;
-        this.mainTextureST = new Vector4_1.Vector4(1, 1, 0, 0);
         this.passes = [
             {
                 name: "Forward",
@@ -23998,17 +24037,6 @@ class LitShader extends Shader_1.Shader {
                 frag: this.fragmentShader.bind(this),
             }
         ];
-    }
-    vertexShader(inAttr) {
-        const normalOut = TransformTools_1.TransformTools.ModelToWorldNormal(inAttr.normal, this.modelMatrix);
-        const outAttr = {
-            uv: inAttr.uv,
-            normal: normalOut,
-        };
-        return {
-            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(inAttr.vertex, 1)),
-            attrOut: outAttr,
-        };
     }
     fragmentShader(v2fAttr) {
         var _a;
@@ -24056,7 +24084,7 @@ class LitShader extends Shader_1.Shader {
 }
 exports.LitShader = LitShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"./Shader":53}],52:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/Vector3":34,"./Shader":53}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScreenDoorShader = void 0;
@@ -24067,9 +24095,6 @@ const Vector2_1 = require("../Math/Vector2");
 class ScreenDoorShader extends Shader_1.Shader {
     constructor() {
         super(...arguments);
-        this.baseColor = Color_1.Color.WHITE;
-        this.mainTexture = null;
-        this.mainTextureST = new Vector4_1.Vector4(1, 1, 0, 0);
         this.screenDoorDensity = 64;
         this.passes = [
             {
@@ -24095,6 +24120,7 @@ class ScreenDoorShader extends Shader_1.Shader {
     }
     fragmentShader(v2fAttr) {
         const screenPos = v2fAttr.screenPos;
+        //TODO:实际上现在这样做效果其实不是很好，纱窗方格是固定尺寸的，应该根据物体的Z轴的距离调整尺寸，否则会看远处的物体很小，但方格依旧保持很大，看着不好看
         // 判断是否被棋盘纱窗过滤掉
         const gridX = screenPos.x * this.screenDoorDensity;
         const gridY = screenPos.y * this.screenDoorDensity;
@@ -24117,6 +24143,8 @@ exports.Shader = void 0;
 const Light_1 = require("../Component/Light");
 const Setting_1 = require("../Core/Setting");
 const UObject_1 = require("../Core/UObject");
+const Color_1 = require("../Math/Color");
+const Vector4_1 = require("../Math/Vector4");
 const RendererDefine_1 = require("../Renderer/RendererDefine");
 class Shader extends UObject_1.UObject {
     constructor() {
@@ -24124,6 +24152,11 @@ class Shader extends UObject_1.UObject {
         this.renderType = RendererDefine_1.RenderType.Opaque;
         this.renderQueue = 0;
         this.passes = [];
+        //#region 着色器通用模板
+        this.baseColor = Color_1.Color.WHITE;
+        this.mainTexture = null;
+        this.mainTextureST = new Vector4_1.Vector4(1, 1, 0, 0);
+        //#endregion
     }
     init(transform, camera) {
         this.transform = transform;
@@ -24132,7 +24165,8 @@ class Shader extends UObject_1.UObject {
         this.modelMatrix = this.transform.localToWorldMatrix;
         this.viewMatrix = this.camera.getViewMatrix();
         this.projectionMatrix = this.camera.getProjectionMatrix();
-        this.mvpMatrix = this.projectionMatrix.multiply(this.viewMatrix).multiply(this.modelMatrix);
+        this.mvpMatrix = this.projectionMatrix.clone().multiply(this.viewMatrix).multiply(this.modelMatrix);
+        this.normalMatrix = this.transform.localToWorldNormalMatrix;
         this.light = Light_1.Light.sunLight;
         this.ambientLight = Setting_1.RenderSettings.ambientLight;
         this.lightColor = this.light.color;
@@ -24142,24 +24176,38 @@ class Shader extends UObject_1.UObject {
     onDestroy() {
         throw new Error("Method not implemented.");
     }
+    // 通用顶点函数，将顶点坐标以及法线变换到裁剪空间
+    vertexShader(inAttr) {
+        return {
+            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(inAttr.vertex, 1)),
+            attrOut: {
+                uv: inAttr.uv,
+                normal: this.normalMatrix.multiplyVector3(inAttr.normal),
+            }
+        };
+    }
+    // 通用着色器函数，采样纹理与基础颜色相乘
+    fragmentShader(v2fAttr) {
+        if (!this.mainTexture)
+            return Color_1.Color.MAGENTA;
+        const uv = v2fAttr.uv;
+        const sampledColor = this.mainTexture.Sample(uv.u * this.mainTextureST.x + this.mainTextureST.z, uv.v * this.mainTextureST.y + this.mainTextureST.w);
+        return Color_1.Color.multiply(sampledColor, this.baseColor);
+    }
 }
 exports.Shader = Shader;
 
-},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25,"../Renderer/RendererDefine":40}],54:[function(require,module,exports){
+},{"../Component/Light":8,"../Core/Setting":21,"../Core/UObject":25,"../Math/Color":28,"../Math/Vector4":35,"../Renderer/RendererDefine":40}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StencilOutlineShader = void 0;
 const Color_1 = require("../Math/Color");
-const Vector4_1 = require("../Math/Vector4");
 const RendererDefine_1 = require("../Renderer/RendererDefine");
 const Shader_1 = require("./Shader");
 const ToonShader_1 = require("./ToonShader");
 class StencilOutlineShader extends Shader_1.Shader {
     constructor() {
         super(...arguments);
-        this.baseColor = Color_1.Color.WHITE;
-        this.mainTexture = null;
-        this.mainTextureST = new Vector4_1.Vector4(1, 1, 0, 0);
         // 基础着色参数
         this.shadowThreshold = 0.3;
         this.midtoneThreshold = 0.7;
@@ -24172,7 +24220,7 @@ class StencilOutlineShader extends Shader_1.Shader {
             // 第一遍：正常渲染物体并标记模板缓冲区
             {
                 name: "RenderObjectAndMarkStencil",
-                vert: ToonShader_1.ToonShader.prototype.vertexShader.bind(this),
+                vert: this.vertexShader.bind(this),
                 frag: ToonShader_1.ToonShader.prototype.fragmentShader.bind(this),
                 renderState: {
                     cullMode: RendererDefine_1.CullMode.Back,
@@ -24202,12 +24250,11 @@ class StencilOutlineShader extends Shader_1.Shader {
 }
 exports.StencilOutlineShader = StencilOutlineShader;
 
-},{"../Math/Color":28,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":53,"./ToonShader":55}],55:[function(require,module,exports){
+},{"../Math/Color":28,"../Renderer/RendererDefine":40,"./Shader":53,"./ToonShader":55}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ToonShader = void 0;
 const Color_1 = require("../Math/Color");
-const TransformTools_1 = require("../Math/TransformTools");
 const Vector3_1 = require("../Math/Vector3");
 const Vector4_1 = require("../Math/Vector4");
 const RendererDefine_1 = require("../Renderer/RendererDefine");
@@ -24215,8 +24262,6 @@ const Shader_1 = require("./Shader");
 class ToonShader extends Shader_1.Shader {
     constructor() {
         super(...arguments);
-        this.mainTexture = null;
-        this.mainTextureST = new Vector4_1.Vector4(0, 0, 1, 1);
         // 卡通着色特有的参数
         this.shadowThreshold = 0.3; // 阴影阈值
         this.midtoneThreshold = 0.7; // 中间调阈值
@@ -24241,19 +24286,6 @@ class ToonShader extends Shader_1.Shader {
                 }
             }
         ];
-    }
-    vertexShader(inAttr) {
-        const normalOut = TransformTools_1.TransformTools.ModelToWorldNormal(inAttr.normal, this.modelMatrix);
-        const outAttr = {
-            uv: inAttr.uv,
-            normal: normalOut,
-            // 传递原始顶点用于轮廓计算
-            vertex: inAttr.vertex
-        };
-        return {
-            vertexOut: this.mvpMatrix.multiplyVector4(new Vector4_1.Vector4(inAttr.vertex, 1)),
-            attrOut: outAttr,
-        };
     }
     fragmentShader(v2fAttr) {
         if (!this.mainTexture) {
@@ -24314,7 +24346,7 @@ class ToonShader extends Shader_1.Shader {
 }
 exports.ToonShader = ToonShader;
 
-},{"../Math/Color":28,"../Math/TransformTools":32,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":53}],56:[function(require,module,exports){
+},{"../Math/Color":28,"../Math/Vector3":34,"../Math/Vector4":35,"../Renderer/RendererDefine":40,"./Shader":53}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Debug = void 0;

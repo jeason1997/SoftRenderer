@@ -30,11 +30,11 @@ export class BarycentricTriangleRasterizer extends TriangleRasterizer {
         const areaPBC = (v1.x - x) * (v2.y - y) - (v2.x - x) * (v1.y - y);
         const alpha = areaPBC / areaABC;
 
-        // 计算子三角形 PCA 的面积（的两倍，有签名）
+        // 计算子三角形 PCA 的面积（的两倍，有符号）
         const areaPCA = (v2.x - x) * (v0.y - y) - (v0.x - x) * (v2.y - y);
         const beta = areaPCA / areaABC;
 
-        // 计算子三角形 PAB 的面积（的两倍，有签名）
+        // 计算子三角形 PAB 的面积（的两倍，有符号）
         const areaPAB = (v0.x - x) * (v1.y - y) - (v1.x - x) * (v0.y - y);
         const gamma = areaPAB / areaABC;
         // 或者 gamma = 1 - alpha - beta;

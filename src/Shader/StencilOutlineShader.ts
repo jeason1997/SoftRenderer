@@ -1,15 +1,9 @@
 import { Color } from "../Math/Color";
-import { Vector4 } from "../Math/Vector4";
-import { CullMode, StencilCompareFunction, StencilOp, StencilPresets } from "../Renderer/RendererDefine";
-import { Texture } from "../Resources/Texture";
-import { Shader, ShaderPass } from "./Shader";
+import { CullMode, ShaderPass, StencilCompareFunction, StencilOp, StencilPresets } from "../Renderer/RendererDefine";
+import { Shader } from "./Shader";
 import { ToonShader } from "./ToonShader";
 
 export class StencilOutlineShader extends Shader {
-
-    public baseColor: Color = Color.WHITE;
-    public mainTexture: Texture | null = null;
-    public mainTextureST: Vector4 = new Vector4(1, 1, 0, 0);
 
     // 基础着色参数
     public shadowThreshold: number = 0.3;
@@ -25,7 +19,7 @@ export class StencilOutlineShader extends Shader {
         // 第一遍：正常渲染物体并标记模板缓冲区
         {
             name: "RenderObjectAndMarkStencil",
-            vert: ToonShader.prototype.vertexShader.bind(this),
+            vert: this.vertexShader.bind(this),
             frag: ToonShader.prototype.fragmentShader.bind(this),
             renderState: {
                 cullMode: CullMode.Back,

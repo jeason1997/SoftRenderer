@@ -190,9 +190,11 @@ export const MainScene = {
 
         // const bunnyObj = await createObj({
         //     name: "bunny",
-        //     modelPath: 'resources/models/bunny2.obj',
+        //     model: 'resources/models/bunny2.obj',
         //     modelScale: 10,
-        //     texture: Texture.CheckerboardTexture(),
+        //     shaderProp: {
+        //         mainTexture: TextureCreator.CheckerboardTexture(),
+        //     }
         // });
 
         const toukuiObj = await createObj({
@@ -206,7 +208,7 @@ export const MainScene = {
                 // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
             }
         });
-        // spheresObj.transform.setParent(toukuiObj.transform);
+        spheresObj.transform.setParent(toukuiObj.transform);
 
         // await createObj({
         //     name: "cube",
