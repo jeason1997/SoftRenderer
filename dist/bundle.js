@@ -21623,6 +21623,12 @@ class RasterizationPipeline {
                 transparentRendererObjs.sort((a, b) => {
                     return b.viewZ - a.viewZ;
                 });
+                // 渲染管线2.绘制阴影贴图
+                for (const obj of opaqueRendererObjs) {
+                    if (obj.castShadows) {
+                        // this.DrawShadowMap(obj);
+                    }
+                }
                 // 渲染管线2.按照先不透明再天空盒再透明的顺序绘画
                 for (const obj of opaqueRendererObjs) {
                     this.DrawObject(obj);
