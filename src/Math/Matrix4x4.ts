@@ -109,6 +109,13 @@ export class Matrix4x4 {
         return new Vector3(m[0][3], m[1][3], m[2][3]);
     }
 
+    public setTranslate(v: Vector3) {
+        let m = this.matrix;
+        m[0][3] = v.x;
+        m[1][3] = v.y;
+        m[2][3] = v.z;
+    }
+
     // public getRotate(): Vector3 {
     //     let mat = this.matrix;
 

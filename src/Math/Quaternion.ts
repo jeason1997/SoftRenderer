@@ -114,6 +114,17 @@ export class Quaternion {
     }
 
     /**
+     * @zh 检查四元数是否相等
+     */
+    public equals(q: Quaternion): boolean {
+        const epsilon = 1e-6;
+        return Math.abs(this.x - q.x) < epsilon && 
+               Math.abs(this.y - q.y) < epsilon && 
+               Math.abs(this.z - q.z) < epsilon && 
+               Math.abs(this.w - q.w) < epsilon;
+    }
+
+    /**
      * @zh 四元数球面插值
      */
     public static slerp(a: Quaternion, b: Quaternion, t: number): Quaternion {

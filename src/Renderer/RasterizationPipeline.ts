@@ -52,19 +52,52 @@ export class RasterizationPipeline {
                 this.currentCamera = cameras[i];
                 this.Clear(this.currentCamera);
                 this.currentRendererObjs = rootObject.getComponentsInChildren(MeshRenderer);
+
+                const opaqueRendererObjs: MeshRenderer[] = [];
+                const transparentRendererObjs: MeshRenderer[] = [];
+
                 // 渲染管线1.视锥体剔除并对场景物体进行排序
-                //TODO
+                const viewMatrix = this.currentCamera.getViewMatrix();
+                for (let j = 0, len = this.currentRendererObjs.length; j < len; j++) {
+                    const renderer = this.currentRendererObjs[j];
+                    const shader = renderer.material.shader;
+                    if (shader == null) continue;
+
+                    // 视锥体剔除
+                    if (this.FrustumCulling(renderer)) continue;
+
+                    // 存储Z值用于后续排序
+                    const viewPos = viewMatrix.multiplyVector4(new Vector4(renderer.transform.worldPosition, 1));
+                    (renderer as any).viewZ = viewPos.z;
+
+                    // 归类
+                    const renderType = shader.renderType;
+                    if (renderType == RenderType.Opaque) {
+                        opaqueRendererObjs.push(renderer);
+                    }
+                    else if (renderType == RenderType.Transparent) {
+                        transparentRendererObjs.push(renderer);
+                    }
+                }
+                // 对不透明物体进行排序：从前往后，降低overdraw
+                opaqueRendererObjs.sort((a, b) => {
+                    return (a as any).viewZ - (b as any).viewZ;
+                });
+                // 对透明物体进行排序：从后往前，先绘制远的，颜色混合才能正确
+                transparentRendererObjs.sort((a, b) => {
+                    return (b as any).viewZ - (a as any).viewZ;
+                });
 
                 // 渲染管线2.按照先不透明再天空盒再透明的顺序绘画
-                // 渲染不透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制近的，降低overdraw
-                for (const render of this.currentRendererObjs) {
-                    this.DrawObject(render);
-                    // Debug.Log(render.gameObject.name);
+                for (const obj of opaqueRendererObjs) {
+                    this.DrawObject(obj);
                 }
                 // 绘制天空盒
                 if (this.drawMode == DrawMode.Shader) this.DrawSkybox(this.currentCamera);
-                // 绘制透明物体：排序场景物体，按照相机空间进行Z轴排序，先绘制远的，颜色混合才能正确
-                //TOOD
+                // 绘制透明物体
+                for (const obj of transparentRendererObjs) {
+                    this.DrawObject(obj);
+                }
             }
             // 调试信息
             this.DebugDraw();
@@ -132,6 +165,8 @@ export class RasterizationPipeline {
 
         // 获取相机的视图和投影矩阵
         const viewMatrix = camera.getViewMatrix();
+        // 修正视图矩阵：移除平移，只保留旋转
+        viewMatrix.setTranslate(Vector3.ZERO);
         const projectionMatrix = camera.getProjectionMatrix();
         // 计算逆视图投影矩阵，用于将屏幕坐标转换为世界方向
         const invViewProj = projectionMatrix.multiply(viewMatrix).invert();
@@ -150,9 +185,9 @@ export class RasterizationPipeline {
                 const depth = this.depthBuffer[y * EngineConfig.canvasWidth + x];
                 if (depth < 0.999) continue; // 使用接近1的值避免精度问题
 
-                // 将屏幕坐标转换为标准化设备坐标(NDC)
-                const ndcX = (x / EngineConfig.canvasWidth) * 2 - 1;
-                const ndcY = 1 - (y / EngineConfig.canvasHeight) * 2; // 翻转Y轴，因为屏幕坐标Y向下为正
+                // 将屏幕坐标转换为标准化设备坐标(NDC)，基于视口而非整个画布
+                const ndcX = ((x - viewportPixelX) / viewportPixelWidth) * 2 - 1;
+                const ndcY = 1 - ((y - viewportPixelY) / viewportPixelHeight) * 2;
 
                 // 创建NDC空间中的点（远平面）
                 const ndcPos = new Vector4(ndcX, ndcY, 1.0, 1.0);
@@ -306,15 +341,26 @@ export class RasterizationPipeline {
 
     //#region 剔除裁剪
 
-    public test() {
-        // 视锥体剔除
-        // Z轴排序
-        // 分成透明跟不透明
-    }
-
     // 视锥体剔除
-    public FrustumCulling() {
+    public FrustumCulling(obj: MeshRenderer): boolean {
+        const bounds = obj.mesh?.bounds;
+        if (bounds == null || bounds.length <= 0) return true;
 
+        const modelMatrix = obj.transform.localToWorldMatrix;
+
+        for (let i = 0; i < bounds.length; i++) {
+            const bound = bounds[i];
+            // TODO:待优化，只使用2个极值点即可，这里用了全部8个点来计算
+            for (let j = 0; j < bound.vertices.length; j++) {
+                const vertex = bound.vertices[j];
+                const worldPos = modelMatrix.multiplyVector4(new Vector4(vertex, 1));
+                if (this.currentCamera.isPointInFrustum(new Vector3(worldPos.x, worldPos.y, worldPos.z))) {
+                    // 只要有任何一个点在视锥体内，则该物体可见，不该被裁剪
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     // 背面剔除
@@ -591,6 +637,7 @@ export class RasterizationPipeline {
             const mesh = renderer.mesh;
             if (!mesh) return;
             const modelMatrix = renderer.transform.localToWorldMatrix;
+            const camera = Camera.mainCamera;
 
             // 面法线
             // for (let i = 0; i < mesh.faceNormals.length; i++) {
@@ -616,23 +663,23 @@ export class RasterizationPipeline {
                 // 计算副切线 (Bitangent) = 法线 × 切线 × w分量
                 const bitangentDir = Vector3.cross(normal, tangentDir).multiplyScalar(tangentW).normalize();
                 // 将顶点位置转换到屏幕空间
-                const vertexScreenPos = TransformTools.ModelToScreenPos(vertex, modelMatrix, this.currentCamera).screen;
+                const vertexScreenPos = TransformTools.ModelToScreenPos(vertex, modelMatrix, camera).screen;
                 // 定义线的长度
                 const lineLength = 0.1;
 
                 // 1. 绘制法线 - 红色
                 const normalEnd = Vector3.add(vertex, Vector3.multiplyScalar(normal, lineLength));
-                const normalScreenEnd = TransformTools.ModelToScreenPos(normalEnd, modelMatrix, this.currentCamera).screen;
+                const normalScreenEnd = TransformTools.ModelToScreenPos(normalEnd, modelMatrix, camera).screen;
                 this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, normalScreenEnd.x, normalScreenEnd.y, Color.RED);
 
                 // 2. 绘制切线 - 绿色
                 const tangentEnd = Vector3.add(vertex, Vector3.multiplyScalar(tangentDir, lineLength));
-                const tangentScreenEnd = TransformTools.ModelToScreenPos(tangentEnd, modelMatrix, this.currentCamera).screen;
+                const tangentScreenEnd = TransformTools.ModelToScreenPos(tangentEnd, modelMatrix, camera).screen;
                 this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, tangentScreenEnd.x, tangentScreenEnd.y, Color.GREEN);
 
                 // 3. 绘制副切线 - 黄色
                 const bitangentEnd = Vector3.add(vertex, Vector3.multiplyScalar(bitangentDir, lineLength));
-                const bitangentScreenEnd = TransformTools.ModelToScreenPos(bitangentEnd, modelMatrix, this.currentCamera).screen;
+                const bitangentScreenEnd = TransformTools.ModelToScreenPos(bitangentEnd, modelMatrix, camera).screen;
                 this.DrawLine(vertexScreenPos.x, vertexScreenPos.y, bitangentScreenEnd.x, bitangentScreenEnd.y, Color.YELLOW);
             }
         }
@@ -687,9 +734,9 @@ export class RasterizationPipeline {
         for (const renderer of this.currentRendererObjs) {
             const mesh = renderer.mesh;
             if (!mesh) return;
+            const camera = Camera.mainCamera;
             const modelMatrix = renderer.transform.localToWorldMatrix;
 
-            const transform = renderer.transform;
             const bounds = mesh.bounds;
             const color = Color.WHITE;
 
@@ -697,22 +744,19 @@ export class RasterizationPipeline {
 
             // 将所有顶点转换到屏幕空间
             const screenVertices = bound.vertices.map(v =>
-                TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), modelMatrix, this.currentCamera).screen
+                TransformTools.ModelToScreenPos(new Vector3(v.x, v.y, v.z), modelMatrix, camera).screen
             );
 
             // 绘制所有边
             bound.edges.forEach(([i1, i2]) => {
                 const v1 = screenVertices[i1];
                 const v2 = screenVertices[i2];
-                // 确保转换后的顶点有效
-                if (v1 && v2 && !isNaN(v1.x) && !isNaN(v1.y) && !isNaN(v2.x) && !isNaN(v2.y)) {
-                    this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
-                }
+                this.DrawLine(v1.x, v1.y, v2.x, v2.y, color);
             });
 
             // 绘制中心点
             const center = bound.center;
-            const screenCenter = TransformTools.ModelToScreenPos(center, modelMatrix, this.currentCamera).screen;
+            const screenCenter = TransformTools.ModelToScreenPos(center, modelMatrix, camera).screen;
             if (screenCenter) {
                 // 绘制一个小十字作为中心点标记
                 const size = 5;

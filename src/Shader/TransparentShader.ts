@@ -1,8 +1,10 @@
-import { BlendFactor, CullMode, ShaderPass } from "../Renderer/RendererDefine";
+import { BlendFactor, CullMode, RenderType, ShaderPass } from "../Renderer/RendererDefine";
 import { Shader } from "./Shader";
 
 export class TransparentShader extends Shader {
 
+    public renderType: RenderType = RenderType.Transparent;
+    
     public passes: ShaderPass[] = [
         {
             name: "Forward",

@@ -125,6 +125,7 @@ export class Transform {
     }
 
     public set position(pos: Vector3) {
+        if (pos.equals(this._tempPos)) return;
         this._tempPos = pos;
         this.setDirty();
     }
@@ -138,6 +139,7 @@ export class Transform {
     }
 
     public set rotation(q: Quaternion) {
+        if (q.equals(this._tempRot)) return;
         this._tempRot = q;
         this.setDirty();
     }
@@ -151,6 +153,7 @@ export class Transform {
     }
 
     public set scale(s: Vector3) {
+        if (s.equals(this._tempScale)) return;
         this._tempScale = s;
         this.setDirty();
     }

@@ -84,7 +84,26 @@ export class Bounds {
         return toCenter.dot(rayDirection);
     }
 
-    static fromPoints(points: Vector3[]): Bounds {
+    // /**
+    //  * 获取包围盒在指定方向上的极值顶点
+    //  * @param bounds 包围盒
+    //  * @param direction 方向向量
+    //  * @param positive 是否获取正方向的极值顶点
+    //  * @returns 极值顶点
+    //  */
+    // public getExtremeVertex(direction: Vector3, positive: boolean): Vector3 {
+    //     // 创建一个新的顶点用于计算
+    //     const vertex = new Vector3();
+        
+    //     // 对于每个轴，根据方向向量的分量符号选择min或max
+    //     vertex.x = direction.x > 0 === positive ? this.max.x : this.min.x;
+    //     vertex.y = direction.y > 0 === positive ? this.max.y : this.min.y;
+    //     vertex.z = direction.z > 0 === positive ? this.max.z : this.min.z;
+        
+    //     return vertex;
+    // }
+
+    public static fromPoints(points: Vector3[]): Bounds {
         if (points.length === 0) return new Bounds();
 
         let min = new Vector3(points[0].x, points[0].y, points[0].z);

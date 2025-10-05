@@ -44,8 +44,24 @@ export const MainScene = {
             name: "camera",
             position: new Vector3(0, 0, -5),
             rotation: new Quaternion(new Vector3(0, 0, 0)),
-            components: [Camera, CameraController, RayTest]
+            components: [Camera, CameraController]
         });
+        // const camera = cameraObj.getComponent(Camera);
+        // if (camera) {
+        //     camera.viewPort = new Vector4(0, 0, 0.5, 1);
+        // }
+
+        // // 相机2
+        // const camera2Obj = await createObj({
+        //     name: "camera",
+        //     position: new Vector3(0, 0, 5),
+        //     rotation: new Quaternion(new Vector3(0, 180, 0)),
+        //     components: [Camera]
+        // });
+        // const camera2 = camera2Obj.getComponent(Camera);
+        // if (camera2) {
+        //     camera2.viewPort = new Vector4(0.5, 0, 0.5, 0.5);
+        // }
 
         // 灯
         const lightObj = await createObj({
@@ -178,12 +194,23 @@ export const MainScene = {
             model: "resources/sphere.obj",
             // components: [Rigidbody, SphereCollider]
             components: [ObjAutoRotate],
+            // shader: ScreenDoorShader,
             shaderProp: {
                 mainTexture: TextureCreator.CheckerboardTexture(),
                 // mainTexture: "resources/texture/Brick_Diffuse.jpg",
                 // normalTexture: "resources/texture/Brick_Normal.jpg",
                 // mainTexture: "resources/texture/Road_Diffuse.jpg",
                 // normalTexture: "resources/texture/Road_Normal.jpg",
+            }
+        });
+
+        await createObj({
+            name: "cube",
+            position: new Vector3(-2, 0, 0),
+            model: "resources/cube.obj",
+            shader: TransparentShader,
+            shaderProp: {
+                mainTexture: "resources/texture/transparent_texture.png",
             }
         });
 
@@ -207,17 +234,7 @@ export const MainScene = {
                 // normalTexture: "resources/toukui/Construction_Helmet_M_Helmet_Normal.png",
             }
         });
-        spheresObj.transform.setParent(toukuiObj.transform);
-
-        // await createObj({
-        //     name: "cube",
-        //     position: new Vector3(-2, 0, 0),
-        //     model: "resources/cube.obj",
-        //     shader: TransparentShader,
-        //     shaderProp: {
-        //         mainTexture: "resources/texture/transparent_texture.png",
-        //     }
-        // });
+        // spheresObj.transform.setParent(toukuiObj.transform);
     }
 }
 
