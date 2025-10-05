@@ -8,6 +8,7 @@ import { Vector3 } from "../Math/Vector3";
 export class ScreenDoorShader extends Shader {
 
     public screenDoorDensity: number = 64;
+    public distanceScale: number = 10.0;    // 距离缩放因子，控制随距离变化的速率
 
     public passes: ShaderPass[] = [
         {
@@ -18,29 +19,39 @@ export class ScreenDoorShader extends Shader {
     ];
 
     public vertexShader(inAttr: VertexAttributes): { vertexOut: Vector4; attrOut: VertexAttributes } {
-        const clipPos = this.mvpMatrix.multiplyVector4(new Vector4(inAttr.vertex as Vector3, 1));
+        const modelPos = this.modelMatrix.multiplyVector4(new Vector4(inAttr.vertex as Vector3, 1));
+        const viewPos = this.viewMatrix.multiplyVector4(modelPos);
+        const clipPos = this.projectionMatrix.multiplyVector4(viewPos);
+
         const ndxX = clipPos.x / clipPos.w;     // NDC X: [-1, 1]
         const ndxY = clipPos.y / clipPos.w;     // NDC Y: [-1, 1]
         const screenX = (ndxX + 1.0) * 0.5;     // [0, 1)
         const screenY = (1.0 - ndxY) * 0.5;     // [0, 1)（Y轴翻转）
+        
+        // 计算顶点到摄像机的距离（在视图空间中的Z值）
+        const distanceToCamera = Math.abs(viewPos.z); // 取绝对值作为距离
+
+        // 根据物体到摄像机的距离调整网格密度
+        // 距离越远，密度越大（格子越小）
+        const adjustedDensity = this.screenDoorDensity * (1 + (distanceToCamera / this.distanceScale));
 
         return {
             vertexOut: clipPos,
             attrOut: {
                 uv: inAttr.uv,
-                screenPos: new Vector2(screenX, screenY)
+                screenPos: new Vector2(screenX, screenY),
+                adjustedDensity: adjustedDensity
             },
         };
     }
 
     public fragmentShader(v2fAttr: VertexAttributes): Color | null {
         const screenPos = v2fAttr.screenPos as Vector2;
-
-        //TODO:实际上现在这样做效果其实不是很好，纱窗方格是固定尺寸的，应该根据物体的Z轴的距离调整尺寸，否则会看远处的物体很小，但方格依旧保持很大，看着不好看
-
+        const adjustedDensity = v2fAttr.adjustedDensity as number;
+        
         // 判断是否被棋盘纱窗过滤掉
-        const gridX = screenPos.x * this.screenDoorDensity;
-        const gridY = screenPos.y * this.screenDoorDensity;
+        const gridX = screenPos.x * adjustedDensity;
+        const gridY = screenPos.y * adjustedDensity;
         const shouldDiscard = ((gridX % 2) < 1.0) === ((gridY % 2) < 1.0);
         if (shouldDiscard) return null;
 

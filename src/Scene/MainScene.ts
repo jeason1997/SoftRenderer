@@ -178,7 +178,6 @@ export const MainScene = {
             model: "resources/sphere.obj",
             // components: [Rigidbody, SphereCollider]
             components: [ObjAutoRotate],
-            shader: ScreenDoorShader,
             shaderProp: {
                 mainTexture: TextureCreator.CheckerboardTexture(),
                 // mainTexture: "resources/texture/Brick_Diffuse.jpg",

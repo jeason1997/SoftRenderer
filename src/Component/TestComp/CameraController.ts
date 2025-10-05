@@ -59,7 +59,7 @@ export class CameraController extends Component {
         }
 
         // 鼠标右键相机旋转
-        if (Input.GetMouseButtonDown(2)) {
+        if (Input.GetMouseButtonDown(0)) {
             Engine.canvas.requestPointerLock();
             this._rotateCamera = true;
         }
@@ -74,11 +74,11 @@ export class CameraController extends Component {
         }
 
         // ALT+鼠标左键相机绕中心点旋转
-        if (Input.GetKey(Input.KeyCode.Alt) && Input.GetMouseButton(0)) {
-            const moveDelta = Input.mouseDelta;
-            this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
-            this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
-        }
+        // if (Input.GetKey(Input.KeyCode.Alt) && Input.GetMouseButton(0)) {
+        //     const moveDelta = Input.mouseDelta;
+        //     this._euler.y -= moveDelta.x * this.rotateSpeed * 0.1;
+        //     this._euler.x += moveDelta.y * this.rotateSpeed * 0.1;
+        // }
     }
 
     private scaleAndAdd(a: Vector3, b: Vector3, scale: number): Vector3 {
